@@ -14,8 +14,11 @@ from models import db, User, SchoolProfile, Teacher, Student, Archive, ActivityL
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'siap_administrasi_guru_2026_secret_key'
 db_url = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
-if db_url and db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql://", 1)
+if db_url:
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+    if db_url.startswith("postgresql://") and "+psycopg2" not in db_url:
+        db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 if os.environ.get('VERCEL') or not os.access(os.path.dirname(__file__) or '.', os.W_OK):
