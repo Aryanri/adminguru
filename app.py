@@ -15,9 +15,15 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'siap_administrasi_guru_2026_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'uploads'
+if os.environ.get('VERCEL') or not os.access(os.path.dirname(__file__) or '.', os.W_OK):
+    app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
+else:
+    app.config['UPLOAD_FOLDER'] = 'uploads'
 
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+try:
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+except Exception as e:
+    print("Upload folder creation notice:", e)
 
 db.init_app(app)
 login_manager = LoginManager()
