@@ -91,7 +91,9 @@ def log_activity(user_id, aktivitas):
 @app.before_request
 def check_single_device():
     if current_user.is_authenticated:
-        if current_user.current_session_id != session.get('device_session_id'):
+        if not session.get('device_session_id'):
+            session['device_session_id'] = current_user.current_session_id
+        elif current_user.current_session_id and current_user.current_session_id != session.get('device_session_id'):
             logout_user()
             flash('Akun Anda telah login di perangkat lain. Sesi ini diakhiri.', 'danger')
             return redirect(url_for('login'))

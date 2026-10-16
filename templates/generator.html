@@ -34,7 +34,7 @@
                 <form method="POST" id="hemForm">
                     <input type="hidden" name="hasil_konten" id="hasil_konten_input">
                     <div class="row g-3 mb-3">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label fw-bold">Jumlah JP per Minggu</label>
                             <select class="form-select" name="jumlah_jp" id="jumlah_jp">
                                 <option value="2">2 JP</option>
@@ -43,24 +43,17 @@
                                 <option value="6">6 JP</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label fw-bold">Pilihan Semester</label>
                             <select class="form-select" name="semester" id="semester">
                                 <option value="Ganjil" selected>Semester Ganjil (Juli - Desember)</option>
                                 <option value="Genap">Semester Genap (Januari - Juni)</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Hari Mengajar</label>
-                            <select class="form-select" name="tipe_hari" id="tipe_hari" onchange="toggleHariTertentu()">
-                                <option value="semua" selected>Semua Hari (Senin - Sabtu)</option>
-                                <option value="tertentu">Hari-Hari Tertentu Saja</option>
-                            </select>
-                        </div>
                     </div>
 
-                    <div id="pilihanHariContainer" class="mb-3 p-3 bg-light rounded border" style="display: none;">
-                        <label class="form-label fw-bold d-block">Pilih Hari Mengajar Tertentu:</label>
+                    <div class="mb-3 p-3 bg-light rounded border">
+                        <label class="form-label fw-bold d-block">Pilih Hari Mengajar (Centang hari yang diinginkan untuk dihitung):</label>
                         <div class="d-flex flex-wrap gap-3">
                             <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="1" id="h1" checked><label class="form-check-label" for="h1">Senin</label></div>
                             <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="2" id="h2" checked><label class="form-check-label" for="h2">Selasa</label></div>
@@ -81,42 +74,27 @@
         <!-- Hasil Preview Real-Time -->
         <div class="card shadow-sm border-0">
             <div class="card-header bg-secondary text-white">
-                <h5 class="m-0"><i class="fa fa-file-invoice me-2"></i>Preview Hasil Analisis Hari Efektif Mengajar (Real-Time)</h5>
+                <h5 class="m-0"><i class="fa fa-file-invoice me-2"></i>Preview Hasil Analisis Hari Efektif Mengajar (Real-Time per Bulan)</h5>
             </div>
             <div class="card-body bg-white p-4" id="previewArea">
                 {% if hasil_generate %}
                     {{ hasil_generate | safe }}
                 {% else %}
-                    <div class="text-center text-muted py-5">Silakan atur parameter di atas, hasil perhitungan hari dan tanggal efektif akan tampil secara real-time di sini.</div>
+                    <div class="text-center text-muted py-5">Silakan centang hari dan atur parameter di atas, hasil perhitungan rincian hari dan tanggal efektif per bulan akan tampil secara real-time di sini.</div>
                 {% endif %}
             </div>
         </div>
     </div>
 
     <script>
-    function toggleHariTertentu() {
-        var tipe = document.getElementById('tipe_hari').value;
-        var container = document.getElementById('pilihanHariContainer');
-        if (tipe === 'tertentu') {
-            container.style.display = 'block';
-        } else {
-            container.style.display = 'none';
-        }
-        calculateHEM();
-    }
-
     function calculateHEM() {
         const semester = document.getElementById('semester').value;
         const jumlahJP = document.getElementById('jumlah_jp').value;
-        const tipeHari = document.getElementById('tipe_hari').value;
         
-        let targetDays = [1, 2, 3, 4, 5, 6]; // Senin-Sabtu
-        if (tipeHari === 'tertentu') {
-            targetDays = [];
-            document.querySelectorAll('.hari-cb').forEach(cb => {
-                if (cb.checked) targetDays.push(parseInt(cb.value));
-            });
-        }
+        let targetDays = [];
+        document.querySelectorAll('.hari-cb').forEach(cb => {
+            if (cb.checked) targetDays.push(parseInt(cb.value));
+        });
 
         // Determine months based on semester
         let months = [];
@@ -145,17 +123,16 @@
         let totalEffectiveDays = 0;
         let htmlOutput = "";
 
-        // Profile school header mock or from backend
-        htmlOutput += `<div class="text-center mb-3"><h3>ANALISIS HARI EFEKTIF MENGAJAR (HEM)</h3><p>Semester ${semester} | Beban: ${jumlahJP} JP per Minggu</p></div><hr>`;
+        htmlOutput += `<div class="text-center mb-4"><h3>ANALISIS HARI EFEKTIF MENGAJAR (HEM)</h3><p class="text-muted">Semester ${semester} | Beban: ${jumlahJP} JP per Minggu</p></div><hr>`;
         htmlOutput += `<div class="table-responsive"><table class="table table-bordered table-striped align-middle">`;
-        htmlOutput += `<thead class="table-dark"><tr><th>Bulan</th><th>Tanggal Efektif (Hari & Tanggal)</th><th>Jumlah Hari</th><th>Jumlah JP Efektif</th></tr></thead><tbody>`;
+        htmlOutput += `<thead class="table-dark text-center"><tr><th style="width: 20%;">Bulan</th><th>Rincian Hari & Tanggal Efektif (Sesuai Pilihan)</th><th style="width: 15%;">Jumlah Hari</th><th style="width: 15%;">Jumlah JP Efektif</th></tr></thead><tbody>`;
 
         months.forEach(m => {
             let dateList = [];
             let daysInMonth = new Date(m.year, m.monthIdx + 1, 0).getDate();
             for (let d = 1; d <= daysInMonth; d++) {
                 let currDate = new Date(m.year, m.monthIdx, d);
-                let dayOfWeek = currDate.getDay(); // 0 is Sunday, 1 is Monday...
+                let dayOfWeek = currDate.getDay(); 
                 if (targetDays.includes(dayOfWeek)) {
                     let formattedDate = `${dayNames[dayOfWeek]}, ${d} ${m.name} ${m.year}`;
                     dateList.push(formattedDate);
@@ -166,8 +143,8 @@
             let totalJPBulan = count * parseInt(jumlahJP);
 
             htmlOutput += `<tr>`;
-            htmlOutput += `<td class="fw-bold">${m.name} ${m.year}</td>`;
-            htmlOutput += `<td class="small" style="max-height: 100px; overflow-y: auto;">${dateList.join('<br>')}</td>`;
+            htmlOutput += `<td class="fw-bold text-center">${m.name} ${m.year}</td>`;
+            htmlOutput += `<td class="small"><div style="max-height: 140px; overflow-y: auto; padding: 5px;">${dateList.length > 0 ? dateList.join('<br>') : '<span class="text-muted">Tidak ada hari terpilih</span>'}</div></td>`;
             htmlOutput += `<td class="text-center">${count} Hari</td>`;
             htmlOutput += `<td class="text-center fw-bold text-primary">${totalJPBulan} JP</td>`;
             htmlOutput += `</tr>`;
@@ -182,7 +159,6 @@
     document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('semester').addEventListener('change', calculateHEM);
         document.getElementById('jumlah_jp').addEventListener('change', calculateHEM);
-        document.getElementById('tipe_hari').addEventListener('change', calculateHEM);
         document.querySelectorAll('.hari-cb').forEach(cb => cb.addEventListener('change', calculateHEM));
         {% if not hasil_generate %}
         calculateHEM();
