@@ -211,8 +211,6 @@ def dashboard():
 
 @app.route('/generator/<modul_slug>', methods=['GET', 'POST'])
 @login_required
-@app.route('/generator/<modul_slug>', methods=['GET', 'POST'])
-@login_required
 def generator(modul_slug):
     all_modules = CustomModule.query.filter_by(aktif=True).all()
     hasil_generate = None
