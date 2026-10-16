@@ -34,6 +34,44 @@ except Exception as e:
     print("Instance folder creation notice:", e)
 
 db.init_app(app)
+
+with app.app_context():
+    try:
+        db.create_all()
+        defaults = [
+            ('Analisis Hari Efektif Mengajar (HEM)', 'hem'),
+            ('CP-TP-ATP', 'cp_tp_atp'),
+            ('Modul Ajar / RPP', 'modul_ajar'),
+            ('LKPD Siswa', 'lkpd'),
+            ('Program Semester (Prosem)', 'prosem'),
+            ('Program Tahunan (Prota)', 'prota'),
+            ('Bank Soal Harian', 'soal_harian'),
+            ('Bank Soal STS (Sumatif Tengah Semester)', 'soal_sts'),
+            ('Bank Soal SAS (Sumatif Akhir Semester)', 'soal_sas'),
+            ('Asesmen Sumatif', 'asesmen_sumatif')
+        ]
+        for d_name, d_slug in defaults:
+            existing = CustomModule.query.filter_by(slug=d_slug).first()
+            if not existing:
+                cm = CustomModule(nama_modul=d_name, slug=d_slug, aktif=True, is_default=True)
+                db.session.add(cm)
+        db.session.commit()
+
+        if not User.query.filter_by(username='superadmin').first():
+            sa = User(
+                username='superadmin',
+                email='superadmin@admin.com',
+                nip='198001012010011001',
+                mapel='Administrator',
+                password=generate_password_hash('superadmin123'),
+                nama_lengkap='Super Administrator',
+                role='superadmin',
+                status='active'
+            )
+            db.session.add(sa)
+            db.session.commit()
+    except Exception as e:
+        print("Init DB error:", e)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -389,76 +427,4 @@ def superadmin_modul_toggle(modul_id):
     return redirect(url_for('superadmin_modul'))
 
 if __name__ == '__main__':
-    with app.app_context():
-        db_path = os.path.join(app.instance_path, 'database.db') if os.path.exists(app.instance_path) else 'database.db'
-        if not os.path.exists(db_path) and os.path.exists('instance/database.db'):
-            db_path = 'instance/database.db'
-            
-        try:
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='custom_module';")
-            tbl_exists = cursor.fetchone()
-            if tbl_exists:
-                cursor.execute("PRAGMA table_info(custom_module);")
-                columns = [col[1] for col in cursor.fetchall()]
-                if 'aktif' not in columns:
-                    cursor.execute("ALTER TABLE custom_module ADD COLUMN aktif BOOLEAN DEFAULT 1;")
-                    conn.commit()
-                if 'is_default' not in columns:
-                    cursor.execute("ALTER TABLE custom_module ADD COLUMN is_default BOOLEAN DEFAULT 0;")
-                    conn.commit()
-            
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user';")
-            if cursor.fetchone():
-                cursor.execute("PRAGMA table_info(user);")
-                user_cols = [col[1] for col in cursor.fetchall()]
-                if 'email' not in user_cols:
-                    cursor.execute("ALTER TABLE user ADD COLUMN email VARCHAR(120);")
-                    conn.commit()
-                if 'nip' not in user_cols:
-                    cursor.execute("ALTER TABLE user ADD COLUMN nip VARCHAR(50);")
-                    conn.commit()
-                if 'mapel' not in user_cols:
-                    cursor.execute("ALTER TABLE user ADD COLUMN mapel VARCHAR(100);")
-                    conn.commit()
-            conn.close()
-        except Exception as e:
-            print("Pre-migration note:", e)
-
-        db.create_all()
-        
-        defaults = [
-            ('Analisis Hari Efektif Mengajar (HEM)', 'hem'),
-            ('CP-TP-ATP', 'cp_tp_atp'),
-            ('Modul Ajar / RPP', 'modul_ajar'),
-            ('LKPD Siswa', 'lkpd'),
-            ('Program Semester (Prosem)', 'prosem'),
-            ('Program Tahunan (Prota)', 'prota'),
-            ('Bank Soal Harian', 'soal_harian'),
-            ('Bank Soal STS (Sumatif Tengah Semester)', 'soal_sts'),
-            ('Bank Soal SAS (Sumatif Akhir Semester)', 'soal_sas'),
-            ('Asesmen Sumatif', 'asesmen_sumatif')
-        ]
-        for d_name, d_slug in defaults:
-            existing = CustomModule.query.filter_by(slug=d_slug).first()
-            if not existing:
-                cm = CustomModule(nama_modul=d_name, slug=d_slug, aktif=True, is_default=True)
-                db.session.add(cm)
-        db.session.commit()
-
-        if not User.query.filter_by(username='superadmin').first():
-            sa = User(
-                username='superadmin',
-                email='superadmin@admin.com',
-                nip='198001012010011001',
-                mapel='Administrator',
-                password=generate_password_hash('superadmin123'),
-                nama_lengkap='Super Administrator',
-                role='superadmin',
-                status='active'
-            )
-            db.session.add(sa)
-            db.session.commit()
-            
     app.run(debug=True, port=5000)
