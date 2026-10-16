@@ -13,17 +13,25 @@ from models import db, User, SchoolProfile, Teacher, Student, Archive, ActivityL
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'siap_administrasi_guru_2026_secret_key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 if os.environ.get('VERCEL') or not os.access(os.path.dirname(__file__) or '.', os.W_OK):
     app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
+    app.instance_path = '/tmp'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/database.db'
 else:
     app.config['UPLOAD_FOLDER'] = 'uploads'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 try:
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 except Exception as e:
     print("Upload folder creation notice:", e)
+
+try:
+    os.makedirs(app.instance_path, exist_ok=True)
+except Exception as e:
+    print("Instance folder creation notice:", e)
 
 db.init_app(app)
 login_manager = LoginManager()
