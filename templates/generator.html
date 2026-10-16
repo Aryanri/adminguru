@@ -23,265 +23,281 @@
 </div>
 
 <div class="row">
-    <div class="col-md-5">
-        <div class="card p-4 shadow-sm">
-            <h5 class="text-primary mb-3"><i class="fa fa-sliders-h me-2"></i>Parameter: <b>{{ current_jenis }}</b></h5>
-            <form method="POST">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Jenjang Pendidikan</label>
-                        <select name="jenjang" id="jenjangSelect" class="form-select" required onchange="updateOptions()">
-                            <option value="SD / MI">SD / MI</option>
-                            <option value="SMP / MTs" selected>SMP / MTs</option>
-                            <option value="SMA / SMK / MA">SMA / SMK / MA</option>
-                        </select>
+    {% if active_slug == 'hem' %}
+    <div class="col-md-12">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="m-0"><i class="fa fa-calendar-alt me-2"></i>Parameter & Kalkulator Real-Time Analisis Hari Efektif Mengajar (HEM)</h5>
+                <button type="button" class="btn btn-light btn-sm fw-bold" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / Export PDF</button>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="hemForm">
+                    <input type="hidden" name="hasil_konten" id="hasil_konten_input">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Jumlah JP per Minggu</label>
+                            <select class="form-select" name="jumlah_jp" id="jumlah_jp">
+                                <option value="2">2 JP</option>
+                                <option value="3">3 JP</option>
+                                <option value="4" selected>4 JP</option>
+                                <option value="6">6 JP</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Pilihan Semester</label>
+                            <select class="form-select" name="semester" id="semester">
+                                <option value="Ganjil" selected>Semester Ganjil (Juli - Desember)</option>
+                                <option value="Genap">Semester Genap (Januari - Juni)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Hari Mengajar</label>
+                            <select class="form-select" name="tipe_hari" id="tipe_hari" onchange="toggleHariTertentu()">
+                                <option value="semua" selected>Semua Hari (Senin - Sabtu)</option>
+                                <option value="tertentu">Hari-Hari Tertentu Saja</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Kelas & Fase</label>
-                        <select name="kelas_fase" id="kelasFaseSelect" class="form-select" required>
-                            <!-- Dynamic options -->
-                        </select>
-                    </div>
-                </div>
 
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <label class="form-label">Kurikulum</label>
-                        <select name="kurikulum" id="kurikulumSelect" class="form-select" required onchange="updateOptions()">
-                            <option value="Kurikulum Merdeka">Kurikulum Merdeka</option>
-                            <option value="Kurikulum 2013 Revisi">Kurikulum 2013 Revisi</option>
-                            <option value="Kurikulum Berbasis Cinta">Kurikulum Berbasis Cinta</option>
-                        </select>
+                    <div id="pilihanHariContainer" class="mb-3 p-3 bg-light rounded border" style="display: none;">
+                        <label class="form-label fw-bold d-block">Pilih Hari Mengajar Tertentu:</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="1" id="h1" checked><label class="form-check-label" for="h1">Senin</label></div>
+                            <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="2" id="h2" checked><label class="form-check-label" for="h2">Selasa</label></div>
+                            <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="3" id="h3" checked><label class="form-check-label" for="h3">Rabu</label></div>
+                            <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="4" id="h4" checked><label class="form-check-label" for="h4">Kamis</label></div>
+                            <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="5" id="h5" checked><label class="form-check-label" for="h5">Jumat</label></div>
+                            <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="6" id="h6"><label class="form-check-label" for="h6">Sabtu</label></div>
+                        </div>
                     </div>
-                </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Mata Pelajaran</label>
-                    <select name="mapel" id="mapelSelect" class="form-select" required>
-                        <!-- Dynamic options -->
-                    </select>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Metode Pembelajaran</label>
-                        <select name="metode" id="metodeSelect" class="form-select" required>
-                            <!-- Dynamic options -->
-                        </select>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-success px-4"><i class="fa fa-save me-1"></i> Simpan Analisis HEM (Permanen)</button>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Aktivitas Pembelajaran</label>
-                        <select name="aktivitas" id="aktivitasSelect" class="form-select" required>
-                            <!-- Dynamic options -->
-                        </select>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Kesulitan</label>
-                        <select name="kesulitan" class="form-select">
-                            <option value="C1">C1 - Mengingat (Remembering)</option>
-                            <option value="C2">C2 - Memahami (Understanding)</option>
-                            <option value="C3" selected>C3 - Menerapkan (Applying)</option>
-                            <option value="C4">C4 - Menganalisis (Analyzing)</option>
-                            <option value="C5">C5 - Mengevaluasi (Evaluating)</option>
-                            <option value="C6">C6 - Mencipta (Creating)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Jml PG</label>
-                        <input type="number" name="jml_pg" class="form-control" value="10">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Jml Isian</label>
-                        <input type="number" name="jml_isian" class="form-control" value="5">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Jml Esai</label>
-                        <input type="number" name="jml_esai" class="form-control" value="5">
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Topik Materi</label>
-                    <input type="text" name="topik" class="form-control" placeholder="Contoh: Sistem Pencernaan Manusia" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Ruang Lingkup Materi</label>
-                    <textarea name="ruang_lingkup" class="form-control" rows="2" placeholder="Tuliskan detail ruang lingkup..." required></textarea>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100 py-2"><i class="fa fa-cogs me-2"></i>Generate Administrasi dengan AI</button>
-            </form>
+                </form>
+            </div>
         </div>
-    </div>
 
-    <div class="col-md-7">
-        <div class="card p-4 shadow-sm" style="min-height: 600px;">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="card-title text-success"><i class="fa fa-file-alt me-2"></i>Hasil Generate / Pratinjau Siap Cetak</h4>
+        <!-- Hasil Preview Real-Time -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="m-0"><i class="fa fa-file-invoice me-2"></i>Preview Hasil Analisis Hari Efektif Mengajar (Real-Time)</h5>
+            </div>
+            <div class="card-body bg-white p-4" id="previewArea">
                 {% if hasil_generate %}
-                <button onclick="window.print()" class="btn btn-sm btn-outline-secondary"><i class="fa fa-print me-1"></i> Cetak / PDF</button>
+                    {{ hasil_generate | safe }}
+                {% else %}
+                    <div class="text-center text-muted py-5">Silakan atur parameter di atas, hasil perhitungan hari dan tanggal efektif akan tampil secara real-time di sini.</div>
                 {% endif %}
             </div>
-            <hr>
-            {% if hasil_generate %}
-            <div class="p-3 border rounded bg-white" id="printable-area">
-                {{ hasil_generate | safe }}
-            </div>
-            {% else %}
-            <div class="text-center text-muted my-5">
-                <i class="fa fa-file-code fa-3x mb-3"></i>
-                <p>Belum ada modul yang digenerate untuk tab ini. Silakan isi form di sebelah kiri lalu klik tombol Generate.</p>
-            </div>
-            {% endif %}
         </div>
     </div>
-</div>
 
-<script>
-const dataKelasFase = {
-    "SD / MI": [
-        {"kelas": "Kelas 1", "fase": "Fase A (Kelas 1-2)"},
-        {"kelas": "Kelas 2", "fase": "Fase A (Kelas 1-2)"},
-        {"kelas": "Kelas 3", "fase": "Fase B (Kelas 3-4)"},
-        {"kelas": "Kelas 4", "fase": "Fase B (Kelas 3-4)"},
-        {"kelas": "Kelas 5", "fase": "Fase C (Kelas 5-6)"},
-        {"kelas": "Kelas 6", "fase": "Fase C (Kelas 5-6)"}
-    ],
-    "SMP / MTs": [
-        {"kelas": "Kelas 7", "fase": "Fase D (Kelas 7-9)"},
-        {"kelas": "Kelas 8", "fase": "Fase D (Kelas 7-9)"},
-        {"kelas": "Kelas 9", "fase": "Fase D (Kelas 7-9)"}
-    ],
-    "SMA / SMK / MA": [
-        {"kelas": "Kelas 10", "fase": "Fase E (Kelas 10)"},
-        {"kelas": "Kelas 11", "fase": "Fase F (Kelas 11-12)"},
-        {"kelas": "Kelas 12", "fase": "Fase F (Kelas 11-12)"}
-    ]
-};
-
-const dataMapel = {
-    "SD / MI": {
-        "Kurikulum Merdeka": ["Pendidikan Agama dan Budi Pekerti", "Pendidikan Pancasila", "Bahasa Indonesia", "Matematika", "Ilmu Pengetahuan Alam dan Sosial (IPAS)", "Seni Budaya", "Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)", "Bahasa Inggris"],
-        "Kurikulum 2013 Revisi": ["Pendidikan Agama dan Budi Pekerti", "PPKn", "Bahasa Indonesia", "Matematika", "SBdP", "PJOK", "Tematik Terpadu"],
-        "Kurikulum Berbasis Cinta": ["Pendidikan Agama dan Budi Pekerti", "Pendidikan Karakter & Empati", "Bahasa Indonesia", "Matematika", "Seni & Kreativitas", "PJOK & Kesehatan Mental"]
-    },
-    "SMP / MTs": {
-        "Kurikulum Merdeka": ["Pendidikan Agama dan Budi Pekerti", "Pendidikan Pancasila", "Bahasa Indonesia", "Matematika", "Ilmu Pengetahuan Alam (IPA)", "Ilmu Pengetahuan Sosial (IPS)", "Bahasa Inggris", "Informatika", "Seni Rupa / Musik / Teater", "PJOK"],
-        "Kurikulum 2013 Revisi": ["Pendidikan Agama dan Budi Pekerti", "PPKn", "Bahasa Indonesia", "Matematika", "IPA", "IPS", "Bahasa Inggris", "Seni Budaya", "Prakarya", "PJOK"],
-        "Kurikulum Berbasis Cinta": ["Pendidikan Agama dan Budi Pekerti", "Pendidikan Karakter & Empati", "Bahasa Indonesia", "Matematika", "IPA Terpadu Berbasis Kepedulian", "IPS Kontekstual", "Bahasa Inggris", "Seni & Budaya", "PJOK"]
-    },
-    "SMA / SMK / MA": {
-        "Kurikulum Merdeka": ["Pendidikan Agama dan Budi Pekerti", "Pendidikan Pancasila", "Bahasa Indonesia", "Matematika", "Bahasa Inggris", "Fisika", "Kimia", "Biologi", "Ekonomi", "Sosiologi", "Sejarah", "Geografi", "Informatika", "PJOK"],
-        "Kurikulum 2013 Revisi": ["Pendidikan Agama dan Budi Pekerti", "PPKn", "Bahasa Indonesia", "Matematika Wajib", "Matematika Peminatan", "Bahasa Inggris", "Fisika", "Kimia", "Biologi", "Ekonomi", "Sosiologi", "Sejarah Indonesia", "Sejarah Peminatan", "Geografi", "PJOK"],
-        "Kurikulum Berbasis Cinta": ["Pendidikan Agama dan Budi Pekerti", "Pendidikan Karakter & Kepemimpinan Emosional", "Bahasa Indonesia", "Matematika", "Bahasa Inggris", "Sains Kontekstual", "Ilmu Sosial Humaniora", "Seni & Kreativitas", "PJOK"]
+    <script>
+    function toggleHariTertentu() {
+        var tipe = document.getElementById('tipe_hari').value;
+        var container = document.getElementById('pilihanHariContainer');
+        if (tipe === 'tertentu') {
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+        }
+        calculateHEM();
     }
-};
 
-const dataMetode = {
-    "Kurikulum Merdeka": [
-        "Project Based Learning (PjBL)",
-        "Problem Based Learning (PBL)",
-        "Inquiry Learning",
-        "Discovery Learning",
-        "Differentiated Learning (Pembelajaran Bererdiferensiasi)"
-    ],
-    "Kurikulum 2013 Revisi": [
-        "Scientific Approach (Pendekatan Saintifik)",
-        "Discovery Learning",
-        "Inquiry Learning",
-        "Problem Based Learning",
-        "Project Based Learning",
-        "Cooperative Learning"
-    ],
-    "Kurikulum Berbasis Cinta": [
-        "Pembelajaran Mendalam",
-        "Empathetic Inquiry & Compassionate Learning",
-        "Project Based Learning Berbasis Kepedulian Sosial",
-        "Dialog Reflektif & Bimbingan Holistik",
-        "Collaborative Caring Learning"
-    ]
-};
+    function calculateHEM() {
+        const semester = document.getElementById('semester').value;
+        const jumlahJP = document.getElementById('jumlah_jp').value;
+        const tipeHari = document.getElementById('tipe_hari').value;
+        
+        let targetDays = [1, 2, 3, 4, 5, 6]; // Senin-Sabtu
+        if (tipeHari === 'tertentu') {
+            targetDays = [];
+            document.querySelectorAll('.hari-cb').forEach(cb => {
+                if (cb.checked) targetDays.push(parseInt(cb.value));
+            });
+        }
 
-const dataAktivitas = {
-    "Kurikulum Merdeka": [
-        "Eksplorasi Konsep & Diskusi Kelompok",
-        "Penyusunan Projek Kolaboratif Berbasis Profil Pelajar Pancasila",
-        "Refleksi Pembelajaran & Presentasi Hasil Karya",
-        "Demonstrasi Praktikum & Analisis Studi Kasus",
-        "Permainan Edukatif (Gamification) & Asesmen Formatif"
-    ],
-    "Kurikulum 2013 Revisi": [
-        "Mengamati, Menanya, Mengumpulkan Informasi, Menalar, & Mengomunikasikan",
-        "Diskusi Kelompok & Tanya Jawab Interaktif",
-        "Eksperimen / Praktikum Laboratorium",
-        "Penugasan Mandiri & Terstruktur",
-        "Presentasi Laporan Hasil Diskusi Kelas"
-    ],
-    "Kurikulum Berbasis Cinta": [
-        "Pembelajaran Mendalam melalui Eksplorasi Makna & Empati",
-        "Aksi Nyata Kepedulian & Pengabdian Kontekstual",
-        "Refleksi Emosional, Syukur, & Apresiasi Diri",
-        "Diskusi Kelompok Asimetris Penuh Kehangatan & Dukungan Sebaya",
-        "Kolaborasi Pemecahan Masalah Sosial Berbasis Kasih Sayang"
-    ]
-};
+        // Determine months based on semester
+        let months = [];
+        let year = new Date().getFullYear();
+        if (semester === 'Ganjil') {
+            months = [
+                { name: 'Juli', monthIdx: 6, year: year },
+                { name: 'Agustus', monthIdx: 7, year: year },
+                { name: 'September', monthIdx: 8, year: year },
+                { name: 'Oktober', monthIdx: 9, year: year },
+                { name: 'November', monthIdx: 10, year: year },
+                { name: 'Desember', monthIdx: 11, year: year }
+            ];
+        } else {
+            months = [
+                { name: 'Januari', monthIdx: 0, year: year },
+                { name: 'Februari', monthIdx: 1, year: year },
+                { name: 'Maret', monthIdx: 2, year: year },
+                { name: 'April', monthIdx: 3, year: year },
+                { name: 'Mei', monthIdx: 4, year: year },
+                { name: 'Juni', monthIdx: 5, year: year }
+            ];
+        }
 
-function updateOptions() {
-    const jenjang = document.getElementById('jenjangSelect').value;
-    const kurikulum = document.getElementById('kurikulumSelect').value;
+        const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        let totalEffectiveDays = 0;
+        let htmlOutput = "";
 
-    // Update Kelas & Fase combined dropdown
-    const kelasFaseSelect = document.getElementById('kelasFaseSelect');
-    kelasFaseSelect.innerHTML = '';
-    const listKF = dataKelasFase[jenjang] || [];
-    listKF.forEach(kf => {
-        let opt = document.createElement('option');
-        opt.value = kf.kelas + " | " + kf.fase;
-        opt.textContent = kf.kelas + " (" + kf.fase + ")";
-        kelasFaseSelect.appendChild(opt);
+        // Profile school header mock or from backend
+        htmlOutput += `<div class="text-center mb-3"><h3>ANALISIS HARI EFEKTIF MENGAJAR (HEM)</h3><p>Semester ${semester} | Beban: ${jumlahJP} JP per Minggu</p></div><hr>`;
+        htmlOutput += `<div class="table-responsive"><table class="table table-bordered table-striped align-middle">`;
+        htmlOutput += `<thead class="table-dark"><tr><th>Bulan</th><th>Tanggal Efektif (Hari & Tanggal)</th><th>Jumlah Hari</th><th>Jumlah JP Efektif</th></tr></thead><tbody>`;
+
+        months.forEach(m => {
+            let dateList = [];
+            let daysInMonth = new Date(m.year, m.monthIdx + 1, 0).getDate();
+            for (let d = 1; d <= daysInMonth; d++) {
+                let currDate = new Date(m.year, m.monthIdx, d);
+                let dayOfWeek = currDate.getDay(); // 0 is Sunday, 1 is Monday...
+                if (targetDays.includes(dayOfWeek)) {
+                    let formattedDate = `${dayNames[dayOfWeek]}, ${d} ${m.name} ${m.year}`;
+                    dateList.push(formattedDate);
+                }
+            }
+            let count = dateList.length;
+            totalEffectiveDays += count;
+            let totalJPBulan = count * parseInt(jumlahJP);
+
+            htmlOutput += `<tr>`;
+            htmlOutput += `<td class="fw-bold">${m.name} ${m.year}</td>`;
+            htmlOutput += `<td class="small" style="max-height: 100px; overflow-y: auto;">${dateList.join('<br>')}</td>`;
+            htmlOutput += `<td class="text-center">${count} Hari</td>`;
+            htmlOutput += `<td class="text-center fw-bold text-primary">${totalJPBulan} JP</td>`;
+            htmlOutput += `</tr>`;
+        });
+
+        htmlOutput += `</tbody><tfoot class="table-light"><tr><th colspan="2" class="text-end">TOTAL KESELURUHAN:</th><th class="text-center">${totalEffectiveDays} Hari</th><th class="text-center text-success">${totalEffectiveDays * parseInt(jumlahJP)} JP</th></tr></tfoot></table></div>`;
+
+        document.getElementById('previewArea').innerHTML = htmlOutput;
+        document.getElementById('hasil_konten_input').value = htmlOutput;
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById('semester').addEventListener('change', calculateHEM);
+        document.getElementById('jumlah_jp').addEventListener('change', calculateHEM);
+        document.getElementById('tipe_hari').addEventListener('change', calculateHEM);
+        document.querySelectorAll('.hari-cb').forEach(cb => cb.addEventListener('change', calculateHEM));
+        {% if not hasil_generate %}
+        calculateHEM();
+        {% endif %}
     });
+    </script>
 
-    // Update Mapel
-    const mapelSelect = document.getElementById('mapelSelect');
-    mapelSelect.innerHTML = '';
-    const listMapel = (dataMapel[jenjang] && dataMapel[jenjang][kurikulum]) ? dataMapel[jenjang][kurikulum] : ["Bahasa Indonesia", "Matematika"];
-    listMapel.forEach(m => {
-        let opt = document.createElement('option');
-        opt.value = m;
-        opt.textContent = m;
-        mapelSelect.appendChild(opt);
-    });
-
-    // Update Metode
-    const metodeSelect = document.getElementById('metodeSelect');
-    metodeSelect.innerHTML = '';
-    const listMetode = dataMetode[kurikulum] ? dataMetode[kurikulum] : dataMetode["Kurikulum Merdeka"];
-    listMetode.forEach(met => {
-        let opt = document.createElement('option');
-        opt.value = met;
-        opt.textContent = met;
-        metodeSelect.appendChild(opt);
-    });
-
-    // Update Aktivitas
-    const aktivitasSelect = document.getElementById('aktivitasSelect');
-    aktivitasSelect.innerHTML = '';
-    const listAktivitas = dataAktivitas[kurikulum] ? dataAktivitas[kurikulum] : dataAktivitas["Kurikulum Merdeka"];
-    listAktivitas.forEach(akt => {
-        let opt = document.createElement('option');
-        opt.value = akt;
-        opt.textContent = akt;
-        aktivitasSelect.appendChild(opt);
-    });
-}
-
-// Run on load
-document.addEventListener("DOMContentLoaded", function() {
-    updateOptions();
-});
-</script>
+    {% else %}
+    <!-- Generator standar untuk modul selain HEM -->
+    <div class="col-md-5">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="m-0"><i class="fa fa-sliders-h me-2"></i>Parameter Dokumen: {{ current_jenis }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Jenjang Pendidikan</label>
+                        <select class="form-select" name="jenjang" required>
+                            <option value="SMP / MTs">SMP / MTs</option>
+                            <option value="SMA / MA">SMA / MA</option>
+                            <option value="SMK / MAK">SMK / MAK</option>
+                            <option value="SD / MI">SD / MI</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Kelas & Fase</label>
+                        <select class="form-select" name="kelas_fase" required>
+                            <option value="Kelas 7 | Fase D (Kelas 7-9)">Kelas 7 | Fase D (Kelas 7-9)</option>
+                            <option value="Kelas 8 | Fase D (Kelas 7-9)">Kelas 8 | Fase D (Kelas 7-9)</option>
+                            <option value="Kelas 9 | Fase D (Kelas 7-9)">Kelas 9 | Fase D (Kelas 7-9)</option>
+                            <option value="Kelas 10 | Fase E (Kelas 10)">Kelas 10 | Fase E (Kelas 10)</option>
+                            <option value="Kelas 11 | Fase F (Kelas 11-12)">Kelas 11 | Fase F (Kelas 11-12)</option>
+                            <option value="Kelas 12 | Fase F (Kelas 11-12)">Kelas 12 | Fase F (Kelas 11-12)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Kurikulum</label>
+                        <select class="form-select" name="kurikulum" required>
+                            <option value="Kurikulum Merdeka (Kumer)">Kurikulum Merdeka (Kumer)</option>
+                            <option value="Kurikulum 2013 (K-13 Revisi)">Kurikulum 2013 (K-13 Revisi)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mata Pelajaran</label>
+                        <input type="text" class="form-control" name="mapel" placeholder="Contoh: Informatika / Matematika" value="{{ current_user.mapel if current_user.mapel else 'Informatika' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Topik / Materi Pokok</label>
+                        <input type="text" class="form-control" name="topik" placeholder="Contoh: Berpikir Komputasional" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ruang Lingkup / Sub-Materi</label>
+                        <input type="text" class="form-control" name="ruang_lingkup" placeholder="Contoh: Dekomposisi & Algoritma" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Metode Pembelajaran</label>
+                        <select class="form-select" name="metode" required>
+                            <option value="Project Based Learning (PjBL)">Project Based Learning (PjBL)</option>
+                            <option value="Problem Based Learning (PBL)">Problem Based Learning (PBL)</option>
+                            <option value="Inquiry Learning">Inquiry Learning</option>
+                            <option value="Discovery Learning">Discovery Learning</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Aktivitas Pembelajaran Utama</label>
+                        <textarea class="form-control" name="aktivitas" rows="2" placeholder="Contoh: Siswa menganalisis studi kasus pemecahan masalah sehari-hari." required></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Tingkat Kesulitan</label>
+                            <select class="form-select" name="kesulitan">
+                                <option value="C1">C1 (Cipta/Ingat)</option>
+                                <option value="C2">C2 (Paham)</option>
+                                <option value="C3" selected>C3 (Aplikasi)</option>
+                                <option value="C4">C4 (Analisis)</option>
+                                <option value="C5">C5 (Evaluasi)</option>
+                                <option value="C6">C6 (Kreasi)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Jumlah PG</label>
+                            <input type="number" class="form-control" name="jml_pg" value="10" min="1" max="50">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Jumlah Esai</label>
+                            <input type="number" class="form-control" name="jml_esai" value="5" min="0" max="20">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold"><i class="fa fa-robot me-2"></i> Generate Dokumen AI</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="m-0"><i class="fa fa-file-alt me-2"></i>Hasil Preview Dokumen AI</h5>
+                {% if hasil_generate %}
+                <button type="button" class="btn btn-light btn-sm fw-bold" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / Export PDF</button>
+                {% endif %}
+            </div>
+            <div class="card-body bg-white p-4" style="min-height: 500px;">
+                {% if hasil_generate %}
+                    {{ hasil_generate | safe }}
+                {% else %}
+                    <div class="text-center text-muted py-5 my-5">
+                        <i class="fa fa-file-invoice fa-3x mb-3 text-secondary"></i>
+                        <h5>Belum ada dokumen yang digenerate.</h5>
+                        <p class="small">Lengkapi form parameter di sebelah kiri lalu klik <b>Generate Dokumen AI</b>.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}
