@@ -13,13 +13,22 @@ from models import db, User, SchoolProfile, Teacher, Student, Archive, ActivityL
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'siap_administrasi_guru_2026_secret_key'
+database_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
+if database_url:
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    if os.environ.get('VERCEL') or not os.access(os.path.dirname(__file__) or '.', os.W_OK):
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/database.db'
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+
 if os.environ.get('VERCEL') or not os.access(os.path.dirname(__file__) or '.', os.W_OK):
     app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
     app.instance_path = '/tmp'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/database.db'
 else:
     app.config['UPLOAD_FOLDER'] = 'uploads'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
