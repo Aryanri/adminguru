@@ -4,8 +4,9 @@
     <div class="col-md-5">
         <div class="card shadow p-4">
             <div class="text-center mb-4">
-                <h3 class="fw-bold text-primary"><i class="fa fa-book-open me-2"></i>Aplikasi Administrasi Guru</h3>
-                <p class="text-muted">Pusat Administrasi Mengajar & Generator AI BSKAP 2026</p>
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Gurava Logo" style="width: 64px; height: 64px; object-fit: contain;" class="mb-3">
+                <h3 class="fw-bold text-primary">Gurava</h3>
+                <p class="text-muted">Aplikasi Administrasi Mengajar & Generator AI</p>
             </div>
             <form method="POST">
                 <div class="mb-3">
@@ -21,16 +22,6 @@
             <div class="text-center mt-2">
                 <p class="small text-muted">Belum punya akun? <a href="{{ url_for('register') }}">Daftar Mandiri</a></p>
                 <p class="small">Lupa password? Hubungi Admin via WA: <a href="https://wa.me/6281321984848?text=Halo%20Admin,%20saya%20lupa%20password%20akun%20saya." target="_blank" class="text-success fw-bold"><i class="fab fa-whatsapp"></i> 081321984848</a></p>
-            </div>
-            <hr>
-            <div class="small text-muted">
-                <b>Info Fitur Utama:</b>
-                <ul class="mb-0 ps-3">
-                    <li>Dashboard interaktif & Kalender Pendidikan</li>
-                    <li>Generator AI (HEM, CP-TP-ATP, Modul Ajar, Bank Soal C1-C6)</li>
-                    <li>Sistem Arsip & Caching (Hemat Token)</li>
-                    <li>Single-Device Login (Aman & Terkontrol)</li>
-                </ul>
             </div>
         </div>
     </div>

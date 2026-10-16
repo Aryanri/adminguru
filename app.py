@@ -13,64 +13,13 @@ from models import db, User, SchoolProfile, Teacher, Student, Archive, ActivityL
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'siap_administrasi_guru_2026_secret_key'
-db_url = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
-if db_url:
-    if db_url.startswith("postgres://"):
-        db_url = db_url.replace("postgres://", "postgresql://", 1)
-    if db_url.startswith("postgresql://") and "+psycopg2" not in db_url:
-        db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-if os.environ.get('VERCEL') or not os.access(os.path.dirname(__file__) or '.', os.W_OK):
-    app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
-else:
-    app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = 'uploads'
 
-try:
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-except Exception as e:
-    print("Upload folder creation notice:", e)
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db.init_app(app)
-
-with app.app_context():
-    try:
-        db.create_all()
-        defaults = [
-            ('Analisis Hari Efektif Mengajar (HEM)', 'hem'),
-            ('CP-TP-ATP', 'cp_tp_atp'),
-            ('Modul Ajar / RPP', 'modul_ajar'),
-            ('LKPD Siswa', 'lkpd'),
-            ('Program Semester (Prosem)', 'prosem'),
-            ('Program Tahunan (Prota)', 'prota'),
-            ('Bank Soal Harian', 'soal_harian'),
-            ('Bank Soal STS (Sumatif Tengah Semester)', 'soal_sts'),
-            ('Bank Soal SAS (Sumatif Akhir Semester)', 'soal_sas'),
-            ('Asesmen Sumatif', 'asesmen_sumatif')
-        ]
-        for d_name, d_slug in defaults:
-            existing = CustomModule.query.filter_by(slug=d_slug).first()
-            if not existing:
-                cm = CustomModule(nama_modul=d_name, slug=d_slug, aktif=True, is_default=True)
-                db.session.add(cm)
-        db.session.commit()
-
-        if not User.query.filter_by(username='superadmin').first():
-            sa = User(
-                username='superadmin',
-                email='superadmin@admin.com',
-                nip='198001012010011001',
-                mapel='Administrator',
-                password=generate_password_hash('superadmin123'),
-                nama_lengkap='Super Administrator',
-                role='superadmin',
-                status='active'
-            )
-            db.session.add(sa)
-            db.session.commit()
-    except Exception as e:
-        print("Init DB error:", e)
-
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -94,11 +43,6 @@ def check_single_device():
             logout_user()
             flash('Akun Anda telah login di perangkat lain. Sesi ini diakhiri.', 'danger')
             return redirect(url_for('login'))
-
-
-@app.route('/favicon.ico')
-def favicon():
-    return '', 204
 
 @app.route('/')
 def index():
@@ -232,91 +176,57 @@ def generator(modul_slug):
     jenis = mod_obj.nama_modul
     profile = SchoolProfile.query.first()
 
-    if modul_slug == 'hem':
-        saved_hem = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi=jenis).order_by(Archive.created_at.desc()).first()
-        if saved_hem:
-            hasil_generate = saved_hem.hasil_konten
-
     if request.method == 'POST':
-        if modul_slug == 'hem':
-            jumlah_jp = request.form.get('jumlah_jp', '4')
-            semester = request.form.get('semester', 'Ganjil')
-            hasil_konten = request.form.get('hasil_konten', '')
-            
-            param_str = f"hem-{current_user.id}-{semester}-{jumlah_jp}"
-            param_hash = hashlib.md5(param_str.encode('utf-8')).hexdigest()
-            
-            saved_hem = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi=jenis).order_by(Archive.created_at.desc()).first()
-            if saved_hem:
-                saved_hem.hasil_konten = hasil_konten
-                saved_hem.topik = f"Analisis HEM Semester {semester} ({jumlah_jp} JP)"
-                saved_hem.parameter_hash = param_hash
-                saved_hem.created_at = datetime.utcnow()
-            else:
-                new_arch = Archive(
-                    user_id=current_user.id,
-                    jenis_administrasi=jenis,
-                    topik=f"Analisis HEM Semester {semester} ({jumlah_jp} JP)",
-                    ruang_lingkup=f"Analisis Hari Efektif Mengajar Semester {semester}",
-                    parameter_hash=param_hash,
-                    hasil_konten=hasil_konten
-                )
-                db.session.add(new_arch)
-            db.session.commit()
-            log_activity(current_user.id, f"Menyimpan Analisis HEM Semester {semester}.")
-            flash('Analisis HEM berhasil disimpan dan tersimpan sampai perubahan berikutnya.', 'success')
-            return redirect(url_for('generator', modul_slug='hem'))
+        jenjang = request.form.get('jenjang')
+        kelas_fase_val = request.form.get('kelas_fase', 'Kelas 7 | Fase D (Kelas 7-9)')
+        parts = kelas_fase_val.split('|')
+        kelas = parts[0].strip() if len(parts) > 0 else 'Kelas 7'
+        fase = parts[1].strip() if len(parts) > 1 else 'Fase D (Kelas 7-9)'
+
+        kurikulum = request.form.get('kurikulum')
+        mapel = request.form.get('mapel')
+        metode = request.form.get('metode')
+        aktivitas = request.form.get('aktivitas')
+        kesulitan = request.form.get('kesulitan', 'C3')
+        jml_pg = request.form.get('jml_pg', '10')
+        jml_esai = request.form.get('jml_esai', '5')
+        jml_isian = request.form.get('jml_isian', '5')
+        topik = request.form.get('topik')
+        ruang_lingkup = request.form.get('ruang_lingkup')
+        
+        param_str = f"{jenis}-{jenjang}-{kelas}-{fase}-{kurikulum}-{mapel}-{topik}-{ruang_lingkup}-{kesulitan}-{current_user.id}"
+        param_hash = hashlib.md5(param_str.encode('utf-8')).hexdigest()
+        
+        cached = Archive.query.filter_by(parameter_hash=param_hash).first()
+        if cached:
+            hasil_generate = cached.hasil_konten
+            log_activity(current_user.id, f"Mengambil Arsip Cache untuk {jenis}: {topik}")
+            flash('Hasil diambil dari Cache Arsip (Menghemat Token API).', 'info')
         else:
-            jenjang = request.form.get('jenjang')
-            kelas_fase_val = request.form.get('kelas_fase', 'Kelas 7 | Fase D (Kelas 7-9)')
-            parts = kelas_fase_val.split('|')
-            kelas = parts[0].strip() if len(parts) > 0 else 'Kelas 7'
-            fase = parts[1].strip() if len(parts) > 1 else 'Fase D (Kelas 7-9)'
-
-            kurikulum = request.form.get('kurikulum')
-            mapel = request.form.get('mapel')
-            metode = request.form.get('metode')
-            aktivitas = request.form.get('aktivitas')
-            kesulitan = request.form.get('kesulitan', 'C3')
-            jml_pg = request.form.get('jml_pg', '10')
-            jml_esai = request.form.get('jml_esai', '5')
-            jml_isian = request.form.get('jml_isian', '5')
-            topik = request.form.get('topik')
-            ruang_lingkup = request.form.get('ruang_lingkup')
-            
-            param_str = f"{jenis}-{jenjang}-{kelas}-{fase}-{kurikulum}-{mapel}-{topik}-{ruang_lingkup}-{kesulitan}-{current_user.id}"
-            param_hash = hashlib.md5(param_str.encode('utf-8')).hexdigest()
-            
-            cached = Archive.query.filter_by(parameter_hash=param_hash).first()
-            if cached:
-                hasil_generate = cached.hasil_konten
-                log_activity(current_user.id, f"Mengambil Arsip Cache untuk {jenis}: {topik}")
-                flash('Hasil diambil dari Cache Arsip (Menghemat Token API).', 'info')
+            kop_html = ""
+            if profile and profile.kop_sekolah:
+                kop_html = f"<div class='text-center mb-3'><img src='{url_for('uploaded_file', filename=profile.kop_sekolah)}' style='max-width:100%; height:auto; max-height:140px;' alt='Kop Surat'></div><hr style='border: 2px solid #333;'>"
             else:
-                kop_html = ""
-                if profile and profile.kop_sekolah:
-                    kop_html = f"<div class='text-center mb-3'><img src='{url_for('uploaded_file', filename=profile.kop_sekolah)}' style='max-width:100%; height:auto; max-height:140px;' alt='Kop Surat'></div><hr style='border: 2px solid #333;'>"
-                else:
-                    kop_html = f"<div class='text-center mb-3'><h3>{profile.nama_sekolah if profile else 'SEMENCA'}</h3><p>{profile.alamat if profile else ''}</p></div><hr style='border: 2px solid #333;'>"
+                kop_html = f"<div class='text-center mb-3'><h3>{profile.nama_sekolah if profile else 'SEMENCA'}</h3><p>{profile.alamat if profile else ''}</p></div><hr style='border: 2px solid #333;'>"
 
-                guru_nip = current_user.nip if current_user.nip else '-'
-                guru_email = current_user.email if current_user.email else '-'
-                guru_mapel = current_user.mapel if current_user.mapel else (mapel if mapel else '-')
+            guru_nip = current_user.nip if current_user.nip else '-'
+            guru_email = current_user.email if current_user.email else '-'
+            guru_mapel = current_user.mapel if current_user.mapel else (mapel if mapel else '-')
 
-                hasil_generate = f"{kop_html}"                              f"<div class='mb-3 p-3 bg-light border rounded small'>"                              f"<b>IDENTITAS PENYUSUN DOKUMEN:</b><br>"                              f"Nama Lengkap: {current_user.nama_lengkap}<br>"                              f"NIP: {guru_nip}<br>"                              f"Alamat Email: {guru_email}<br>"                              f"Mata Pelajaran: {guru_mapel}"                              f"</div>"                              f"<h3>DOKUMEN ADMINISTRASI GURU: {jenis.upper()}</h3>"                              f"<hr><p><b>Jenjang:</b> {jenjang} | <b>Kelas & Fase:</b> {kelas} ({fase}) | <b>Kurikulum:</b> {kurikulum}</p>"                              f"<p><b>Mata Pelajaran:</b> {guru_mapel} | <b>Metode:</b> {metode}</p>"                              f"<p><b>Topik Materi:</b> {topik}</p>"                              f"<p><b>Ruang Lingkup:</b> {ruang_lingkup}</p>"                              f"<p><b>Tingkat Kesulitan (BSKAP 2026):</b> {kesulitan}</p>"                              f"<h4>Rincian / Soal Tergenerate:</h4>"                              f"<ul>"                              f"<li>Jumlah Pilihan Ganda: {jml_pg} soal (Level C1-C6)</li>"                              f"<li>Jumlah Isian Singkat: {jml_isian} soal</li>"                              f"<li>Jumlah Esai: {jml_esai} soal</li>"                              f"</ul>"                              f"<div style='border:1px dashed #ccc; padding:15px; background:#f9f9f9;'>"                              f"<b>Konten AI (Ringkas & Langsung ke Inti):</b><br>"                              f"1. Analisis Pembelajaran & Capaian Pembelajaran Kurikulum {kurikulum}.<br>"                              f"2. Langkah kegiatan pembelajaran berbasis aktivitas {aktivitas}.<br>"                              f"3. Instrumen Penilaian dan Rubrik Evaluasi Peserta Didik siap cetak."                              f"</div>"                              f"<div class='row mt-5'>"                              f"<div class='col-6'></div>"                              f"<div class='col-6 text-center'>"                              f"<p>Mengetahui,<br>Kepala Sekolah</p><br><br>"                              f"<b>{profile.nama_kepsek if profile else 'Kepala Sekolah'}</b><br>"                              f"NIP. {profile.nip_kepsek if profile else '-'}"                              f"</div>"                              f"</div>"
-                
-                new_archive = Archive(
-                    user_id=current_user.id,
-                    jenis_administrasi=jenis,
-                    topik=topik,
-                    ruang_lingkup=ruang_lingkup,
-                    parameter_hash=param_hash,
-                    hasil_konten=hasil_generate
-                )
-                db.session.add(new_archive)
-                db.session.commit()
-                log_activity(current_user.id, f"Generate baru administrasi {jenis} ({topik}).")
-                flash('Modul berhasil digenerate oleh AI dan disimpan ke arsip.', 'success')
+            hasil_generate = f"{kop_html}"                              f"<div class='mb-3 p-3 bg-light border rounded small'>"                              f"<b>IDENTITAS PENYUSUN DOKUMEN:</b><br>"                              f"Nama Lengkap: {current_user.nama_lengkap}<br>"                              f"NIP: {guru_nip}<br>"                              f"Alamat Email: {guru_email}<br>"                              f"Mata Pelajaran: {guru_mapel}"                              f"</div>"                              f"<h3>DOKUMEN ADMINISTRASI GURU: {jenis.upper()}</h3>"                              f"<hr><p><b>Jenjang:</b> {jenjang} | <b>Kelas & Fase:</b> {kelas} ({fase}) | <b>Kurikulum:</b> {kurikulum}</p>"                              f"<p><b>Mata Pelajaran:</b> {guru_mapel} | <b>Metode:</b> {metode}</p>"                              f"<p><b>Topik Materi:</b> {topik}</p>"                              f"<p><b>Ruang Lingkup:</b> {ruang_lingkup}</p>"                              f"<p><b>Tingkat Kesulitan (BSKAP 2026):</b> {kesulitan}</p>"                              f"<h4>Rincian / Soal Tergenerate:</h4>"                              f"<ul>"                              f"<li>Jumlah Pilihan Ganda: {jml_pg} soal (Level C1-C6)</li>"                              f"<li>Jumlah Isian Singkat: {jml_isian} soal</li>"                              f"<li>Jumlah Esai: {jml_esai} soal</li>"                              f"</ul>"                              f"<div style='border:1px dashed #ccc; padding:15px; background:#f9f9f9;'>"                              f"<b>Konten AI (Ringkas & Langsung ke Inti):</b><br>"                              f"1. Analisis Pembelajaran & Capaian Pembelajaran Kurikulum {kurikulum}.<br>"                              f"2. Langkah kegiatan pembelajaran berbasis aktivitas {aktivitas}.<br>"                              f"3. Instrumen Penilaian dan Rubrik Evaluasi Peserta Didik siap cetak."                              f"</div>"                              f"<div class='row mt-5'>"                              f"<div class='col-6'></div>"                              f"<div class='col-6 text-center'>"                              f"<p>Mengetahui,<br>Kepala Sekolah</p><br><br>"                              f"<b>{profile.nama_kepsek if profile else 'Kepala Sekolah'}</b><br>"                              f"NIP. {profile.nip_kepsek if profile else '-'}"                              f"</div>"                              f"</div>"
+            
+            new_archive = Archive(
+                user_id=current_user.id,
+                jenis_administrasi=jenis,
+                topik=topik,
+                ruang_lingkup=ruang_lingkup,
+                parameter_hash=param_hash,
+                hasil_konten=hasil_generate
+            )
+            db.session.add(new_archive)
+            db.session.commit()
+            log_activity(current_user.id, f"Generate baru administrasi {jenis} ({topik}).")
+            flash('Modul berhasil digenerate oleh AI dan disimpan ke arsip.', 'success')
             
     return render_template('generator.html', all_modules=all_modules, hasil_generate=hasil_generate, active_slug=modul_slug, current_jenis=jenis)
 
