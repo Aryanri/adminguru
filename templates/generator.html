@@ -160,10 +160,10 @@
                     
                     if (nationalHolidays2026[dateStr]) {
                         totalHolidayConflicts++;
-                        dateBadges.push(`<span class="badge bg-danger text-white m-1 p-2" title="Bentrok Libur Nasional: ${nationalHolidays2026[dateStr]}">⚠️ ${formattedDate} (${nationalHolidays2026[dateStr]})</span>`);
+                        dateBadges.push(`<div class="text-danger fw-bold py-1 px-2 mb-1 bg-light border border-danger rounded d-flex justify-content-between align-items-center"><span>⚠️ ${formattedDate}</span><span class="badge bg-danger text-white">LIBUR: ${nationalHolidays2026[dateStr]}</span></div>`);
                     } else {
                         effectiveCountInMonth++;
-                        dateBadges.push(`<span class="badge bg-light text-dark border m-1 p-2">${formattedDate}</span>`);
+                        dateBadges.push(`<span class="badge bg-white text-dark border m-1 px-2 py-1">${formattedDate}</span>`);
                     }
                 }
             }
@@ -171,8 +171,8 @@
             let totalJPBulan = effectiveCountInMonth * parseInt(jumlahJP);
 
             htmlOutput += `<tr>`;
-            htmlOutput += `<td class="fw-bold text-center">${m.name} ${m.year}</td>`;
-            htmlOutput += `<td><div class="d-flex flex-wrap" style="max-height: 180px; overflow-y: auto;">${dateBadges.length > 0 ? dateBadges.join('') : '<span class="text-muted p-2">Tidak ada hari terpilih</span>'}</div></td>`;
+            htmlOutput += `<td class="fw-bold text-center align-middle">${m.name} ${m.year}</td>`;
+            htmlOutput += `<td><div class="d-flex flex-wrap align-items-center">${dateBadges.length > 0 ? dateBadges.join('') : '<span class="text-muted p-2">Tidak ada hari terpilih</span>'}</div></td>`;
             htmlOutput += `<td class="text-center fw-bold">${effectiveCountInMonth} Hari</td>`;
             htmlOutput += `<td class="text-center fw-bold text-primary">${totalJPBulan} JP</td>`;
             htmlOutput += `</tr>`;
