@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2><i class="fa fa-archive me-2 text-primary"></i>Arsip & Cache Dokumen Administrasi</h2>
+        <p class="text-muted">Semua hasil generate tersimpan otomatis di sini untuk digunakan kembali tanpa memanggil ulang API (Hemat Token).</p>
+    </div>
+</div>
+
+<div class="card p-4 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Waktu</th>
+                    <th>Pembuat</th>
+                    <th>Jenis Administrasi</th>
+                    <th>Topik Materi</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for arch in archives %}
+                <tr>
+                    <td>{{ arch.created_at.strftime('%d-%m-%Y %H:%M') }}</td>
+                    <td>{{ arch.user.nama_lengkap }}</td>
+                    <td><span class="badge bg-primary">{{ arch.jenis_administrasi }}</span></td>
+                    <td>{{ arch.topik }}</td>
+                    <td>
+                        <a href="{{ url_for('arsip_detail', id=arch.id) }}" class="btn btn-sm btn-outline-primary"><i class="fa fa-eye me-1"></i> Buka / Cetak</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center text-muted">Belum ada arsip tersimpan.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

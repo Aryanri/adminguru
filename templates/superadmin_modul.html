@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2><i class="fa fa-cubes me-2 text-primary"></i>Manajemen Modul & Fitur Baru (Superadmin)</h2>
+        <p class="text-muted">Kelola seluruh modul sistem (termasuk modul bawaan dan modul kustom). Anda dapat menonaktifkan modul bawaan apabila terjadi kendala/gangguan agar tidak diakses user.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <div class="card p-4 shadow-sm">
+            <h4 class="card-title mb-3">Tambah Modul Baru (Custom)</h4>
+            <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="add_module">
+                <div class="mb-3">
+                    <label class="form-label">Nama Modul</label>
+                    <input type="text" name="nama_modul" class="form-control" placeholder="Contoh: Modul Projek P5" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Template Word (.docx)</label>
+                    <input type="file" name="template_word" class="form-control" accept=".docx">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Kode Script / Kustomisasi AI (Opsional)</label>
+                    <textarea name="script_code" class="form-control" rows="4" placeholder="# Script khusus python untuk modul ini"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-100"><i class="fa fa-upload me-2"></i>Upload & Tambahkan Modul</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-md-7">
+        <div class="card p-4 shadow-sm">
+            <h4 class="card-title mb-3">Daftar Seluruh Modul Terpasang (Bawaan & Kustom)</h4>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead><tr><th>Nama Modul</th><th>Tipe</th><th>Status</th><th>Aksi</th></tr></thead>
+                    <tbody>
+                        {% for m in modules %}
+                        <tr>
+                            <td>
+                                <b>{{ m.nama_modul }}</b><br>
+                                <small class="text-muted">Slug: <code>{{ m.slug }}</code></small>
+                            </td>
+                            <td>
+                                {% if m.is_default %}
+                                <span class="badge bg-primary">Modul Bawaan</span>
+                                {% else %}
+                                <span class="badge bg-info text-dark">Modul Kustom</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if m.aktif %}
+                                <span class="badge bg-success">Aktif</span>
+                                {% else %}
+                                <span class="badge bg-danger">Nonaktif (Gangguan)</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('superadmin_modul_toggle', modul_id=m.id) }}" class="btn btn-sm {% if m.aktif %}btn-outline-warning{% else %}btn-outline-success{% endif %}">
+                                    {% if m.aktif %}<i class="fa fa-eye-slash me-1"></i> Nonaktifkan{% else %}<i class="fa fa-eye me-1"></i> Aktifkan{% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="text-center text-muted">Belum ada modul terpasang.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

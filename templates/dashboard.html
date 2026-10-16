@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2><i class="fa fa-tachometer-alt me-2 text-primary"></i>Dashboard Utama</h2>
+        <p class="text-muted">Selamat datang, <b>{{ current_user.nama_lengkap }}</b> (Role: <span class="badge bg-secondary">{{ current_user.role }}</span>)</p>
+    </div>
+</div>
+
+{% if announcement and announcement.aktif %}
+<div class="alert alert-info alert-dismissible fade show shadow-sm mb-4" role="alert">
+    <i class="fa fa-bullhorn me-2"></i><b>Pengumuman Sistem:</b> {{ announcement.pesan }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Profil Sekolah & Upload Kop Surat Gambar -->
+    <div class="col-md-6 mb-4">
+        <div class="card p-4 shadow-sm h-100">
+            <h4 class="card-title text-dark mb-3"><i class="fa fa-school me-2"></i>Profil Sekolah & Upload Kop Surat</h4>
+            <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="form_type" value="school_profile">
+                <div class="mb-3">
+                    <label class="form-label">Upload Gambar Kop Surat (Format: JPG, JPEG, PNG)</label>
+                    <input type="file" name="kop_image" class="form-control" accept=".jpg,.jpeg,.png">
+                    {% if profile and profile.kop_sekolah %}
+                    <div class="mt-2">
+                        <small class="text-muted">Kop Surat Terunggah:</small><br>
+                        <img src="{{ url_for('uploaded_file', filename=profile.kop_sekolah) }}" class="img-thumbnail mt-1" style="max-height: 80px;" alt="Kop Surat">
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nama Sekolah</label>
+                    <input type="text" name="nama_sekolah" class="form-control" value="{% if profile %}{{ profile.nama_sekolah }}{% endif %}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Alamat Sekolah</label>
+                    <textarea name="alamat" class="form-control" rows="2" required>{% if profile %}{{ profile.alamat }}{% endif %}</textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nama Kepala Sekolah</label>
+                        <input type="text" name="nama_kepsek" class="form-control" value="{% if profile %}{{ profile.nama_kepsek }}{% endif %}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">NIP Kepala Sekolah</label>
+                        <input type="text" name="nip_kepsek" class="form-control" value="{% if profile %}{{ profile.nip_kepsek }}{% endif %}" required>
+                    </div>
+                </div>
+                {% if current_user.role in ['superadmin', 'admin'] %}
+                <button type="submit" class="btn btn-primary"><i class="fa fa-save me-1"></i> Simpan Profil Sekolah</button>
+                {% else %}
+                <p class="text-muted small"><i class="fa fa-info-circle me-1"></i> Hanya Admin/Superadmin yang dapat mengubah profil sekolah.</p>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Identitas Akun Penyusun Dokumen (Bisa diedit) -->
+    <div class="col-md-6 mb-4">
+        <div class="card p-4 shadow-sm h-100">
+            <h4 class="card-title text-dark mb-3"><i class="fa fa-user-circle me-2"></i>Identitas Akun Penyusun Dokumen</h4>
+            <p class="text-muted small">Data di bawah ini digunakan secara otomatis pada kop dokumen/modul yang Anda generate.</p>
+            <form method="POST">
+                <input type="hidden" name="form_type" value="user_profile">
+                <div class="mb-3">
+                    <label class="form-label">Nama Lengkap</label>
+                    <input type="text" name="nama_lengkap" class="form-control" value="{{ current_user.nama_lengkap }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">NIP</label>
+                    <input type="text" name="nip" class="form-control" value="{{ current_user.nip if current_user.nip else '' }}" placeholder="Contoh: 19850101...">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Alamat Email</label>
+                    <input type="email" name="email" class="form-control" value="{{ current_user.email if current_user.email else '' }}" placeholder="Contoh: guru@sekolah.sch.id">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Mata Pelajaran (Mapel)</label>
+                    <input type="text" name="mapel" class="form-control" value="{{ current_user.mapel if current_user.mapel else '' }}" placeholder="Contoh: Matematika">
+                </div>
+                <button type="submit" class="btn btn-success"><i class="fa fa-save me-1"></i> Simpan Identitas Penyusun</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 5 Aktivitas Terakhir -->
+    <div class="col-md-12 mb-4">
+        <div class="card p-4 shadow-sm">
+            <h4 class="card-title text-dark mb-3"><i class="fa fa-history me-2"></i>5 Aktivitas Terakhir Anda</h4>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Waktu</th>
+                            <th>Aktivitas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in user_logs %}
+                        <tr>
+                            <td><code>{{ log.timestamp.strftime('%d-%m-%Y %H:%M:%S') }}</code></td>
+                            <td>{{ log.aktivitas }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="2" class="text-center text-muted">Belum ada aktivitas tercatat.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2><i class="fa fa-magic me-2 text-primary"></i>Generator Administrasi Mengajar AI</h2>
+        <p class="text-muted">Pilih tab jenis modul administrasi di bawah untuk generate otomatis dokumen siap cetak.</p>
+    </div>
+</div>
+
+<!-- Navigasi Tab Modul -->
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-body bg-light rounded">
+        <ul class="nav nav-pills flex-wrap gap-2">
+            {% for mod in all_modules %}
+            <li class="nav-item">
+                <a class="nav-link {% if active_slug == mod.slug %}active{% endif %}" href="{{ url_for('generator', modul_slug=mod.slug) }}">
+                    <i class="fa {% if mod.is_default %}fa-file-alt{% else %}fa-cube{% endif %} me-1"></i> {{ mod.nama_modul }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <div class="card p-4 shadow-sm">
+            <h5 class="text-primary mb-3"><i class="fa fa-sliders-h me-2"></i>Parameter: <b>{{ current_jenis }}</b></h5>
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Jenjang Pendidikan</label>
+                        <select name="jenjang" id="jenjangSelect" class="form-select" required onchange="updateOptions()">
+                            <option value="SD / MI">SD / MI</option>
+                            <option value="SMP / MTs" selected>SMP / MTs</option>
+                            <option value="SMA / SMK / MA">SMA / SMK / MA</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Kelas & Fase</label>
+                        <select name="kelas_fase" id="kelasFaseSelect" class="form-select" required>
+                            <!-- Dynamic options -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Kurikulum</label>
+                        <select name="kurikulum" id="kurikulumSelect" class="form-select" required onchange="updateOptions()">
+                            <option value="Kurikulum Merdeka">Kurikulum Merdeka</option>
+                            <option value="Kurikulum 2013 Revisi">Kurikulum 2013 Revisi</option>
+                            <option value="Kurikulum Berbasis Cinta">Kurikulum Berbasis Cinta</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Mata Pelajaran</label>
+                    <select name="mapel" id="mapelSelect" class="form-select" required>
+                        <!-- Dynamic options -->
+                    </select>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Metode Pembelajaran</label>
+                        <select name="metode" id="metodeSelect" class="form-select" required>
+                            <!-- Dynamic options -->
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Aktivitas Pembelajaran</label>
+                        <select name="aktivitas" id="aktivitasSelect" class="form-select" required>
+                            <!-- Dynamic options -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Kesulitan</label>
+                        <select name="kesulitan" class="form-select">
+                            <option value="C1">C1 - Mengingat (Remembering)</option>
+                            <option value="C2">C2 - Memahami (Understanding)</option>
+                            <option value="C3" selected>C3 - Menerapkan (Applying)</option>
+                            <option value="C4">C4 - Menganalisis (Analyzing)</option>
+                            <option value="C5">C5 - Mengevaluasi (Evaluating)</option>
+                            <option value="C6">C6 - Mencipta (Creating)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Jml PG</label>
+                        <input type="number" name="jml_pg" class="form-control" value="10">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Jml Isian</label>
+                        <input type="number" name="jml_isian" class="form-control" value="5">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Jml Esai</label>
+                        <input type="number" name="jml_esai" class="form-control" value="5">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Topik Materi</label>
+                    <input type="text" name="topik" class="form-control" placeholder="Contoh: Sistem Pencernaan Manusia" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Ruang Lingkup Materi</label>
+                    <textarea name="ruang_lingkup" class="form-control" rows="2" placeholder="Tuliskan detail ruang lingkup..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2"><i class="fa fa-cogs me-2"></i>Generate Administrasi dengan AI</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card p-4 shadow-sm" style="min-height: 600px;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="card-title text-success"><i class="fa fa-file-alt me-2"></i>Hasil Generate / Pratinjau Siap Cetak</h4>
+                {% if hasil_generate %}
+                <button onclick="window.print()" class="btn btn-sm btn-outline-secondary"><i class="fa fa-print me-1"></i> Cetak / PDF</button>
+                {% endif %}
+            </div>
+            <hr>
+            {% if hasil_generate %}
+            <div class="p-3 border rounded bg-white" id="printable-area">
+                {{ hasil_generate | safe }}
+            </div>
+            {% else %}
+            <div class="text-center text-muted my-5">
+                <i class="fa fa-file-code fa-3x mb-3"></i>
+                <p>Belum ada modul yang digenerate untuk tab ini. Silakan isi form di sebelah kiri lalu klik tombol Generate.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+const dataKelasFase = {
+    "SD / MI": [
+        {"kelas": "Kelas 1", "fase": "Fase A (Kelas 1-2)"},
+        {"kelas": "Kelas 2", "fase": "Fase A (Kelas 1-2)"},
+        {"kelas": "Kelas 3", "fase": "Fase B (Kelas 3-4)"},
+        {"kelas": "Kelas 4", "fase": "Fase B (Kelas 3-4)"},
+        {"kelas": "Kelas 5", "fase": "Fase C (Kelas 5-6)"},
+        {"kelas": "Kelas 6", "fase": "Fase C (Kelas 5-6)"}
+    ],
+    "SMP / MTs": [
+        {"kelas": "Kelas 7", "fase": "Fase D (Kelas 7-9)"},
+        {"kelas": "Kelas 8", "fase": "Fase D (Kelas 7-9)"},
+        {"kelas": "Kelas 9", "fase": "Fase D (Kelas 7-9)"}
+    ],
+    "SMA / SMK / MA": [
+        {"kelas": "Kelas 10", "fase": "Fase E (Kelas 10)"},
+        {"kelas": "Kelas 11", "fase": "Fase F (Kelas 11-12)"},
+        {"kelas": "Kelas 12", "fase": "Fase F (Kelas 11-12)"}
+    ]
+};
+
+const dataMapel = {
+    "SD / MI": {
+        "Kurikulum Merdeka": ["Pendidikan Agama dan Budi Pekerti", "Pendidikan Pancasila", "Bahasa Indonesia", "Matematika", "Ilmu Pengetahuan Alam dan Sosial (IPAS)", "Seni Budaya", "Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)", "Bahasa Inggris"],
+        "Kurikulum 2013 Revisi": ["Pendidikan Agama dan Budi Pekerti", "PPKn", "Bahasa Indonesia", "Matematika", "SBdP", "PJOK", "Tematik Terpadu"],
+        "Kurikulum Berbasis Cinta": ["Pendidikan Agama dan Budi Pekerti", "Pendidikan Karakter & Empati", "Bahasa Indonesia", "Matematika", "Seni & Kreativitas", "PJOK & Kesehatan Mental"]
+    },
+    "SMP / MTs": {
+        "Kurikulum Merdeka": ["Pendidikan Agama dan Budi Pekerti", "Pendidikan Pancasila", "Bahasa Indonesia", "Matematika", "Ilmu Pengetahuan Alam (IPA)", "Ilmu Pengetahuan Sosial (IPS)", "Bahasa Inggris", "Informatika", "Seni Rupa / Musik / Teater", "PJOK"],
+        "Kurikulum 2013 Revisi": ["Pendidikan Agama dan Budi Pekerti", "PPKn", "Bahasa Indonesia", "Matematika", "IPA", "IPS", "Bahasa Inggris", "Seni Budaya", "Prakarya", "PJOK"],
+        "Kurikulum Berbasis Cinta": ["Pendidikan Agama dan Budi Pekerti", "Pendidikan Karakter & Empati", "Bahasa Indonesia", "Matematika", "IPA Terpadu Berbasis Kepedulian", "IPS Kontekstual", "Bahasa Inggris", "Seni & Budaya", "PJOK"]
+    },
+    "SMA / SMK / MA": {
+        "Kurikulum Merdeka": ["Pendidikan Agama dan Budi Pekerti", "Pendidikan Pancasila", "Bahasa Indonesia", "Matematika", "Bahasa Inggris", "Fisika", "Kimia", "Biologi", "Ekonomi", "Sosiologi", "Sejarah", "Geografi", "Informatika", "PJOK"],
+        "Kurikulum 2013 Revisi": ["Pendidikan Agama dan Budi Pekerti", "PPKn", "Bahasa Indonesia", "Matematika Wajib", "Matematika Peminatan", "Bahasa Inggris", "Fisika", "Kimia", "Biologi", "Ekonomi", "Sosiologi", "Sejarah Indonesia", "Sejarah Peminatan", "Geografi", "PJOK"],
+        "Kurikulum Berbasis Cinta": ["Pendidikan Agama dan Budi Pekerti", "Pendidikan Karakter & Kepemimpinan Emosional", "Bahasa Indonesia", "Matematika", "Bahasa Inggris", "Sains Kontekstual", "Ilmu Sosial Humaniora", "Seni & Kreativitas", "PJOK"]
+    }
+};
+
+const dataMetode = {
+    "Kurikulum Merdeka": [
+        "Project Based Learning (PjBL)",
+        "Problem Based Learning (PBL)",
+        "Inquiry Learning",
+        "Discovery Learning",
+        "Differentiated Learning (Pembelajaran Bererdiferensiasi)"
+    ],
+    "Kurikulum 2013 Revisi": [
+        "Scientific Approach (Pendekatan Saintifik)",
+        "Discovery Learning",
+        "Inquiry Learning",
+        "Problem Based Learning",
+        "Project Based Learning",
+        "Cooperative Learning"
+    ],
+    "Kurikulum Berbasis Cinta": [
+        "Pembelajaran Mendalam",
+        "Empathetic Inquiry & Compassionate Learning",
+        "Project Based Learning Berbasis Kepedulian Sosial",
+        "Dialog Reflektif & Bimbingan Holistik",
+        "Collaborative Caring Learning"
+    ]
+};
+
+const dataAktivitas = {
+    "Kurikulum Merdeka": [
+        "Eksplorasi Konsep & Diskusi Kelompok",
+        "Penyusunan Projek Kolaboratif Berbasis Profil Pelajar Pancasila",
+        "Refleksi Pembelajaran & Presentasi Hasil Karya",
+        "Demonstrasi Praktikum & Analisis Studi Kasus",
+        "Permainan Edukatif (Gamification) & Asesmen Formatif"
+    ],
+    "Kurikulum 2013 Revisi": [
+        "Mengamati, Menanya, Mengumpulkan Informasi, Menalar, & Mengomunikasikan",
+        "Diskusi Kelompok & Tanya Jawab Interaktif",
+        "Eksperimen / Praktikum Laboratorium",
+        "Penugasan Mandiri & Terstruktur",
+        "Presentasi Laporan Hasil Diskusi Kelas"
+    ],
+    "Kurikulum Berbasis Cinta": [
+        "Pembelajaran Mendalam melalui Eksplorasi Makna & Empati",
+        "Aksi Nyata Kepedulian & Pengabdian Kontekstual",
+        "Refleksi Emosional, Syukur, & Apresiasi Diri",
+        "Diskusi Kelompok Asimetris Penuh Kehangatan & Dukungan Sebaya",
+        "Kolaborasi Pemecahan Masalah Sosial Berbasis Kasih Sayang"
+    ]
+};
+
+function updateOptions() {
+    const jenjang = document.getElementById('jenjangSelect').value;
+    const kurikulum = document.getElementById('kurikulumSelect').value;
+
+    // Update Kelas & Fase combined dropdown
+    const kelasFaseSelect = document.getElementById('kelasFaseSelect');
+    kelasFaseSelect.innerHTML = '';
+    const listKF = dataKelasFase[jenjang] || [];
+    listKF.forEach(kf => {
+        let opt = document.createElement('option');
+        opt.value = kf.kelas + " | " + kf.fase;
+        opt.textContent = kf.kelas + " (" + kf.fase + ")";
+        kelasFaseSelect.appendChild(opt);
+    });
+
+    // Update Mapel
+    const mapelSelect = document.getElementById('mapelSelect');
+    mapelSelect.innerHTML = '';
+    const listMapel = (dataMapel[jenjang] && dataMapel[jenjang][kurikulum]) ? dataMapel[jenjang][kurikulum] : ["Bahasa Indonesia", "Matematika"];
+    listMapel.forEach(m => {
+        let opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        mapelSelect.appendChild(opt);
+    });
+
+    // Update Metode
+    const metodeSelect = document.getElementById('metodeSelect');
+    metodeSelect.innerHTML = '';
+    const listMetode = dataMetode[kurikulum] ? dataMetode[kurikulum] : dataMetode["Kurikulum Merdeka"];
+    listMetode.forEach(met => {
+        let opt = document.createElement('option');
+        opt.value = met;
+        opt.textContent = met;
+        metodeSelect.appendChild(opt);
+    });
+
+    // Update Aktivitas
+    const aktivitasSelect = document.getElementById('aktivitasSelect');
+    aktivitasSelect.innerHTML = '';
+    const listAktivitas = dataAktivitas[kurikulum] ? dataAktivitas[kurikulum] : dataAktivitas["Kurikulum Merdeka"];
+    listAktivitas.forEach(akt => {
+        let opt = document.createElement('option');
+        opt.value = akt;
+        opt.textContent = akt;
+        aktivitasSelect.appendChild(opt);
+    });
+}
+
+// Run on load
+document.addEventListener("DOMContentLoaded", function() {
+    updateOptions();
+});
+</script>
+{% endblock %}

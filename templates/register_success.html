@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="col-md-6 text-center">
+        <div class="card shadow p-5">
+            <i class="fa fa-check-circle text-success fa-4x mb-3"></i>
+            <h3>Pendaftaran Berhasil!</h3>
+            <p class="text-muted">Akun Anda telah terdaftar dalam status <b>Pending</b>. Silakan klik tombol di bawah untuk konfirmasi aktivasi langsung ke WhatsApp Admin.</p>
+            <a href="{{ wa_url }}" target="_blank" class="btn btn-success btn-lg py-3 w-100 mb-3"><i class="fab fa-whatsapp me-2"></i>Konfirmasi Aktivasi via WA (081321984848)</a>
+            <a href="{{ url_for('login') }}" class="btn btn-outline-secondary">Kembali ke Halaman Login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
