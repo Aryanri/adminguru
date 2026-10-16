@@ -86,7 +86,7 @@
         </div>
     </div>
 
-        <script>
+    <script>
     const nationalHolidays2026 = {
         "2026-01-01": "Tahun Baru Masehi",
         "2026-01-16": "Isra Mikraj Nabi Muhammad SAW",
@@ -197,3 +197,115 @@
         {% endif %}
     });
     </script>
+
+    {% else %}
+    <!-- Generator standar untuk modul selain HEM -->
+    <div class="col-md-5">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="m-0"><i class="fa fa-sliders-h me-2"></i>Parameter Dokumen: {{ current_jenis }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Jenjang Pendidikan</label>
+                        <select class="form-select" name="jenjang" required>
+                            <option value="SMP / MTs">SMP / MTs</option>
+                            <option value="SMA / MA">SMA / MA</option>
+                            <option value="SMK / MAK">SMK / MAK</option>
+                            <option value="SD / MI">SD / MI</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Kelas & Fase</label>
+                        <select class="form-select" name="kelas_fase" required>
+                            <option value="Kelas 7 | Fase D (Kelas 7-9)">Kelas 7 | Fase D (Kelas 7-9)</option>
+                            <option value="Kelas 8 | Fase D (Kelas 7-9)">Kelas 8 | Fase D (Kelas 7-9)</option>
+                            <option value="Kelas 9 | Fase D (Kelas 7-9)">Kelas 9 | Fase D (Kelas 7-9)</option>
+                            <option value="Kelas 10 | Fase E (Kelas 10)">Kelas 10 | Fase E (Kelas 10)</option>
+                            <option value="Kelas 11 | Fase F (Kelas 11-12)">Kelas 11 | Fase F (Kelas 11-12)</option>
+                            <option value="Kelas 12 | Fase F (Kelas 11-12)">Kelas 12 | Fase F (Kelas 11-12)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Kurikulum</label>
+                        <select class="form-select" name="kurikulum" required>
+                            <option value="Kurikulum Merdeka (Kumer)">Kurikulum Merdeka (Kumer)</option>
+                            <option value="Kurikulum 2013 (K-13 Revisi)">Kurikulum 2013 (K-13 Revisi)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mata Pelajaran</label>
+                        <input type="text" class="form-control" name="mapel" placeholder="Contoh: Informatika / Matematika" value="{{ current_user.mapel if current_user.mapel else 'Informatika' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Topik / Materi Pokok</label>
+                        <input type="text" class="form-control" name="topik" placeholder="Contoh: Berpikir Komputasional" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ruang Lingkup / Sub-Materi</label>
+                        <input type="text" class="form-control" name="ruang_lingkup" placeholder="Contoh: Dekomposisi & Algoritma" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Metode Pembelajaran</label>
+                        <select class="form-select" name="metode" required>
+                            <option value="Project Based Learning (PjBL)">Project Based Learning (PjBL)</option>
+                            <option value="Problem Based Learning (PBL)">Problem Based Learning (PBL)</option>
+                            <option value="Inquiry Learning">Inquiry Learning</option>
+                            <option value="Discovery Learning">Discovery Learning</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Aktivitas Pembelajaran Utama</label>
+                        <textarea class="form-control" name="aktivitas" rows="2" placeholder="Contoh: Siswa menganalisis studi kasus pemecahan masalah sehari-hari." required></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Tingkat Kesulitan</label>
+                            <select class="form-select" name="kesulitan">
+                                <option value="C1">C1 (Cipta/Ingat)</option>
+                                <option value="C2">C2 (Paham)</option>
+                                <option value="C3" selected>C3 (Aplikasi)</option>
+                                <option value="C4">C4 (Analisis)</option>
+                                <option value="C5">C5 (Evaluasi)</option>
+                                <option value="C6">C6 (Kreasi)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Jumlah PG</label>
+                            <input type="number" class="form-control" name="jml_pg" value="10" min="1" max="50">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Jumlah Esai</label>
+                            <input type="number" class="form-control" name="jml_esai" value="5" min="0" max="20">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold"><i class="fa fa-robot me-2"></i> Generate Dokumen AI</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="m-0"><i class="fa fa-file-alt me-2"></i>Hasil Preview Dokumen AI</h5>
+                {% if hasil_generate %}
+                <button type="button" class="btn btn-light btn-sm fw-bold" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / Export PDF</button>
+                {% endif %}
+            </div>
+            <div class="card-body bg-white p-4" style="min-height: 500px;">
+                {% if hasil_generate %}
+                    {{ hasil_generate | safe }}
+                {% else %}
+                    <div class="text-center text-muted py-5 my-5">
+                        <i class="fa fa-file-invoice fa-3x mb-3 text-secondary"></i>
+                        <h5>Belum ada dokumen yang digenerate.</h5>
+                        <p class="small">Lengkapi form parameter di sebelah kiri lalu klik <b>Generate Dokumen AI</b>.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
