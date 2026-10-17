@@ -260,7 +260,7 @@ def generator(modul_slug):
                 saved_hem.hasil_konten = hasil_konten
                 saved_hem.topik = f"Analisis HEM Semester {semester} ({jumlah_jp} JP)"
                 saved_hem.parameter_hash = param_hash
-                saved_hem.created_at = datetime.utcnow()
+                saved_hem.created_at = wib_now()
             else:
                 new_arch = Archive(
                     user_id=current_user.id,

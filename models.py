@@ -1,6 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+
+def wib_now():
+    return datetime.now(timezone(timedelta(hours=7))).replace(tzinfo=None)
 
 db = SQLAlchemy()
 
@@ -15,7 +18,7 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(20), nullable=False, default='guru') # superadmin, admin, guru
     status = db.Column(db.String(20), nullable=False, default='pending') # active, pending, inactive
     current_session_id = db.Column(db.String(100), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=wib_now)
     
     archives = db.relationship('Archive', backref='user', lazy=True)
     activity_logs = db.relationship('ActivityLog', backref='user', lazy=True)
@@ -50,19 +53,19 @@ class Archive(db.Model):
     ruang_lingkup = db.Column(db.Text, nullable=True)
     parameter_hash = db.Column(db.String(255), index=True, nullable=False)
     hasil_konten = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=wib_now)
 
 class ActivityLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     aktivitas = db.Column(db.String(255), nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=wib_now)
 
 class Announcement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     pesan = db.Column(db.Text, nullable=False)
     aktif = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=wib_now)
 
 class CustomModule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -72,4 +75,4 @@ class CustomModule(db.Model):
     script_code = db.Column(db.Text, nullable=True)
     aktif = db.Column(db.Boolean, default=True)
     is_default = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=wib_now)
