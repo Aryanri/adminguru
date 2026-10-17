@@ -1,4 +1,211 @@
-{% extends "base.html" %}{% block content %}<div class="row mb-4">    <div class="col-md-12">        <h2><i class="fa fa-magic me-2 text-primary"></i>Generator Administrasi Mengajar AI</h2>        <p class="text-muted">Pilih tab jenis modul administrasi di bawah untuk generate otomatis dokumen siap cetak.</p>    </div></div><!-- Navigasi Tab Modul --><div class="card mb-4 shadow-sm border-0">    <div class="card-body bg-light rounded">        <ul class="nav nav-pills flex-wrap gap-2">            {% for mod in all_modules %}            <li class="nav-item">                <a class="nav-link {% if active_slug == mod.slug %}active{% endif %}" href="{{ url_for('generator', modul_slug=mod.slug) }}">                    <i class="fa {% if mod.is_default %}fa-file-alt{% else %}fa-cube{% endif %} me-1"></i> {{ mod.nama_modul }}                </a>            </li>            {% endfor %}        </ul>    </div></div><div class="row">        {% if active_slug == 'hem' %}    <div class="col-md-12">        <div class="card shadow-sm border-0 mb-4">            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">                <h5 class="m-0"><i class="fa fa-calendar-alt me-2"></i>Parameter & Kalkulator Real-Time Analisis Hari Efektif Mengajar (HEM) - Semester Ganjil & Genap</h5>                <button type="button" class="btn btn-light btn-sm fw-bold" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / Export PDF</button>            </div>            <div class="card-body">                <form method="POST" id="hemForm">                    <input type="hidden" name="hasil_konten" id="hasil_konten_input">                    <div class="row g-3 mb-3">                        <div class="col-md-12">                            <label class="form-label fw-bold">Jumlah JP per Minggu</label>                            <select class="form-select" name="jumlah_jp" id="jumlah_jp">                                <option value="2">2 JP</option>                                <option value="3">3 JP</option>                                <option value="4" selected>4 JP</option>                                <option value="6">6 JP</option>                            </select>                        </div>                    </div>                    <div class="mb-3 p-3 bg-light rounded border">                        <label class="form-label fw-bold d-block">Pilih Hari Mengajar (Centang hari yang diinginkan untuk dihitung):</label>                        <div class="d-flex flex-wrap gap-3">                            <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="1" id="h1" checked><label class="form-check-label" for="h1">Senin</label></div>                            <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="2" id="h2" checked><label class="form-check-label" for="h2">Selasa</label></div>                            <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="3" id="h3" checked><label class="form-check-label" for="h3">Rabu</label></div>                            <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="4" id="h4" checked><label class="form-check-label" for="h4">Kamis</label></div>                            <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="5" id="h5" checked><label class="form-check-label" for="h5">Jumat</label></div>                            <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="6" id="h6"><label class="form-check-label" for="h6">Sabtu</label></div>                        </div>                    </div>                    <div class="text-end">                        <button type="submit" class="btn btn-success px-4"><i class="fa fa-save me-1"></i> Simpan Analisis HEM (Permanen)</button>                    </div>                </form>            </div>        </div>        <!-- Hasil Preview Real-Time -->        <div class="card shadow-sm border-0">            <div class="card-header bg-secondary text-white">                <h5 class="m-0"><i class="fa fa-file-invoice me-2"></i>Preview Hasil Analisis Hari Efektif Mengajar (Semester Ganjil & Genap)</h5>            </div>            <div class="card-body bg-white p-4" id="previewArea">                {% if hasil_generate %}                    {{ hasil_generate | safe }}                {% else %}                    <div class="text-center text-muted py-5">Silakan centang hari dan atur jumlah JP di atas, hasil perhitungan Semester Ganjil dan Genap akan tampil secara real-time di sini.</div>                {% endif %}            </div>        </div>    </div>            <script>
+{% extends "base.html" %}{% block content %}<div class="row mb-4">    <div class="col-md-12">        <h2><i class="fa fa-magic me-2 text-primary"></i>Generator Administrasi Mengajar AI</h2>        <p class="text-muted">Pilih tab jenis modul administrasi di bawah untuk generate otomatis dokumen siap cetak.</p>    </div></div><!-- Navigasi Tab Modul --><div class="card mb-4 shadow-sm border-0">    <div class="card-body bg-light rounded">        <ul class="nav nav-pills flex-wrap gap-2">            {% for mod in all_modules %}            <li class="nav-item">                <a class="nav-link {% if active_slug == mod.slug %}active{% endif %}" href="{{ url_for('generator', modul_slug=mod.slug) }}">                    <i class="fa {% if mod.is_default %}fa-file-alt{% else %}fa-cube{% endif %} me-1"></i> {{ mod.nama_modul }}                </a>            </li>            {% endfor %}        </ul>    </div></div><div class="row">        {% if active_slug == 'hem' %}
+    <div class="col-md-12">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="m-0"><i class="fa fa-calendar-alt me-2"></i>Parameter & Kalkulator Real-Time Analisis Hari Efektif Mengajar (HEM) - Semester Ganjil & Genap</h5>
+                <button type="button" class="btn btn-light btn-sm fw-bold" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / Export PDF</button>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">Jumlah JP per Minggu</label>
+                        <select class="form-select" name="jumlah_jp" id="jumlah_jp">
+                            <option value="2">2 JP</option>
+                            <option value="3">3 JP</option>
+                            <option value="4" selected>4 JP</option>
+                            <option value="6">6 JP</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3 p-3 bg-light rounded border">
+                    <label class="form-label fw-bold d-block">Pilih Hari Mengajar (Centang hari yang diinginkan untuk dihitung):</label>
+                    <div class="d-flex flex-wrap gap-3">
+                        <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="1" id="h1" checked><label class="form-check-label" for="h1">Senin</label></div>
+                        <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="2" id="h2" checked><label class="form-check-label" for="h2">Selasa</label></div>
+                        <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="3" id="h3" checked><label class="form-check-label" for="h3">Rabu</label></div>
+                        <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="4" id="h4" checked><label class="form-check-label" for="h4">Kamis</label></div>
+                        <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="5" id="h5" checked><label class="form-check-label" for="h5">Jumat</label></div>
+                        <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="6" id="h6"><label class="form-check-label" for="h6">Sabtu</label></div>
+                    </div>
+                </div>
+                <div class="text-muted small"><i class="fa fa-info-circle me-1"></i> Perubahan parameter (jumlah JP atau hari mengajar) akan langsung dihitung dan tersimpan otomatis secara real-time.</div>
+            </div>
+        </div>
+
+        <!-- Hasil Preview Real-Time -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="m-0"><i class="fa fa-file-invoice me-2"></i>Preview Hasil Analisis Hari Efektif Mengajar (Semester Ganjil & Genap)</h5>
+            </div>
+            <div class="card-body bg-white p-4" id="previewArea">
+                {% if hasil_generate %}
+                    {{ hasil_generate | safe }}
+                {% else %}
+                    <div class="text-center text-muted py-5">Silakan centang hari dan atur jumlah JP di atas, hasil perhitungan Semester Ganjil dan Genap akan tampil secara real-time di sini.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const nationalHolidays2026 = {
+        "2026-01-01": "Tahun Baru Masehi",
+        "2026-01-16": "Isra Mikraj Nabi Muhammad SAW",
+        "2026-02-17": "Tahun Baru Imlek",
+        "2026-03-19": "Hari Suci Nyepi",
+        "2026-04-03": "Wafat Yesus Kristus",
+        "2026-05-01": "Hari Buruh Internasional",
+        "2026-05-14": "Kenaikan Yesus Kristus",
+        "2026-05-27": "Hari Raya Idul Adha",
+        "2026-05-31": "Hari Raya Waisak",
+        "2026-06-01": "Hari Lahir Pancasila",
+        "2026-06-18": "Tahun Baru Islam",
+        "2026-08-17": "Hari Kemerdekaan Republik Indonesia",
+        "2026-08-25": "Maulid Nabi Muhammad SAW",
+        "2026-12-25": "Hari Raya Natal"
+    };
+
+    function getWeekNumber(d) {
+        d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+        var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+        var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+        return d.getUTCFullYear() + '-' + weekNo;
+    }
+
+    function calculateHEM() {
+        const jpEl = document.getElementById('jumlah_jp');
+        if (!jpEl) return;
+        const jumlahJP = parseInt(jpEl.value) || 4;
+
+        let targetDays = [];
+        document.querySelectorAll('.hari-cb').forEach(cb => {
+            if (cb.checked) targetDays.push(parseInt(cb.value));
+        });
+
+        const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        let year = new Date().getFullYear();
+
+        let semesters = [
+            {
+                name: 'SEMESTER GANJIL (Juli - Desember)',
+                months: [
+                    { name: 'Juli', monthIdx: 6, year: year },
+                    { name: 'Agustus', monthIdx: 7, year: year },
+                    { name: 'September', monthIdx: 8, year: year },
+                    { name: 'Oktober', monthIdx: 9, year: year },
+                    { name: 'November', monthIdx: 10, year: year },
+                    { name: 'Desember', monthIdx: 11, year: year }
+                ]
+            },
+            {
+                name: 'SEMESTER GENAP (Januari - Juni)',
+                months: [
+                    { name: 'Januari', monthIdx: 0, year: year },
+                    { name: 'Februari', monthIdx: 1, year: year },
+                    { name: 'Maret', monthIdx: 2, year: year },
+                    { name: 'April', monthIdx: 3, year: year },
+                    { name: 'Mei', monthIdx: 4, year: year },
+                    { name: 'Juni', monthIdx: 5, year: year }
+                ]
+            }
+        ];
+
+        let totalHolidayConflicts = 0;
+        let htmlOutput = `<div class="text-center mb-4"><h3>ANALISIS HARI EFEKTIF MENGAJAR (HEM)</h3><p class="text-muted">Beban Mengajar: ${jumlahJP} JP per Minggu (Semester Ganjil & Genap)</p></div><hr>`;
+
+        semesters.forEach(sem => {
+            htmlOutput += `<h4 class="text-primary mt-4 mb-3 border-bottom pb-2"><i class="fa fa-calendar-check me-2"></i>${sem.name}</h4>`;
+            htmlOutput += `<div class="table-responsive mb-4"><table class="table table-bordered table-striped align-middle">`;
+            htmlOutput += `<thead class="table-dark text-center"><tr><th style="width: 16%;">Bulan</th><th>Rincian Hari & Tanggal Efektif</th><th style="width: 11%;">Jml Hari</th><th style="width: 11%;">Jml Minggu</th><th style="width: 15%;">Jumlah JP Efektif</th></tr></thead><tbody>`;
+
+            let semEffectiveDays = 0;
+            let semEffectiveWeeksSet = new Set();
+
+            sem.months.forEach(m => {
+                let dateBadges = [];
+                let daysInMonth = new Date(m.year, m.monthIdx + 1, 0).getDate();
+                let effectiveCountInMonth = 0;
+                let monthWeeksSet = new Set();
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                    let currDate = new Date(m.year, m.monthIdx, d);
+                    let dayOfWeek = currDate.getDay();
+                    if (targetDays.includes(dayOfWeek)) {
+                        let mm = String(m.monthIdx + 1).padStart(2, '0');
+                        let dd = String(d).padStart(2, '0');
+                        let dateStr = `${m.year}-${mm}-${dd}`;
+                        let formattedDate = `${dayNames[dayOfWeek]}, ${d} ${m.name}`;
+
+                        if (nationalHolidays2026[dateStr]) {
+                            totalHolidayConflicts++;
+                            dateBadges.push(`<div class="text-danger fw-bold py-1 px-2 mb-1 bg-light border border-danger rounded d-flex justify-content-between align-items-center"><span>⚠️ ${formattedDate}</span><span class="badge bg-danger text-white">LIBUR: ${nationalHolidays2026[dateStr]}</span></div>`);
+                        } else {
+                            effectiveCountInMonth++;
+                            monthWeeksSet.add(getWeekNumber(currDate));
+                            semEffectiveWeeksSet.add(getWeekNumber(currDate));
+                            dateBadges.push(`<span class="badge bg-white text-dark border m-1 px-2 py-1">${formattedDate}</span>`);
+                        }
+                    }
+                }
+                semEffectiveDays += effectiveCountInMonth;
+                let monthWeeksCount = monthWeeksSet.size;
+                let totalJPBulan = monthWeeksCount * jumlahJP;
+
+                htmlOutput += `<tr>`;
+                htmlOutput += `<td class="fw-bold text-center align-middle">${m.name} ${m.year}</td>`;
+                htmlOutput += `<td><div class="d-flex flex-wrap align-items-center">${dateBadges.length > 0 ? dateBadges.join('') : '<span class="text-muted p-2">Tidak ada hari terpilih</span>'}</div></td>`;
+                htmlOutput += `<td class="text-center fw-bold">${effectiveCountInMonth} Hari</td>`;
+                htmlOutput += `<td class="text-center fw-bold text-secondary">${monthWeeksCount} Minggu</td>`;
+                htmlOutput += `<td class="text-center fw-bold text-primary">${totalJPBulan} JP</td>`;
+                htmlOutput += `</tr>`;
+            });
+
+            let semTotalWeeks = semEffectiveWeeksSet.size;
+            let semTotalJP = semTotalWeeks * jumlahJP;
+
+            htmlOutput += `</tbody><tfoot class="table-light"><tr><th colspan="2" class="text-end">TOTAL ${sem.name}:</th><th class="text-center text-success">${semEffectiveDays} Hari</th><th class="text-center text-success">${semTotalWeeks} Minggu Efektif</th><th class="text-center text-success">${semTotalJP} JP</th></tr></tfoot></table></div>`;
+        });
+
+        if (totalHolidayConflicts > 0) {
+            htmlOutput += `<div class="alert alert-danger mt-3 mb-0"><i class="fa fa-exclamation-triangle me-2"></i><b>Perhatian:</b> Terdapat <b>${totalHolidayConflicts} jadwal mengajar</b> yang berbenturan dengan hari libur nasional / hari raya di sepanjang tahun (ditandai dengan warna merah).</div>`;
+        }
+
+        const previewEl = document.getElementById('previewArea');
+        if (previewEl) previewEl.innerHTML = htmlOutput;
+
+        // Auto-save silently in background
+        fetch('/api/save_hem', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                jumlah_jp: jumlahJP,
+                hari_tertentu: targetDays,
+                hasil_konten: htmlOutput
+            })
+        }).catch(err => console.error("Auto-save HEM error:", err));
+    }
+
+    function initHEM() {
+        const jpEl = document.getElementById('jumlah_jp');
+        if (jpEl) jpEl.addEventListener('change', calculateHEM);
+        document.querySelectorAll('.hari-cb').forEach(cb => {
+            cb.addEventListener('change', calculateHEM);
+        });
+        calculateHEM();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initHEM);
+    } else {
+        initHEM();
+    }
+    </script>
+    {% else %}
+{% else %}                    <div class="text-center text-muted py-5">Silakan centang hari dan atur jumlah JP di atas, hasil perhitungan Semester Ganjil dan Genap akan tampil secara real-time di sini.</div>                {% endif %}            </div>        </div>    </div>            <script>
     const nationalHolidays2026 = {
         "2026-01-01": "Tahun Baru Masehi",
         "2026-01-16": "Isra Mikraj Nabi Muhammad SAW",
