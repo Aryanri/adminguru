@@ -31,27 +31,26 @@
                 <button type="button" class="btn btn-light btn-sm fw-bold" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / Export PDF</button>
             </div>
             <div class="card-body">
-                <div class="row g-3 mb-3">
-                    <div class="col-md-12">
-                        <label class="form-label fw-bold">Jumlah JP per Minggu</label>
-                        <select class="form-select" name="jumlah_jp" id="jumlah_jp">
+                <div class="row g-3 mb-3 align-items-center">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small mb-1">Jumlah JP per Minggu</label>
+                        <select class="form-select form-select-sm" name="jumlah_jp" id="jumlah_jp">
                             <option value="2">2 JP</option>
                             <option value="3">3 JP</option>
                             <option value="4" selected>4 JP</option>
                             <option value="6">6 JP</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="mb-3 p-3 bg-light rounded border">
-                    <label class="form-label fw-bold d-block">Pilih Hari Mengajar (Centang hari yang diinginkan untuk dihitung):</label>
-                    <div class="d-flex flex-wrap gap-3">
-                        <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="1" id="h1" checked><label class="form-check-label" for="h1">Senin</label></div>
-                        <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="2" id="h2" checked><label class="form-check-label" for="h2">Selasa</label></div>
-                        <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="3" id="h3" checked><label class="form-check-label" for="h3">Rabu</label></div>
-                        <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="4" id="h4" checked><label class="form-check-label" for="h4">Kamis</label></div>
-                        <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="5" id="h5" checked><label class="form-check-label" for="h5">Jumat</label></div>
-                        <div class="form-check"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="6" id="h6"><label class="form-check-label" for="h6">Sabtu</label></div>
+                    <div class="col-md-9">
+                        <label class="form-label fw-bold small mb-1">Pilih Hari Mengajar (Centang hari yang diinginkan):</label>
+                        <div class="d-flex flex-wrap gap-3 pt-1">
+                            <div class="form-check mb-0"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="1" id="h1" checked><label class="form-check-label small" for="h1">Senin</label></div>
+                            <div class="form-check mb-0"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="2" id="h2" checked><label class="form-check-label small" for="h2">Selasa</label></div>
+                            <div class="form-check mb-0"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="3" id="h3" checked><label class="form-check-label small" for="h3">Rabu</label></div>
+                            <div class="form-check mb-0"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="4" id="h4" checked><label class="form-check-label small" for="h4">Kamis</label></div>
+                            <div class="form-check mb-0"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="5" id="h5" checked><label class="form-check-label small" for="h5">Jumat</label></div>
+                            <div class="form-check mb-0"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="6" id="h6"><label class="form-check-label small" for="h6">Sabtu</label></div>
+                        </div>
                     </div>
                 </div>
                 <div class="text-muted small"><i class="fa fa-info-circle me-1"></i> Perubahan parameter (jumlah JP atau hari mengajar) akan langsung dihitung dan tersimpan otomatis secara real-time.</div>
