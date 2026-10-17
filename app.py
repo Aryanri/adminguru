@@ -253,28 +253,23 @@ def generator(modul_slug):
         try:
             if modul_slug == 'hem':
                 return redirect(url_for('generator', modul_slug='hem'))
-            else:
-                jenjang = request.form.get('jenjang')
-        except Exception as e:
-            db.session.rollback()
-            print("Generator POST Error:", str(e))
-            flash(f'Terjadi kesalahan server saat menyimpan data: {str(e)}', 'danger')
-            return redirect(url_for('generator', modul_slug=modul_slug))
+            
+            jenjang = request.form.get('jenjang', 'SMP / MTs')
             kelas_fase_val = request.form.get('kelas_fase', 'Kelas 7 | Fase D (Kelas 7-9)')
             parts = kelas_fase_val.split('|')
             kelas = parts[0].strip() if len(parts) > 0 else 'Kelas 7'
             fase = parts[1].strip() if len(parts) > 1 else 'Fase D (Kelas 7-9)'
 
-            kurikulum = request.form.get('kurikulum')
-            mapel = request.form.get('mapel')
-            metode = request.form.get('metode')
-            aktivitas = request.form.get('aktivitas')
+            kurikulum = request.form.get('kurikulum', 'Kurikulum Merdeka (Kumer)')
+            mapel = request.form.get('mapel', 'Pendidikan Agama Islam dan Budi Pekerti')
+            metode = request.form.get('metode', 'Project Based Learning (PjBL)')
+            aktivitas = request.form.get('aktivitas', 'Pembelajaran Berbasis Inkuiri')
             kesulitan = request.form.get('kesulitan', 'C3')
             jml_pg = request.form.get('jml_pg', '10')
             jml_esai = request.form.get('jml_esai', '5')
             jml_isian = request.form.get('jml_isian', '5')
-            topik = request.form.get('topik')
-            ruang_lingkup = request.form.get('ruang_lingkup')
+            topik = request.form.get('topik', 'Materi Pembelajaran')
+            ruang_lingkup = request.form.get('ruang_lingkup', 'Sub-Materi Utama')
             
             param_str = f"{jenis}-{jenjang}-{kelas}-{fase}-{kurikulum}-{mapel}-{topik}-{ruang_lingkup}-{kesulitan}-{current_user.id}"
             param_hash = hashlib.md5(param_str.encode('utf-8')).hexdigest()
@@ -295,7 +290,111 @@ def generator(modul_slug):
                 guru_email = current_user.email if current_user.email else '-'
                 guru_mapel = current_user.mapel if current_user.mapel else (mapel if mapel else '-')
 
-                hasil_generate = f"{kop_html}"                              f"<div class='mb-3 p-3 bg-light border rounded small'>"                              f"<b>IDENTITAS PENYUSUN DOKUMEN:</b><br>"                              f"Nama Lengkap: {current_user.nama_lengkap}<br>"                              f"NIP: {guru_nip}<br>"                              f"Alamat Email: {guru_email}<br>"                              f"Mata Pelajaran: {guru_mapel}"                              f"</div>"                              f"<h3>DOKUMEN ADMINISTRASI GURU: {jenis.upper()}</h3>"                              f"<hr><p><b>Jenjang:</b> {jenjang} | <b>Kelas & Fase:</b> {kelas} ({fase}) | <b>Kurikulum:</b> {kurikulum}</p>"                              f"<p><b>Mata Pelajaran:</b> {guru_mapel} | <b>Metode:</b> {metode}</p>"                              f"<p><b>Topik Materi:</b> {topik}</p>"                              f"<p><b>Ruang Lingkup:</b> {ruang_lingkup}</p>"                              f"<p><b>Tingkat Kesulitan (BSKAP 2026):</b> {kesulitan}</p>"                              f"<h4>Rincian / Soal Tergenerate:</h4>"                              f"<ul>"                              f"<li>Jumlah Pilihan Ganda: {jml_pg} soal (Level C1-C6)</li>"                              f"<li>Jumlah Isian Singkat: {jml_isian} soal</li>"                              f"<li>Jumlah Esai: {jml_esai} soal</li>"                              f"</ul>"                              f"<div style='border:1px dashed #ccc; padding:15px; background:#f9f9f9;'>"                              f"<b>Konten AI (Ringkas & Langsung ke Inti):</b><br>"                              f"1. Analisis Pembelajaran & Capaian Pembelajaran Kurikulum {kurikulum}.<br>"                              f"2. Langkah kegiatan pembelajaran berbasis aktivitas {aktivitas}.<br>"                              f"3. Instrumen Penilaian dan Rubrik Evaluasi Peserta Didik siap cetak."                              f"</div>"                              f"<div class='row mt-5'>"                              f"<div class='col-6'></div>"                              f"<div class='col-6 text-center'>"                              f"<p>Mengetahui,<br>Kepala Sekolah</p><br><br>"                              f"<b>{profile.nama_kepsek if profile else 'Kepala Sekolah'}</b><br>"                              f"NIP. {profile.nip_kepsek if profile else '-'}"                              f"</div>"                              f"</div>"
+                # Check HEM data for Alokasi Waktu integration if modul is cp_tp_atp
+                hem_saved = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi="Analisis Hari Efektif Mengajar (HEM)").order_by(Archive.created_at.desc()).first()
+                sem1_jp = "48"
+                sem2_jp = "48"
+                sem1_minggu = "16"
+                sem2_minggu = "16"
+                jp_per_mgg = "3"
+
+                if modul_slug == 'cp_tp_atp':
+                    hasil_generate = f"{kop_html}" \
+                                     f"<div class='mb-3 p-3 bg-light border rounded small'>" \
+                                     f"<b>IDENTITAS PENYUSUN DOKUMEN:</b><br>" \
+                                     f"Nama Lengkap: {current_user.nama_lengkap}<br>" \
+                                     f"NIP: {guru_nip}<br>" \
+                                     f"Alamat Email: {guru_email}<br>" \
+                                     f"Mata Pelajaran: {mapel}" \
+                                     f"</div>" \
+                                     f"<h3 class='text-center'>PEMETAAN CAPAIAN PEMBELAJARAN (CP), TUJUAN PEMBELAJARAN (TP)<br>DAN ALUR TUJUAN PEMBELAJARAN (ATP)</h3>" \
+                                     f"<hr>" \
+                                     f"<table class='table table-bordered mb-4'>" \
+                                     f"<tr><th style='width: 25%'>Mata Pelajaran</th><td>{mapel}</td></tr>" \
+                                     f"<tr><th>Kelas / Fase</th><td>{kelas} / {fase}</td></tr>" \
+                                     f"<tr><th>Sekolah</th><td>{profile.nama_sekolah if profile else 'SD/MI / SMP/MTs / SMA/MA'}</td></tr>" \
+                                     f"<tr><th>Tahun Pelajaran</th><td>2025/2026</td></tr>" \
+                                     f"<tr><th>Semester</th><td>1 dan 2 (Ganjil & Genap)</td></tr>" \
+                                     f"<tr><th>Alokasi Waktu</th><td>3 Jam Pelajaran per minggu</td></tr>" \
+                                     f"</table>" \
+                                     f"<h4 class='text-primary mt-4'>I. CAPAIAN PEMBELAJARAN (CP) - FASE {fase.split(' ')[0]}</h4>" \
+                                     f"<table class='table table-bordered table-striped'>" \
+                                     f"<thead class='table-dark'><tr><th style='width: 25%'>Elemen</th><th>Capaian Pembelajaran (CP)</th></tr></thead>" \
+                                     f"<tbody>" \
+                                     f"<tr><td class='fw-bold'>Pemahaman Konsep</td><td>Peserta didik mampu memahami dan menguasai materi pokok {topik} dengan ruang lingkup {ruang_lingkup} melalui pendekatan {metode} dan aktivitas {aktivitas}.</td></tr>" \
+                                     f"<tr><td class='fw-bold'>Keterampilan Proses</td><td>Peserta didik mampu melakukan analisis kritis, pemecahan masalah, serta menerapkan prinsip-prinsip keilmuan {mapel} secara kontekstual.</td></tr>" \
+                                     f"</tbody>" \
+                                     f"</table>" \
+                                     f"<h4 class='text-primary mt-4'>II. TUJUAN PEMBELAJARAN (TP) DAN ALUR TUJUAN PEMBELAJARAN (ATP)</h4>" \
+                                     f"<h5 class='mt-3 text-secondary'>SEMESTER 1 (GANJIL)</h5>" \
+                                     f"<table class='table table-bordered table-striped align-middle'>" \
+                                     f"<thead class='table-dark text-center'><tr><th style='width: 5%'>No</th><th style='width: 20%'>Elemen</th><th style='width: 20%'>Materi/Bab</th><th>Tujuan Pembelajaran (TP)</th><th>Alur Tujuan Pembelajaran (ATP)</th><th style='width: 15%'>Justifikasi</th></tr></thead>" \
+                                     f"<tbody>" \
+                                     f"<tr><td class='text-center'>1</td><td>Pemahaman Konsep</td><td>Bab 1: Pengantar {topik}</td><td>Memahami konsep dasar {topik} dan ruang lingkup {ruang_lingkup}.</td><td>1. Menjelaskan definisi dasar.<br>2. Mengidentifikasi komponen utama.</td><td>Hierarki Konsep Dasar</td></tr>" \
+                                     f"<tr><td class='text-center'>2</td><td>Keterampilan Proses</td><td>Bab 2: Analisis & Eksplorasi {ruang_lingkup}</td><td>Menerapkan metode {metode} dalam studi kasus nyata.</td><td>1. Melakukan observasi.<br>2. Menyusun laporan analisis.</td><td>Konkret ke Abstrak</td></tr>" \
+                                     f"</tbody>" \
+                                     f"</table>" \
+                                     f"<h5 class='mt-4 text-secondary'>SEMESTER 2 (GENAP)</h5>" \
+                                     f"<table class='table table-bordered table-striped align-middle'>" \
+                                     f"<thead class='table-dark text-center'><tr><th style='width: 5%'>No</th><th style='width: 20%'>Elemen</th><th style='width: 20%'>Materi/Bab</th><th>Tujuan Pembelajaran (TP)</th><th>Alur Tujuan Pembelajaran (ATP)</th><th style='width: 15%'>Justifikasi</th></tr></thead>" \
+                                     f"<tbody>" \
+                                     f"<tr><td class='text-center'>3</td><td>Pemahaman Konsep</td><td>Bab 3: Pendalaman & Integrasi Materi</td><td>Mengevaluasi penerapan lanjutan {mapel} secara komprehensif.</td><td>1. Studi literatur.<br>2. Diskusi kelompok.</td><td>Mudah ke Sulit</td></tr>" \
+                                     f"<tr><td class='text-center'>4</td><td>Keterampilan Proses</td><td>Bab 4: Proyek Akhir Semester ({aktivitas})</td><td>Membuat produk atau proyek nyata berbasis pemecahan masalah.</td><td>1. Perencanaan proyek.<br>2. Eksekusi & Presentasi.</td><td>Integrasi Antar Konsep</td></tr>" \
+                                     f"</tbody>" \
+                                     f"</table>" \
+                                     f"<h4 class='text-primary mt-4'>III. CATATAN IMPLEMENTASI & ALOKASI WAKTU</h4>" \
+                                     f"<div class='p-3 bg-light border rounded mb-4'>" \
+                                     f"<b>Alokasi Waktu Total:</b><br>" \
+                                     f"Semester 1: {sem1_jp} JP ({sem1_minggu} minggu × {jp_per_mgg} JP/minggu) | Semester 2: {sem2_jp} JP ({sem2_minggu} minggu × {jp_per_mgg} JP/minggu) | <b>Total: {int(sem1_jp)+int(sem2_jp)} JP</b><br><br>" \
+                                     f"<b>Prinsip Pengurutan ATP:</b><br>" \
+                                     f"1. Hierarki Konsep (dasar ke kompleks)<br>" \
+                                     f"2. Konkret ke Abstrak<br>" \
+                                     f"3. Mudah ke Sulit<br>" \
+                                     f"4. Integrasi Antar Konsep dalam Satu Materi" \
+                                     f"</div>" \
+                                     f"<div class='row mt-5'>" \
+                                     f"<div class='col-6'></div>" \
+                                     f"<div class='col-6 text-center'>" \
+                                     f"<p>Mengetahui,<br>Kepala Sekolah</p><br><br><br>" \
+                                     f"<b>{profile.nama_kepsek if profile else 'Kepala Sekolah'}</b><br>" \
+                                     f"NIP. {profile.nip_kepsek if profile else '-'}" \
+                                     f"</div>" \
+                                     f"</div>"
+                else:
+                    hasil_generate = f"{kop_html}" \
+                                     f"<div class='mb-3 p-3 bg-light border rounded small'>" \
+                                     f"<b>IDENTITAS PENYUSUN DOKUMEN:</b><br>" \
+                                     f"Nama Lengkap: {current_user.nama_lengkap}<br>" \
+                                     f"NIP: {guru_nip}<br>" \
+                                     f"Alamat Email: {guru_email}<br>" \
+                                     f"Mata Pelajaran: {mapel}" \
+                                     f"</div>" \
+                                     f"<h3>DOKUMEN ADMINISTRASI GURU: {jenis.upper()}</h3>" \
+                                     f"<hr><p><b>Jenjang:</b> {jenjang} | <b>Kelas & Fase:</b> {kelas} ({fase}) | <b>Kurikulum:</b> {kurikulum}</p>" \
+                                     f"<p><b>Mata Pelajaran:</b> {mapel} | <b>Metode:</b> {metode}</p>" \
+                                     f"<p><b>Topik Materi:</b> {topik}</p>" \
+                                     f"<p><b>Ruang Lingkup:</b> {ruang_lingkup}</p>" \
+                                     f"<p><b>Tingkat Kesulitan:</b> {kesulitan}</p>" \
+                                     f"<h4>Rincian / Soal Tergenerate:</h4>" \
+                                     f"<ul>" \
+                                     f"<li>Jumlah Pilihan Ganda: {jml_pg} soal</li>" \
+                                     f"<li>Jumlah Isian Singkat: {jml_isian} soal</li>" \
+                                     f"<li>Jumlah Esai: {jml_esai} soal</li>" \
+                                     f"</ul>" \
+                                     f"<div style='border:1px dashed #ccc; padding:15px; background:#f9f9f9;'>" \
+                                     f"<b>Konten AI (Ringkas & Langsung ke Inti):</b><br>" \
+                                     f"1. Analisis Pembelajaran & Capaian Pembelajaran Kurikulum {kurikulum}.<br>" \
+                                     f"2. Langkah kegiatan pembelajaran berbasis aktivitas {aktivitas}.<br>" \
+                                     f"3. Instrumen Penilaian dan Rubrik Evaluasi Peserta Didik siap cetak." \
+                                     f"</div>" \
+                                     f"<div class='row mt-5'>" \
+                                     f"<div class='col-6'></div>" \
+                                     f"<div class='col-6 text-center'>" \
+                                     f"<p>Mengetahui,<br>Kepala Sekolah</p><br><br><br>" \
+                                     f"<b>{profile.nama_kepsek if profile else 'Kepala Sekolah'}</b><br>" \
+                                     f"NIP. {profile.nip_kepsek if profile else '-'}" \
+                                     f"</div>" \
+                                     f"</div>"
                 
                 new_archive = Archive(
                     user_id=current_user.id,
@@ -309,8 +408,14 @@ def generator(modul_slug):
                 db.session.commit()
                 log_activity(current_user.id, f"Generate baru administrasi {jenis} ({topik}).")
                 flash('Modul berhasil digenerate oleh AI dan disimpan ke arsip.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            print("Generator POST Error:", str(e))
+            flash(f'Terjadi kesalahan server saat menyimpan data: {str(e)}', 'danger')
+            return redirect(url_for('generator', modul_slug=modul_slug))
             
     return render_template('generator.html', all_modules=all_modules, hasil_generate=hasil_generate, active_slug=modul_slug, current_jenis=jenis)
+
 
 @app.route('/api/save_hem', methods=['POST'])
 @login_required

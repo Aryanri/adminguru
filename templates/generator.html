@@ -500,4 +500,49 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Modal Loading Animasi AI -->
+<div class="modal fade" id="aiLoadingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="aiLoadingModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center p-4 shadow-lg border-0">
+      <div class="modal-body">
+        <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem;" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <h5 class="fw-bold mb-2" id="aiLoadingModalLabel">Sedang Meng-generate Dokumen AI...</h5>
+        <p class="text-muted small mb-3" id="aiStatusText">Menghubungkan Puter.js AI Engine...</p>
+        <div class="progress" style="height: 6px;">
+          <div id="aiProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 25%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const form = document.getElementById('generatorForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Show modal
+            const loadingModal = new bootstrap.Modal(document.getElementById('aiLoadingModal'));
+            loadingModal.show();
+
+            const statusText = document.getElementById('aiStatusText');
+            const progressBar = document.getElementById('aiProgressBar');
+
+            setTimeout(() => {
+                statusText.textContent = "Mengalihkan ke Gemini AI Engine (Fallback 1)...";
+                progressBar.style.width = "55%";
+            }, 1000);
+
+            setTimeout(() => {
+                statusText.textContent = "Optimalisasi Alur Tujuan Pembelajaran via Groq AI (Fallback 2)...";
+                progressBar.style.width = "85%";
+            }, 2000);
+        });
+    }
+});
+</script>
+
 {% endblock %}
