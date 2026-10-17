@@ -220,7 +220,11 @@
         document.querySelectorAll('.hari-cb').forEach(cb => {
             cb.addEventListener('change', calculateHEM);
         });
-        calculateHEM();
+        // Only calculate on initial load if previewArea does not already have backend-rendered content
+        const previewEl = document.getElementById('previewArea');
+        if (previewEl && !previewEl.innerHTML.trim().includes('ANALISIS HARI EFEKTIF MENGAJAR')) {
+            calculateHEM();
+        }
     }
 
     if (document.readyState === 'loading') {
