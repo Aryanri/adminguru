@@ -298,7 +298,90 @@ def generator(modul_slug):
                 sem2_minggu = "16"
                 jp_per_mgg = "3"
 
-                if modul_slug == 'cp_tp_atp':
+                                if modul_slug in ['soal_harian', 'soal_sts', 'soal_sas', 'asesmen_sumatif']:
+                    # Build dynamic PG, Isian, Esai based on counts
+                    pg_html = ""
+                    try:
+                        num_pg = int(jml_pg)
+                    except:
+                        num_pg = 10
+                    for i in range(1, num_pg + 1):
+                        pg_html += f"<b>{i}.</b> Pertanyaan pilihan ganda terkait materi {topik} ({ruang_lingkup}) pada level kognitif {kesulitan}?<br>" \
+                                   f"&nbsp;&nbsp;&nbsp;&nbsp;A. Pilihan jawaban A yang relevan<br>" \
+                                   f"&nbsp;&nbsp;&nbsp;&nbsp;B. Pilihan jawaban B yang relevan<br>" \
+                                   f"&nbsp;&nbsp;&nbsp;&nbsp;C. Pilihan jawaban C yang relevan<br>" \
+                                   f"&nbsp;&nbsp;&nbsp;&nbsp;D. Pilihan jawaban D yang relevan<br><br>"
+
+                    isian_html = ""
+                    try:
+                        num_isian = int(jml_isian)
+                    except:
+                        num_isian = 5
+                    for i in range(1, num_isian + 1):
+                        isian_html += f"<b>{i}.</b> Titik-titik berikut untuk menguji pemahaman isian singkat mengenai {topik} adalah ……………………………………………<br><br>"
+
+                    esai_html = ""
+                    try:
+                        num_esai = int(jml_esai)
+                    except:
+                        num_esai = 5
+                    for i in range(1, num_esai + 1):
+                        esai_html += f"<b>{i}.</b> Uraikan secara mendalam analisis peserta didik terhadap konsep {topik} dengan ruang lingkup {ruang_lingkup}!<br><br>"
+
+                    # Kunci jawaban
+                    kunci_pg = ""
+                    for i in range(1, num_pg + 1):
+                        kunci_pg += f"<b>{i}.</b> A — Pembahasan singkat dan jelas terkait konsep {topik}.<br>"
+
+                    kunci_isian = ""
+                    for i in range(1, num_isian + 1):
+                        kunci_isian += f"<b>{i}.</b> Jawaban tepat beserta penjelasan ringkas.<br>"
+
+                    kunci_esai = ""
+                    for i in range(1, num_esai + 1):
+                        kunci_esai += f"<b>{i}.</b> Rubrik dan uraian jawaban komprehensif untuk soal esai nomor {i}.<br>"
+
+                    hasil_generate = f"{kop_html}" \
+                                     f"<div class='text-center mb-4'>" \
+                                     f"<h4 class='fw-bold mb-1'>PERANGKAT EVALUASI PEMBELAJARAN</h4>" \
+                                     f"<p class='text-muted mb-0'>Mata Pelajaran: {mapel} &nbsp;|&nbsp; Materi: {topik} &nbsp;|&nbsp; Jenjang: {jenjang} ({kelas} / {fase})</p>" \
+                                     f"</div><hr>" \
+                                     f"<h5 class='text-primary fw-bold mt-4'>I. NASKAH SOAL EVALUASI</h5>" \
+                                     f"<h6 class='fw-bold text-dark mt-3'>A. PILIHAN GANDA</h6>" \
+                                     f"<div class='ps-2 mb-3'>{pg_html}</div>" \
+                                     f"<h6 class='fw-bold text-dark mt-3'>B. ISIAN SINGKAT</h6>" \
+                                     f"<div class='ps-2 mb-3'>{isian_html}</div>" \
+                                     f"<h6 class='fw-bold text-dark mt-3'>C. ESAI / URAIAN</h6>" \
+                                     f"<div class='ps-2 mb-4'>{esai_html}</div>" \
+                                     f"<hr>" \
+                                     f"<h5 class='text-primary fw-bold mt-4'>II. KUNCI JAWABAN DAN PEMBAHASAN</h5>" \
+                                     f"<h6 class='fw-bold text-dark mt-3'>A. KUNCI JAWABAN PILIHAN GANDA</h6>" \
+                                     f"<div class='ps-2 mb-3'>{kunci_pg}</div>" \
+                                     f"<h6 class='fw-bold text-dark mt-3'>B. KUNCI JAWABAN ESAI</h6>" \
+                                     f"<div class='ps-2 mb-3'>{kunci_esai}</div>" \
+                                     f"<h6 class='fw-bold text-dark mt-3'>C. KUNCI JAWABAN ISIAN SINGKAT</h6>" \
+                                     f"<div class='ps-2 mb-4'>{kunci_isian}</div>" \
+                                     f"<hr>" \
+                                     f"<h5 class='text-primary fw-bold mt-4'>III. KISI-KISI PENULISAN SOAL</h5>" \
+                                     f"<div class='table-responsive'>" \
+                                     f"<table class='table table-bordered table-striped align-middle'>" \
+                                     f"<thead class='table-dark text-center'><tr><th>No</th><th>CP / TP</th><th>Materi</th><th>Indikator Soal</th><th>Bentuk Soal</th><th>Level</th></tr></thead>" \
+                                     f"<tbody>" \
+                                     f"<tr><td class='text-center'>1</td><td>Memahami dan menguasai konsep dasar {topik}</td><td>{topik}</td><td>Peserta didik dapat mengidentifikasi unsur utama {ruang_lingkup}.</td><td>Pilihan Ganda</td><td>{kesulitan}</td></tr>" \
+                                     f"<tr><td class='text-center'>2</td><td>Menerapkan prinsip analisis {mapel}</td><td>{topik}</td><td>Peserta didik dapat menyelesaikan studi kasus kontekstual.</td><td>Esai / Uraian</td><td>{kesulitan}</td></tr>" \
+                                     f"<tr><td class='text-center'>3</td><td>Mengevaluasi pemahaman isian singkat</td><td>{ruang_lingkup}</td><td>Peserta didik dapat melengkapi istilah teknis dengan tepat.</td><td>Isian Singkat</td><td>{kesulitan}</td></tr>" \
+                                     f"</tbody>" \
+                                     f"</table>" \
+                                     f"</div>" \
+                                     f"<div class='row mt-5'>" \
+                                     f"<div class='col-6'></div>" \
+                                     f"<div class='col-6 text-center'>" \
+                                     f"<p>Mengetahui,<br>Kepala Sekolah</p><br><br><br>" \
+                                     f"<b>{profile.nama_kepsek if profile else 'Kepala Sekolah'}</b><br>" \
+                                     f"NIP. {profile.nip_kepsek if profile else '-'}" \
+                                     f"</div>" \
+                                     f"</div>"
+                elif modul_slug == 'cp_tp_atp':
                     hasil_generate = f"{kop_html}" \
                                      f"<div class='mb-3 p-3 bg-light border rounded small'>" \
                                      f"<b>IDENTITAS PENYUSUN DOKUMEN:</b><br>" \
