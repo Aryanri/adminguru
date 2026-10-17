@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 from models import db, User, SchoolProfile, Teacher, Student, Archive, ActivityLog, Announcement, CustomModule, wib_now
 
 app = Flask(__name__)
+application = app
 app.config['SECRET_KEY'] = 'siap_administrasi_guru_2026_secret_key'
 database_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
 if database_url:
