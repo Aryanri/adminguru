@@ -233,48 +233,45 @@
     }
     </script>
     {% else %}
-    <!-- Generator standar untuk modul selain HEM -->
+        <!-- Generator standar untuk modul selain HEM -->
     <div class="col-md-5">
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-primary text-white">
                 <h5 class="m-0"><i class="fa fa-sliders-h me-2"></i>Parameter Dokumen: {{ current_jenis }}</h5>
             </div>
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" id="generatorForm">
                     <div class="mb-3">
                         <label class="form-label fw-bold">Jenjang Pendidikan</label>
-                        <select class="form-select" name="jenjang" required>
-                            <option value="SMP / MTs">SMP / MTs</option>
+                        <select class="form-select" name="jenjang" id="jenjangSelect" required>
+                            <option value="SD / MI">SD / MI</option>
+                            <option value="SMP / MTs" selected>SMP / MTs</option>
                             <option value="SMA / MA">SMA / MA</option>
                             <option value="SMK / MAK">SMK / MAK</option>
-                            <option value="SD / MI">SD / MI</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Kelas & Fase</label>
-                        <select class="form-select" name="kelas_fase" required>
-                            <option value="Kelas 7 | Fase D (Kelas 7-9)">Kelas 7 | Fase D (Kelas 7-9)</option>
-                            <option value="Kelas 8 | Fase D (Kelas 7-9)">Kelas 8 | Fase D (Kelas 7-9)</option>
-                            <option value="Kelas 9 | Fase D (Kelas 7-9)">Kelas 9 | Fase D (Kelas 7-9)</option>
-                            <option value="Kelas 10 | Fase E (Kelas 10)">Kelas 10 | Fase E (Kelas 10)</option>
-                            <option value="Kelas 11 | Fase F (Kelas 11-12)">Kelas 11 | Fase F (Kelas 11-12)</option>
-                            <option value="Kelas 12 | Fase F (Kelas 11-12)">Kelas 12 | Fase F (Kelas 11-12)</option>
+                        <select class="form-select" name="kelas_fase" id="kelasFaseSelect" required>
+                            <!-- Dinamis via JS -->
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Kurikulum</label>
-                        <select class="form-select" name="kurikulum" required>
-                            <option value="Kurikulum Merdeka (Kumer)">Kurikulum Merdeka (Kumer)</option>
+                        <select class="form-select" name="kurikulum" id="kurikulumSelect" required>
+                            <option value="Kurikulum Merdeka (Kumer)" selected>Kurikulum Merdeka (Kumer)</option>
                             <option value="Kurikulum 2013 (K-13 Revisi)">Kurikulum 2013 (K-13 Revisi)</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Mata Pelajaran</label>
-                        <input type="text" class="form-control" name="mapel" placeholder="Contoh: Informatika / Matematika" value="{{ current_user.mapel if current_user.mapel else 'Informatika' }}" required>
+                        <select class="form-select" name="mapel" id="mapelSelect" required>
+                            <!-- Dinamis via JS -->
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Topik / Materi Pokok</label>
-                        <input type="text" class="form-control" name="topik" placeholder="Contoh: Berpikir Komputasional" required>
+                        <input type="text" class="form-control" name="topik" placeholder="Contoh: Berpikir Komputasional / Aljabar" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Ruang Lingkup / Sub-Materi</label>
@@ -291,7 +288,9 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Aktivitas Pembelajaran Utama</label>
-                        <textarea class="form-control" name="aktivitas" rows="2" placeholder="Contoh: Siswa menganalisis studi kasus pemecahan masalah sehari-hari." required></textarea>
+                        <select class="form-select" name="aktivitas" id="aktivitasSelect" required>
+                            <!-- Dinamis via JS -->
+                        </select>
                     </div>
                     <div class="row">
                         <div class="col-md-4 mb-3">
@@ -319,6 +318,165 @@
             </div>
         </div>
     </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const jenjangSelect = document.getElementById('jenjangSelect');
+        const kelasFaseSelect = document.getElementById('kelasFaseSelect');
+        const kurikulumSelect = document.getElementById('kurikulumSelect');
+        const mapelSelect = document.getElementById('mapelSelect');
+        const aktivitasSelect = document.getElementById('aktivitasSelect');
+
+        const kelasFaseData = {
+            "SD / MI": [
+                { text: "Kelas 1 | Fase A (Kelas 1-2)", value: "Kelas 1 | Fase A (Kelas 1-2)" },
+                { text: "Kelas 2 | Fase A (Kelas 1-2)", value: "Kelas 2 | Fase A (Kelas 1-2)" },
+                { text: "Kelas 3 | Fase B (Kelas 3-4)", value: "Kelas 3 | Fase B (Kelas 3-4)" },
+                { text: "Kelas 4 | Fase B (Kelas 3-4)", value: "Kelas 4 | Fase B (Kelas 3-4)" },
+                { text: "Kelas 5 | Fase C (Kelas 5-6)", value: "Kelas 5 | Fase C (Kelas 5-6)" },
+                { text: "Kelas 6 | Fase C (Kelas 5-6)", value: "Kelas 6 | Fase C (Kelas 5-6)" }
+            ],
+            "SMP / MTs": [
+                { text: "Kelas 7 | Fase D (Kelas 7-9)", value: "Kelas 7 | Fase D (Kelas 7-9)" },
+                { text: "Kelas 8 | Fase D (Kelas 7-9)", value: "Kelas 8 | Fase D (Kelas 7-9)" },
+                { text: "Kelas 9 | Fase D (Kelas 7-9)", value: "Kelas 9 | Fase D (Kelas 7-9)" }
+            ],
+            "SMA / MA": [
+                { text: "Kelas 10 | Fase E (Kelas 10)", value: "Kelas 10 | Fase E (Kelas 10)" },
+                { text: "Kelas 11 | Fase F (Kelas 11-12)", value: "Kelas 11 | Fase F (Kelas 11-12)" },
+                { text: "Kelas 12 | Fase F (Kelas 11-12)", value: "Kelas 12 | Fase F (Kelas 11-12)" }
+            ],
+            "SMK / MAK": [
+                { text: "Kelas 10 | Fase E (Kelas 10)", value: "Kelas 10 | Fase E (Kelas 10)" },
+                { text: "Kelas 11 | Fase F (Kelas 11-12)", value: "Kelas 11 | Fase F (Kelas 11-12)" },
+                { text: "Kelas 12 | Fase F (Kelas 11-12)", value: "Kelas 12 | Fase F (Kelas 11-12)" }
+            ]
+        };
+
+        const mapelData = {
+            "SD / MI": [
+                "Pendidikan Agama Islam dan Budi Pekerti",
+                "Pendidikan Pancasila dan Kewarganegaraan",
+                "Bahasa Indonesia",
+                "Matematika",
+                "Ilmu Pengetahuan Alam dan Sosial (IPAS)",
+                "Seni Budaya dan Prakarya (SBdP)",
+                "Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)",
+                "Bahasa Inggris"
+            ],
+            "SMP / MTs": [
+                "Pendidikan Agama Islam dan Budi Pekerti",
+                "Pendidikan Pancasila",
+                "Bahasa Indonesia",
+                "Matematika",
+                "Ilmu Pengetahuan Alam (IPA)",
+                "Ilmu Pengetahuan Sosial (IPS)",
+                "Bahasa Inggris",
+                "Informatika",
+                "Seni Budaya",
+                "Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)"
+            ],
+            "SMA / MA": [
+                "Pendidikan Agama Islam dan Budi Pekerti",
+                "Pendidikan Pancasila",
+                "Bahasa Indonesia",
+                "Matematika",
+                "Bahasa Inggris",
+                "Fisika",
+                "Kimia",
+                "Biologi",
+                "Sejarah",
+                "Ekonomi",
+                "Sosiologi",
+                "Geografi",
+                "Seni Budaya",
+                "Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)"
+            ],
+            "SMK / MAK": [
+                "Pendidikan Agama Islam dan Budi Pekerti",
+                "Pendidikan Pancasila",
+                "Bahasa Indonesia",
+                "Matematika",
+                "Bahasa Inggris",
+                "Informatika",
+                "Projek IPAS",
+                "Dasar-Dasar Kejuruan",
+                "Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)"
+            ]
+        };
+
+        const aktivitasData = {
+            "Kurikulum Merdeka (Kumer)": [
+                "Projek Penguatan Profil Pelajar Pancasila (P5) terintegrasi materi",
+                "Pembelajaran Berbasis Inkuiri & Eksplorasi Konsep Mendalam",
+                "Diferensiasi Pembelajaran (Konten, Proses, & Produk Peserta Didik)",
+                "Diskusi Kelompok Kolaboratif & Presentasi Studi Kasus",
+                "Praktik Mandiri Berbasis Digital / LKPD Interaktif"
+            ],
+            "Kurikulum 2013 (K-13 Revisi)": [
+                "Pendekatan Saintifik 5M (Mengamati, Menanya, Mengumpulkan Informasi, Menalar, Mengomunikasikan)",
+                "Problem Solving & Diskusi Kelompok Terbimbing",
+                "Eksperimen / Praktikum Laboratorium & Penugasan Portofolio",
+                "Tanya Jawab Interaktif & Latihan Soal Terstruktur",
+                "Model Pembelajaran Langsung (Direct Instruction) & Ceramah Variatif"
+            ]
+        };
+
+        function updateKelasFase() {
+            const jenjang = jenjangSelect.value;
+            kelasFaseSelect.innerHTML = "";
+            if (kelasFaseData[jenjang]) {
+                kelasFaseData[jenjang].forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.value;
+                    opt.textContent = item.text;
+                    kelasFaseSelect.appendChild(opt);
+                });
+            }
+        }
+
+        function updateMapel() {
+            const jenjang = jenjangSelect.value;
+            mapelSelect.innerHTML = "";
+            if (mapelData[jenjang]) {
+                mapelData[jenjang].forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = m;
+                    mapelSelect.appendChild(opt);
+                });
+            }
+        }
+
+        function updateAktivitas() {
+            const kurikulum = kurikulumSelect.value;
+            aktivitasSelect.innerHTML = "";
+            if (aktivitasData[kurikulum]) {
+                aktivitasData[kurikulum].forEach(akt => {
+                    const opt = document.createElement('option');
+                    opt.value = akt;
+                    opt.textContent = akt;
+                    aktivitasSelect.appendChild(opt);
+                });
+            }
+        }
+
+        jenjangSelect.addEventListener('change', function() {
+            updateKelasFase();
+            updateMapel();
+        });
+
+        kurikulumSelect.addEventListener('change', function() {
+            updateAktivitas();
+        });
+
+        // Initial trigger
+        updateKelasFase();
+        updateMapel();
+        updateAktivitas();
+    });
+    </script>
+
     <div class="col-md-7">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
