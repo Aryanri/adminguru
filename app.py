@@ -308,7 +308,7 @@ def generator(modul_slug):
                     except:
                         num_pg = 10
                     for i in range(1, num_pg + 1):
-                        pg_html += f"<b>{i}.</b> Soal Pilihan Ganda nomor {i} mengenai {topik} ({ruang_lingkup}) tingkat {kesulitan}.<br>" \
+                        pg_html += f"<b>{i}.</b> Pertanyaan pilihan ganda nomor {i} untuk materi {topik} dengan ruang lingkup {ruang_lingkup} (Level Kognitif {kesulitan}):<br>" \
                                    f"&nbsp;&nbsp;&nbsp;&nbsp;A. Pilihan jawaban A yang relevan<br>" \
                                    f"&nbsp;&nbsp;&nbsp;&nbsp;B. Pilihan jawaban B yang relevan<br>" \
                                    f"&nbsp;&nbsp;&nbsp;&nbsp;C. Pilihan jawaban C yang relevan<br>" \
@@ -320,7 +320,7 @@ def generator(modul_slug):
                     except:
                         num_isian = 5
                     for i in range(1, num_isian + 1):
-                        isian_html += f"<b>{i}.</b> Pertanyaan isian singkat {i} tentang {topik} adalah ……………………………………………<br><br>"
+                        isian_html += f"<b>{i}.</b> Titik-titik untuk soal isian singkat nomor {i} mengenai materi {topik} adalah ……………………………………………<br><br>"
 
                     esai_html = ""
                     try:
@@ -328,23 +328,28 @@ def generator(modul_slug):
                     except:
                         num_esai = 5
                     for i in range(1, num_esai + 1):
-                        esai_html += f"<b>{i}.</b> Uraikan secara mendalam analisis peserta didik terhadap konsep {topik} nomor {i}!<br><br>"
+                        esai_html += f"<b>{i}.</b> Uraikan secara mendalam analisis dan penjelasan untuk soal esai nomor {i} terkait {topik}!<br><br>"
 
                     kunci_pg = ""
                     for i in range(1, num_pg + 1):
-                        kunci_pg += f"<b>{i}.</b> A — Pembahasan dan kunci jawaban soal pilihan ganda {i} untuk materi {topik}.<br>"
+                        kunci_pg += f"<b>{i}.</b> A — Pembahasan dan kunci jawaban pilihan ganda nomor {i}.<br>"
 
                     kunci_esai = ""
                     for i in range(1, num_esai + 1):
-                        kunci_esai += f"<b>{i}.</b> Rubrik dan uraian jawaban komprehensif untuk soal esai nomor {i}.<br>"
+                        kunci_esai += f"<b>{i}.</b> Rubrik penilaian dan kunci jawaban esai komprehensif nomor {i}.<br>"
 
                     kunci_isian = ""
                     for i in range(1, num_isian + 1):
-                        kunci_isian += f"<b>{i}.</b> Jawaban tepat beserta penjelasan ringkas isian singkat {i}.<br>"
+                        kunci_isian += f"<b>{i}.</b> Jawaban tepat beserta penjelasan ringkas isian singkat nomor {i}.<br>"
+
+                    kisi_rows = ""
+                    for i in range(1, max(num_pg, num_esai, num_isian) + 1):
+                        b_soal = "Pilihan Ganda" if i <= num_pg else ("Esai" if i <= num_pg + num_esai else "Isian Singkat")
+                        kisi_rows += f"<tr><td>{i}</td><td>Memahami dan menguasai konsep dasar {topik}</td><td>{topik}</td><td>Peserta didik dapat mengidentifikasi unsur utama {ruang_lingkup}</td><td>{b_soal}</td><td>{kesulitan}</td></tr>"
 
                     hasil_generate = f"{kop_html}" \
                                      f"<div class='mb-1'><b>PERANGKAT EVALUASI PEMBELAJARAN</b></div>" \
-                                     f"<div class='mb-3'>Mata Pelajaran: {mapel}  |  Materi: {topik}  |  Jenjang: {jenjang} ({kelas} ({fase}))</div>" \
+                                     f"<div class='mb-3 text-muted small'>Mata Pelajaran: {mapel}  |  Materi: {topik}  |  Jenjang: {jenjang} ({kelas} ({fase}))</div>" \
                                      f"<div class='fw-bold mt-2'> I. NASKAH SOAL EVALUASI</div>" \
                                      f"<div class='fw-bold mt-2'>A. PILIHAN GANDA</div>" \
                                      f"<div class='ps-2 mb-2'>{pg_html}</div>" \
@@ -364,8 +369,7 @@ def generator(modul_slug):
                                      f"<table class='table table-bordered align-middle'>" \
                                      f"<thead class='table-light'><tr><th>No</th><th>CP / TP</th><th>Materi</th><th>Indikator Soal</th><th>Bentuk Soal</th><th>Level</th></tr></thead>" \
                                      f"<tbody>" \
-                                     f"<tr><td>1</td><td>Memahami konsep {topik}</td><td>{topik}</td><td>Peserta didik dapat mengidentifikasi materi {ruang_lingkup}</td><td>Pilihan Ganda</td><td>{kesulitan}</td></tr>" \
-                                     f"<tr><td>2</td><td>Menganalisis studi kasus {topik}</td><td>{topik}</td><td>Peserta didik dapat menjelaskan uraian esai</td><td>Esai / Uraian</td><td>{kesulitan}</td></tr>" \
+                                     f"{kisi_rows}" \
                                      f"</tbody>" \
                                      f"</table>" \
                                      f"</div>"
