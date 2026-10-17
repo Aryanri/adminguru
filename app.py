@@ -17,6 +17,9 @@ database_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
 if database_url:
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql+psycopg2://", 1)
+    if "sslmode" not in database_url and "neon.tech" in database_url:
+        separator = "&" if "?" in database_url else "?"
+        database_url = database_url + separator + "sslmode=require"
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
     if os.environ.get('VERCEL') or not os.access(os.path.dirname(__file__) or '.', os.W_OK):
