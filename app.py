@@ -309,7 +309,7 @@ def generator(modul_slug):
                                    f"&nbsp;&nbsp;&nbsp;&nbsp;A. ………..<br>" \
                                    f"&nbsp;&nbsp;&nbsp;&nbsp;B. ………..<br>" \
                                    f"&nbsp;&nbsp;&nbsp;&nbsp;C. …………<br>" \
-                                   f"&nbsp;&nbsp;&nbsp;&nbsp;D. …….<br><br>"
+                                   f"&nbsp;&nbsp;&nbsp;&nbsp;D. ……. <br><br>"
 
                     isian_html = ""
                     try:
@@ -331,38 +331,38 @@ def generator(modul_slug):
                     for i in range(1, num_pg + 1):
                         kunci_pg += f"<b>{i}.</b> jawaban pembahasan singkat<br>"
 
-                    kunci_isian = ""
-                    for i in range(1, num_isian + 1):
-                        kunci_isian += f"<b>{i}.</b> jawaban pembahasan singkat<br>"
-
                     kunci_esai = ""
                     for i in range(1, num_esai + 1):
                         kunci_esai += f"<b>{i}.</b> jawaban pembahasan singkat<br>"
 
+                    kunci_isian = ""
+                    for i in range(1, num_isian + 1):
+                        kunci_isian += f"<b>{i}.</b> jawaban pembahasan singkat<br>"
+
                     hasil_generate = f"{kop_html}" \
-                                     f"<div class='mb-2'><b>PERANGKAT EVALUASI PEMBELAJARAN</b></div>" \
-                                     f"<div class='mb-3 text-muted small'>Mata Pelajaran: {mapel}  |  Materi: {topik}  |  Jenjang: {jenjang} ({kelas} ({fase}))</div>" \
-                                     f"<div class='fw-bold mt-3'> I. NASKAH SOAL EVALUASI</div>" \
+                                     f"<div class='mb-1'><b>PERANGKAT EVALUASI PEMBELAJARAN</b></div>" \
+                                     f"<div class='mb-3'>Mata Pelajaran: {mapel}  |  Materi: {topik}  |  Jenjang: {jenjang} ({kelas} ({fase}))</div>" \
+                                     f"<div class='fw-bold mt-2'> I. NASKAH SOAL EVALUASI</div>" \
                                      f"<div class='fw-bold mt-2'>A. PILIHAN GANDA</div>" \
                                      f"<div class='ps-2 mb-2'>{pg_html}</div>" \
                                      f"<div class='fw-bold mt-2'>B. ISIAN SINGKAT</div>" \
                                      f"<div class='ps-2 mb-2'>{isian_html}</div>" \
                                      f"<div class='fw-bold mt-2'>C. ESAI / URAIAN</div>" \
                                      f"<div class='ps-2 mb-3'>{esai_html}</div>" \
-                                     f"<div class='fw-bold mt-3'> II. KUNCI JAWABAN DAN PEMBAHASAN</div>" \
+                                     f"<div class='fw-bold mt-2'> II. KUNCI JAWABAN DAN PEMBAHASAN</div>" \
                                      f"<div class='fw-bold mt-2'>A. KUNCI JAWABAN PILIHAN GANDA</div>" \
                                      f"<div class='ps-2 mb-2'>{kunci_pg}</div>" \
                                      f"<div class='fw-bold mt-2'>B. KUNCI JAWABAN ESAI</div>" \
                                      f"<div class='ps-2 mb-2'>{kunci_esai}</div>" \
                                      f"<div class='fw-bold mt-2'>c. KUNCI JAWABAN ISIAN SINGKAT</div>" \
                                      f"<div class='ps-2 mb-3'>{kunci_isian}</div>" \
-                                     f"<div class='fw-bold mt-3'>III. KISI-KISI PENULISAN SOAL</div>" \
+                                     f"<div class='fw-bold mt-2'>III. KISI-KISI PENULISAN SOAL</div>" \
                                      f"<div class='table-responsive mt-2'>" \
                                      f"<table class='table table-bordered align-middle'>" \
                                      f"<thead class='table-light'><tr><th>No</th><th>CP / TP</th><th>Materi</th><th>Indikator Soal</th><th>Bentuk Soal</th><th>Level</th></tr></thead>" \
                                      f"<tbody>" \
-                                     f"<tr><td>1</td><td>{topik}</td><td>{topik}</td><td>Peserta didik dapat memahami materi</td><td>Pilihan Ganda</td><td>{kesulitan}</td></tr>" \
-                                     f"<tr><td>2</td><td>{topik}</td><td>{topik}</td><td>Peserta didik dapat menjelaskan materi</td><td>Esai</td><td>{kesulitan}</td></tr>" \
+                                     f"<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>" \
+                                     f"<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>" \
                                      f"</tbody>" \
                                      f"</table>" \
                                      f"</div>"
