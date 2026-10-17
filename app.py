@@ -9,7 +9,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from models import db, User, SchoolProfile, Teacher, Student, Archive, ActivityLog, Announcement, CustomModule
+from models import db, User, SchoolProfile, Teacher, Student, Archive, ActivityLog, Announcement, CustomModule, wib_now
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'siap_administrasi_guru_2026_secret_key'
@@ -250,38 +250,44 @@ def generator(modul_slug):
             hasil_generate = saved_hem.hasil_konten
 
     if request.method == 'POST':
-        if modul_slug == 'hem':
-            jumlah_jp = request.form.get('jumlah_jp', '4')
-            semester = request.form.get('semester', 'Ganjil')
-            tipe_hari = request.form.get('tipe_hari', 'senin_sabtu')
-            hari_tertentu = request.form.getlist('hari_tertentu')
-            hasil_konten = request.form.get('hasil_konten', '')
-            
-            param_str = f"hem-{current_user.id}-{semester}-{jumlah_jp}-{tipe_hari}-" + "-".join(hari_tertentu)
-            param_hash = hashlib.md5(param_str.encode('utf-8')).hexdigest()
-            
-            saved_hem = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi=jenis).order_by(Archive.created_at.desc()).first()
-            if saved_hem:
-                saved_hem.hasil_konten = hasil_konten
-                saved_hem.topik = f"Analisis HEM Semester {semester} ({jumlah_jp} JP)"
-                saved_hem.parameter_hash = param_hash
-                saved_hem.created_at = wib_now()
+        try:
+            if modul_slug == 'hem':
+                jumlah_jp = request.form.get('jumlah_jp', '4')
+                semester = request.form.get('semester', 'Ganjil')
+                tipe_hari = request.form.get('tipe_hari', 'senin_sabtu')
+                hari_tertentu = request.form.getlist('hari_tertentu')
+                hasil_konten = request.form.get('hasil_konten', '')
+                
+                param_str = f"hem-{current_user.id}-{semester}-{jumlah_jp}-{tipe_hari}-" + "-".join(hari_tertentu)
+                param_hash = hashlib.md5(param_str.encode('utf-8')).hexdigest()
+                
+                saved_hem = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi=jenis).order_by(Archive.created_at.desc()).first()
+                if saved_hem:
+                    saved_hem.hasil_konten = hasil_konten
+                    saved_hem.topik = f"Analisis HEM Semester {semester} ({jumlah_jp} JP)"
+                    saved_hem.parameter_hash = param_hash
+                    saved_hem.created_at = wib_now()
+                else:
+                    new_arch = Archive(
+                        user_id=current_user.id,
+                        jenis_administrasi=jenis,
+                        topik=f"Analisis HEM Semester {semester} ({jumlah_jp} JP)",
+                        ruang_lingkup=f"Analisis Hari Efektif Mengajar Semester {semester}",
+                        parameter_hash=param_hash,
+                        hasil_konten=hasil_konten
+                    )
+                    db.session.add(new_arch)
+                db.session.commit()
+                log_activity(current_user.id, f"Menyimpan Analisis HEM Semester {semester}.")
+                flash('Analisis HEM berhasil disimpan dan tersimpan sampai perubahan berikutnya.', 'success')
+                return redirect(url_for('generator', modul_slug='hem'))
             else:
-                new_arch = Archive(
-                    user_id=current_user.id,
-                    jenis_administrasi=jenis,
-                    topik=f"Analisis HEM Semester {semester} ({jumlah_jp} JP)",
-                    ruang_lingkup=f"Analisis Hari Efektif Mengajar Semester {semester}",
-                    parameter_hash=param_hash,
-                    hasil_konten=hasil_konten
-                )
-                db.session.add(new_arch)
-            db.session.commit()
-            log_activity(current_user.id, f"Menyimpan Analisis HEM Semester {semester}.")
-            flash('Analisis HEM berhasil disimpan dan tersimpan sampai perubahan berikutnya.', 'success')
-            return redirect(url_for('generator', modul_slug='hem'))
-        else:
-            jenjang = request.form.get('jenjang')
+                jenjang = request.form.get('jenjang')
+        except Exception as e:
+            db.session.rollback()
+            print("Generator POST Error:", str(e))
+            flash(f'Terjadi kesalahan server saat menyimpan data: {str(e)}', 'danger')
+            return redirect(url_for('generator', modul_slug=modul_slug))
             kelas_fase_val = request.form.get('kelas_fase', 'Kelas 7 | Fase D (Kelas 7-9)')
             parts = kelas_fase_val.split('|')
             kelas = parts[0].strip() if len(parts) > 0 else 'Kelas 7'
