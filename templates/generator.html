@@ -593,7 +593,10 @@ document.addEventListener("DOMContentLoaded", function() {
         el.addEventListener('input', saveInputs);
     });
 
-    // Initial load
+    // Initial load & dropdown population
+    updateKelasFase();
+    updateMapel();
+    updateAktivitas();
     loadInputs();
 
     const form = document.getElementById('generatorForm');
