@@ -183,7 +183,26 @@ def logout():
     logout_user()
     session.pop('device_session_id', None)
     flash('Anda telah berhasil logout.', 'info')
-    return redirect(url_for('login'))
+    return """
+    <html>
+    <head><title>Logging out...</title></head>
+    <body style="background:#f8f9fa; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+    <div style="text-align:center;">
+        <h4>Mengakhiri Sesi...</h4>
+        <p class="text-muted">Sedang memutuskan koneksi dari Puter.js dan Gurava.</p>
+    </div>
+    <script src="https://js.puter.com/v2/"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (typeof puter !== 'undefined' && puter.auth.isSignedIn()) {
+                puter.auth.signOut();
+            }
+            setTimeout(() => { window.location.href = '/login'; }, 500);
+        });
+    </script>
+    </body>
+    </html>
+    """
 
 @app.route('/dashboard', methods=['GET', 'POST'])
 @login_required
@@ -399,7 +418,13 @@ Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik ses
                 error_msgs = []
                 used_api = ""
                 
-                # 1. PUTER.JS / PUTER AI (OpenAI Compatible)
+                # 0. PUTER.JS CLIENT-SIDE (Jika berhasil di-generate via JavaScript di frontend)
+                ai_generated_content = request.form.get('ai_generated_content')
+                if ai_generated_content and ai_generated_content.strip():
+                    ai_text = ai_generated_content
+                    used_api = "Puter AI (Client-Side)"
+                
+                # 1. PUTER.JS / PUTER AI (OpenAI Compatible) - Backend Fallback
                 if puter_key and not ai_text:
                     try:
                         url = "https://api.puter.com/puterai/openai/v1/chat/completions"
@@ -414,7 +439,7 @@ Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik ses
                         with urllib.request.urlopen(req, timeout=30) as response:
                             res_json = json.loads(response.read().decode('utf-8'))
                             ai_text = res_json['choices'][0]['message']['content']
-                            used_api = "Puter AI"
+                            used_api = "Puter AI (Server-Side)"
                     except Exception as e:
                         error_msgs.append(f"Puter API Error: {str(e)}")
                         
@@ -450,7 +475,6 @@ Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik ses
                     except Exception as e:
                         error_msgs.append(f"Groq API Error: {str(e)}")
                         
-                # FINAL CHECK
                 if ai_text:
                     ai_text = ai_text.strip()
                     if ai_text.startswith("```html"): ai_text = ai_text[7:]
