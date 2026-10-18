@@ -302,7 +302,22 @@ def generator(modul_slug):
                     # PROMPT GENERATE AI:
                     # "bertindaklah sebagai guru ahli, buatkan soal sesuai modul yang dipilih, jenjang pendidikan, mata pelajaran, kurikulum, tingkat kesulitan, jumlah soal PG, jumlah soal Esai, jumlah Isian singkat yang dipilih dan hasilnya tampilkan pada halaman preview dokumen sesuai dengan template soal.docx (word)."
                     
-                    # Contextual question templates based on mapel & topik
+                    pg_templates = [
+                        f"Perhatikan konsep terkait <b>{topik}</b> berikut ini. Manakah pernyataan di bawah ini yang paling tepat menjelaskan fungsi utama dari <b>{ruang_lingkup}</b>?",
+                        f"Seorang peserta didik mengamati penerapan <b>{topik}</b> di lingkungan sekitarnya. Berdasarkan prinsip kurikulum, langkah awal yang sesuai dengan kaidah <b>{ruang_lingkup}</b> adalah...",
+                        f"Perhatikan karakteristik berikut! (1) Dinamis, (2) Terstruktur, (3) Berkelanjutan. Karakteristik yang paling mencerminkan esensi dari <b>{topik}</b> pada aspek <b>{ruang_lingkup}</b> ditunjukkan oleh nomor...",
+                        f"Apa dampak paling signifikan jika prinsip <b>{ruang_lingkup}</b> tidak diimplementasikan dengan baik dalam kajian <b>{topik}</b>?",
+                        f"Hubungan fungsional antara <b>{topik}</b> dan <b>{ruang_lingkup}</b> dalam konteks <b>{mapel}</b> paling tepat dianalogikan sebagai..."
+                    ]
+                    
+                    pg_options = [
+                        [f"Memperkuat dasar pemahaman teoretis peserta didik secara eksklusif.", f"Meningkatkan efektivitas penerapan dalam kehidupan sehari-hari.", f"Menghilangkan risiko kesalahan prosedural secara mutlak.", f"Menyediakan kerangka kerja konseptual yang statis."],
+                        [f"Melakukan evaluasi hasil secara menyeluruh.", f"Mengidentifikasi masalah utama secara sistematis.", f"Menyusun laporan hasil observasi akhir.", f"Menerapkan solusi tanpa analisis awal."],
+                        [f"(1) dan (2)", f"(1) dan (3)", f"(2) dan (3)", f"Semua benar"],
+                        [f"Proses pembelajaran menjadi lebih cepat namun kurang bermakna.", f"Hilangnya fondasi utama yang mendasari pemahaman utuh.", f"Tidak ada dampak yang terukur secara langsung.", f"Tercapainya tujuan alternatif di luar standar kompetensi."],
+                        [f"Pondasi dan bangunan utama.", f"Kendaraan dan bahan bakar.", f"Teori dan hipotesis semata.", f"Sebab dan akibat yang saling lepas."]
+                    ]
+
                     pg_html = ""
                     try:
                         num_pg = int(jml_pg)
@@ -310,11 +325,20 @@ def generator(modul_slug):
                         num_pg = 10
                         
                     for i in range(1, num_pg + 1):
-                        pg_html += f"<b>{i}.</b> Dalam kajian mata pelajaran <b>{mapel}</b> dengan fokus materi <b>{topik}</b> ({ruang_lingkup}) pada Kurikulum <b>{kurikulum}</b> (Level Kognitif: {kesulitan}), manakah konsep atau prinsip utama yang paling tepat diterapkan?<br>" \
-                                   f"&nbsp;&nbsp;&nbsp;&nbsp;A. Penerapan teori dasar {topik} secara komprehensif dalam konteks nyata.<br>" \
-                                   f"&nbsp;&nbsp;&nbsp;&nbsp;B. Analisis komponen pendukung pada ruang lingkup {ruang_lingkup}.<br>" \
-                                   f"&nbsp;&nbsp;&nbsp;&nbsp;C. Evaluasi terhadap prosedur pelaksanaan {mapel} secara mendalam.<br>" \
-                                   f"&nbsp;&nbsp;&nbsp;&nbsp;D. Sintesis dan pengembangan solusi alternatif berbasis pendekatan modern.<br><br>"
+                        q_idx = (i - 1) % 5
+                        pg_html += f"<b>{i}.</b> {pg_templates[q_idx]}<br>" \
+                                   f"&nbsp;&nbsp;&nbsp;&nbsp;A. {pg_options[q_idx][0]}<br>" \
+                                   f"&nbsp;&nbsp;&nbsp;&nbsp;B. {pg_options[q_idx][1]}<br>" \
+                                   f"&nbsp;&nbsp;&nbsp;&nbsp;C. {pg_options[q_idx][2]}<br>" \
+                                   f"&nbsp;&nbsp;&nbsp;&nbsp;D. {pg_options[q_idx][3]}<br><br>"
+
+                    isian_templates = [
+                        f"Proses utama dalam <b>{topik}</b> yang melibatkan <b>{ruang_lingkup}</b> secara langsung dan berkesinambungan dikenal dengan istilah ....................",
+                        f"Berdasarkan standar kompetensi, indikator utama keberhasilan dari penerapan <b>{topik}</b> adalah ....................",
+                        f"Elemen paling fundamental dari <b>{ruang_lingkup}</b> yang tidak boleh dilewatkan dalam analisis <b>{mapel}</b> disebut ....................",
+                        f"Tahapan akhir setelah melakukan kajian mendalam terhadap <b>{topik}</b> biasanya bertujuan untuk menghasilkan ....................",
+                        f"Istilah teknis yang umum digunakan untuk menggambarkan interaksi di dalam <b>{ruang_lingkup}</b> adalah ...................."
+                    ]
 
                     isian_html = ""
                     try:
@@ -323,7 +347,16 @@ def generator(modul_slug):
                         num_isian = 5
                         
                     for i in range(1, num_isian + 1):
-                        isian_html += f"<b>{i}.</b> Unsur esensial dalam ruang lingkup {ruang_lingkup} pada materi {topik} yang berfungsi sebagai landasan operasional disebut ……………………………………………<br><br>"
+                        q_idx = (i - 1) % 5
+                        isian_html += f"<b>{i}.</b> {isian_templates[q_idx]}<br><br>"
+
+                    esai_templates = [
+                        f"Jelaskan secara rinci bagaimana <b>{topik}</b> dapat diimplementasikan dalam kehidupan sehari-hari dengan mengacu pada kaidah <b>{ruang_lingkup}</b>!",
+                        f"Analisislah permasalahan yang sering muncul saat mempelajari <b>{topik}</b> dan berikan solusi konkret berdasarkan prinsip <b>{kurikulum}</b>!",
+                        f"Uraikan peran penting <b>{ruang_lingkup}</b> dalam meningkatkan pemahaman komprehensif peserta didik terhadap mata pelajaran <b>{mapel}</b>!",
+                        f"Bandingkan dua pendekatan berbeda dalam memahami <b>{topik}</b>, lalu tentukan pendekatan mana yang paling relevan dengan kondisi saat ini beserta alasannya!",
+                        f"Buatlah sebuah skenario atau contoh kasus singkat yang menggambarkan penerapan materi <b>{topik}</b> secara efektif!"
+                    ]
 
                     esai_html = ""
                     try:
@@ -332,57 +365,60 @@ def generator(modul_slug):
                         num_esai = 5
                         
                     for i in range(1, num_esai + 1):
-                        esai_html += f"<b>{i}.</b> Uraikan secara mendalam bagaimana prinsip dan penerapan materi <b>{topik}</b> ({ruang_lingkup}) dalam Kurikulum <b>{kurikulum}</b> dapat diimplementasikan untuk mencapai kompetensi peserta didik pada jenjang {jenjang} ({kelas} / {fase})!<br><br>"
+                        q_idx = (i - 1) % 5
+                        esai_html += f"<b>{i}.</b> {esai_templates[q_idx]}<br><br>"
 
                     kunci_pg = ""
+                    kunci_pg_ans = ["B", "B", "C", "B", "A"]
                     for i in range(1, num_pg + 1):
-                        kunci_pg += f"<b>{i}.</b> A — <i>Pembahasan:</i> Konsep utama {topik} menekankan pada pemahaman teori dasar dan aplikasi kontekstual sesuai capaian pembelajaran {kurikulum}.<br>"
+                        q_idx = (i - 1) % 5
+                        kunci_pg += f"<b>{i}.</b> {kunci_pg_ans[q_idx]} — <i>Pembahasan:</i> Pilihan ini paling tepat karena secara fungsional selaras dengan prinsip dasar <b>{topik}</b> pada batasan <b>{ruang_lingkup}</b>.<br>"
 
                     kunci_esai = ""
                     for i in range(1, num_esai + 1):
-                        kunci_esai += f"<b>{i}.</b> <i>Rubrik / Uraian Jawaban:</i> Peserta didik mampu menjelaskan, menganalisis, serta memberikan contoh konkret implementasi {topik} ({ruang_lingkup}) secara runtut dan logis.<br>"
+                        kunci_esai += f"<b>{i}.</b> <i>Rubrik Jawaban:</i> Peserta didik mendapatkan skor maksimal (4) jika mampu menguraikan argumen secara logis, memberikan contoh relevan tentang <b>{topik}</b>, dan menyimpulkan sesuai konteks. (Skor 3: argumen logis tapi tanpa contoh, Skor 2: penjelasan kurang relevan, Skor 1: jawaban salah/tidak nyambung).<br>"
 
                     kunci_isian = ""
                     for i in range(1, num_isian + 1):
-                        kunci_isian += f"<b>{i}.</b> <i>Jawaban:</i> Prosedur inti / kerangka konseptual {topik}.<br>"
+                        kunci_isian += f"<b>{i}.</b> <i>Jawaban:</i> Tergantung konteks spesifik / Istilah teknis baku pada materi <b>{topik}</b>.<br>"
 
                     kisi_rows = ""
                     total_soal = num_pg + num_esai + num_isian
                     for i in range(1, total_soal + 1):
                         if i <= num_pg:
                             b_soal = "Pilihan Ganda"
-                            indikator = f"Peserta didik dapat mengidentifikasi dan menganalisis prinsip dasar {topik}."
+                            indikator = f"Menentukan pernyataan yang tepat mengenai karakteristik {ruang_lingkup}."
                         elif i <= num_pg + num_esai:
                             b_soal = "Esai / Uraian"
-                            indikator = f"Peserta didik dapat menguraikan penerapan praktis {ruang_lingkup}."
+                            indikator = f"Menganalisis dan mengevaluasi studi kasus terkait {topik}."
                         else:
                             b_soal = "Isian Singkat"
-                            indikator = f"Peserta didik dapat melengkapi istilah teknis terkait {topik}."
+                            indikator = f"Menyebutkan istilah spesifik pada sub-materi {topik}."
                             
-                        cp_tp_text = f"Memahami, menerapkan, dan mengevaluasi materi {topik} ({kurikulum})"
+                        cp_tp_text = f"Memahami, menerapkan, dan mengevaluasi materi {topik} sesuai jenjang {jenjang}"
                         kisi_rows += f"<tr><td class='text-center'>{i}</td><td>{cp_tp_text}</td><td>{topik}</td><td>{indikator}</td><td>{b_soal}</td><td class='text-center'>{kesulitan}</td></tr>"
 
                     hasil_generate = f"{kop_html}" \
-                                     f"<div class='mb-1'><b>PERANGKAT EVALUASI PEMBELAJARAN</b></div>" \
-                                     f"<div class='mb-3 text-muted small'>Mata Pelajaran: {mapel}  |  Materi: {topik}  |  Jenjang: {jenjang} ({kelas} ({fase}))  |  Kurikulum: {kurikulum}</div>" \
-                                     f"<div class='fw-bold mt-2'> I. NASKAH SOAL EVALUASI</div>" \
-                                     f"<div class='fw-bold mt-2'>A. PILIHAN GANDA</div>" \
-                                     f"<div class='ps-2 mb-2'>{pg_html}</div>" \
-                                     f"<div class='fw-bold mt-2'>B. ISIAN SINGKAT</div>" \
-                                     f"<div class='ps-2 mb-2'>{isian_html}</div>" \
-                                     f"<div class='fw-bold mt-2'>C. ESAI / URAIAN</div>" \
-                                     f"<div class='ps-2 mb-3'>{esai_html}</div>" \
-                                     f"<div class='fw-bold mt-2'> II. KUNCI JAWABAN DAN PEMBAHASAN</div>" \
-                                     f"<div class='fw-bold mt-2'>A. KUNCI JAWABAN PILIHAN GANDA</div>" \
-                                     f"<div class='ps-2 mb-2'>{kunci_pg}</div>" \
-                                     f"<div class='fw-bold mt-2'>B. KUNCI JAWABAN ESAI</div>" \
-                                     f"<div class='ps-2 mb-2'>{kunci_esai}</div>" \
-                                     f"<div class='fw-bold mt-2'>c. KUNCI JAWABAN ISIAN SINGKAT</div>" \
-                                     f"<div class='ps-2 mb-3'>{kunci_isian}</div>" \
-                                     f"<div class='fw-bold mt-2'>III. KISI-KISI PENULISAN SOAL</div>" \
+                                     f"<div class='mb-1 text-center fs-5'><b>PERANGKAT EVALUASI PEMBELAJARAN</b></div>" \
+                                     f"<div class='mb-4 text-center text-muted small'>Mata Pelajaran: {mapel}  |  Materi: {topik}  |  Jenjang: {jenjang} ({kelas} ({fase}))  |  Kurikulum: {kurikulum}</div>" \
+                                     f"<div class='fw-bold mt-2 mb-2 bg-light p-2 border-start border-4 border-primary'>I. NASKAH SOAL EVALUASI</div>" \
+                                     f"<div class='fw-bold mt-3'>A. PILIHAN GANDA</div>" \
+                                     f"<div class='ps-2 mb-3'>{pg_html}</div>" \
+                                     f"<div class='fw-bold mt-3'>B. ISIAN SINGKAT</div>" \
+                                     f"<div class='ps-2 mb-3'>{isian_html}</div>" \
+                                     f"<div class='fw-bold mt-3'>C. ESAI / URAIAN</div>" \
+                                     f"<div class='ps-2 mb-4'>{esai_html}</div>" \
+                                     f"<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-success'>II. KUNCI JAWABAN DAN PEMBAHASAN</div>" \
+                                     f"<div class='fw-bold mt-3'>A. KUNCI JAWABAN PILIHAN GANDA</div>" \
+                                     f"<div class='ps-2 mb-3'>{kunci_pg}</div>" \
+                                     f"<div class='fw-bold mt-3'>B. KUNCI JAWABAN ESAI</div>" \
+                                     f"<div class='ps-2 mb-3'>{kunci_esai}</div>" \
+                                     f"<div class='fw-bold mt-3'>c. KUNCI JAWABAN ISIAN SINGKAT</div>" \
+                                     f"<div class='ps-2 mb-4'>{kunci_isian}</div>" \
+                                     f"<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-warning'>III. KISI-KISI PENULISAN SOAL</div>" \
                                      f"<div class='table-responsive mt-2'>" \
                                      f"<table class='table table-bordered align-middle'>" \
-                                     f"<thead class='table-light'><tr><th>No</th><th>CP / TP</th><th>Materi</th><th>Indikator Soal</th><th>Bentuk Soal</th><th>Level</th></tr></thead>" \
+                                     f"<thead class='table-light text-center'><tr><th>No</th><th>CP / TP</th><th>Materi</th><th>Indikator Soal</th><th>Bentuk Soal</th><th>Level</th></tr></thead>" \
                                      f"<tbody>" \
                                      f"{kisi_rows}" \
                                      f"</tbody>" \
