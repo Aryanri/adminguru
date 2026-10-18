@@ -318,6 +318,11 @@ def generator(modul_slug):
                 jp_per_mgg = "3"
 
                 if modul_slug in ['soal_harian', 'soal_sts', 'soal_sas', 'asesmen_sumatif']:
+                    try:
+                        total_soal = int(jml_pg) + int(jml_isian) + int(jml_esai)
+                    except:
+                        total_soal = 20
+                        
                     prompt_ai = f"""Bertindaklah sebagai guru ahli pembuat instrumen evaluasi. Buatkan soal untuk parameter berikut:
 Mata Pelajaran: {mapel}
 Materi/Topik: {topik}
@@ -328,6 +333,9 @@ Level Kognitif: {kesulitan}
 Jumlah Soal PG: {jml_pg}
 Jumlah Soal Isian Singkat: {jml_isian}
 Jumlah Soal Esai: {jml_esai}
+Total Keseluruhan Soal: {total_soal} soal
+
+PENTING: Pada bagian "III. KISI-KISI PENULISAN SOAL", Anda WAJIB membuat baris tabel (<tr>) SEBANYAK TOTAL KESELURUHAN SOAL ({total_soal} baris). Setiap soal yang dibuat di bagian naskah soal harus ada pemetaan kisi-kisinya di tabel ini.
 
 Keluarkan HANYA HTML MURNI (tanpa format markdown ```html, jangan gunakan tag body/html). 
 Gunakan struktur persis seperti ini:
@@ -362,7 +370,8 @@ Gunakan struktur persis seperti ini:
 <table class='table table-bordered align-middle'>
 <thead class='table-light text-center'><tr><th>No</th><th>CP / TP</th><th>Materi</th><th>Indikator Soal</th><th>Bentuk Soal</th><th>Level</th></tr></thead>
 <tbody>
-<tr><td class='text-center'>1</td><td>[Tujuan Pembelajaran]</td><td>{topik}</td><td>[Indikator Soal]</td><td>[PG/Isian/Esai]</td><td class='text-center'>{kesulitan}</td></tr>
+<tr><td class='text-center'>1</td><td>[Tujuan Pembelajaran]</td><td>{topik}</td><td>[Indikator Soal PG 1]</td><td>PG</td><td class='text-center'>{kesulitan}</td></tr>
+<!-- LANJUTKAN MEMBUAT BARIS (<tr>) UNTUK SEMUA SOAL PG, LALU SEMUA SOAL ISIAN, LALU SEMUA SOAL ESAI. PASTIKAN JUMLAH BARIS SAMA PERSIS DENGAN TOTAL SOAL ({total_soal} BARIS). -->
 </tbody>
 </table>
 </div>
