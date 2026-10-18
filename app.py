@@ -272,7 +272,7 @@ def generator(modul_slug):
             topik = request.form.get('topik', 'Materi Pembelajaran')
             ruang_lingkup = request.form.get('ruang_lingkup', 'Sub-Materi Utama')
             
-            param_str = f"{jenis}-{jenjang}-{kelas}-{fase}-{kurikulum}-{mapel}-{topik}-{ruang_lingkup}-{kesulitan}-{current_user.id}"
+            param_str = f"AIV3-{jenis}-{jenjang}-{kelas}-{fase}-{kurikulum}-{mapel}-{topik}-{ruang_lingkup}-{kesulitan}-{current_user.id}"
             param_hash = hashlib.md5(param_str.encode('utf-8')).hexdigest()
             
             cached = Archive.query.filter_by(parameter_hash=param_hash).first()
@@ -385,7 +385,7 @@ Aktivitas: {aktivitas}
 Keluarkan HANYA HTML MURNI tanpa markdown ```html, tanpa tag body/html.
 Format dokumen semenarik dan serapi mungkin menyerupai dokumen administrasi guru profesional menggunakan Bootstrap classes jika perlu (table-bordered, dll).
 Beri judul dokumen <h3>{jenis.upper()}</h3>
-Buat struktur mendalam dan nyata (bukan sekedar kerangka kosong) yang berisi detail implementasi untuk {topik} dan {ruang_lingkup}.
+Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik sesuai mata pelajaran {mapel}. Jangan hanya mengulang kata-kata dari prompt atau memberikan template kosong. Buat materi nyata yang siap digunakan guru di kelas untuk topik {topik} dengan ruang lingkup {ruang_lingkup}.
 """
 
                 import urllib.request
