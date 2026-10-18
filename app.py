@@ -300,8 +300,7 @@ def generator(modul_slug):
 
                 if modul_slug in ['soal_harian', 'soal_sts', 'soal_sas', 'asesmen_sumatif']:
                     # PROMPT GENERATE AI:
-                    # "bertindaklah sebagai guru ahli, buatkan soal sesuai modul yang dipilih, jenjang pendidikan, mata pelajaran, kurikulum, tingkat kesulitan, jumlah soal PG, jumlah soal Esai, jumlah Isian singkat yang dipilih dan hasilnya tampilkan pada halaman preview dokumen sesuai dengan template soal.docx (word)."
-                    
+                    # "Bertindak sebagai Pakar Evaluasi & Penyusun Soal Standar Kurikulum Merdeka.sesuai kelas_fase,jenjang,topik,materi,kesulitan,jml_pg,jml_esai,jml_isian                    
                     pg_html = ""
                     try:
                         num_pg = int(jml_pg)
