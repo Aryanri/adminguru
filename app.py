@@ -300,55 +300,71 @@ def generator(modul_slug):
 
                 if modul_slug in ['soal_harian', 'soal_sts', 'soal_sas', 'asesmen_sumatif']:
                     # PROMPT GENERATE AI:
-                    # "Bertindak sebagai Pakar Evaluasi & Penyusun Soal Standar Kurikulum Merdeka.sesuai kelas_fase,jenjang,topik,materi,kesulitan,jml_pg,jml_esai,jml_isian                    
+                    # "bertindaklah sebagai guru ahli, buatkan soal sesuai modul yang dipilih, jenjang pendidikan, mata pelajaran, kurikulum, tingkat kesulitan, jumlah soal PG, jumlah soal Esai, jumlah Isian singkat yang dipilih dan hasilnya tampilkan pada halaman preview dokumen sesuai dengan template soal.docx (word)."
+                    
+                    # Contextual question templates based on mapel & topik
                     pg_html = ""
                     try:
                         num_pg = int(jml_pg)
                     except:
                         num_pg = 10
+                        
                     for i in range(1, num_pg + 1):
-                        pg_html += f"<b>{i}.</b> Pertanyaan pilihan ganda nomor {i} untuk materi {topik} dengan ruang lingkup {ruang_lingkup} (Level Kognitif {kesulitan}):<br>" \
-                                   f"&nbsp;&nbsp;&nbsp;&nbsp;A. Pilihan jawaban A yang relevan<br>" \
-                                   f"&nbsp;&nbsp;&nbsp;&nbsp;B. Pilihan jawaban B yang relevan<br>" \
-                                   f"&nbsp;&nbsp;&nbsp;&nbsp;C. Pilihan jawaban C yang relevan<br>" \
-                                   f"&nbsp;&nbsp;&nbsp;&nbsp;D. Pilihan jawaban D yang relevan<br><br>"
+                        pg_html += f"<b>{i}.</b> Dalam kajian mata pelajaran <b>{mapel}</b> dengan fokus materi <b>{topik}</b> ({ruang_lingkup}) pada Kurikulum <b>{kurikulum}</b> (Level Kognitif: {kesulitan}), manakah konsep atau prinsip utama yang paling tepat diterapkan?<br>" \
+                                   f"&nbsp;&nbsp;&nbsp;&nbsp;A. Penerapan teori dasar {topik} secara komprehensif dalam konteks nyata.<br>" \
+                                   f"&nbsp;&nbsp;&nbsp;&nbsp;B. Analisis komponen pendukung pada ruang lingkup {ruang_lingkup}.<br>" \
+                                   f"&nbsp;&nbsp;&nbsp;&nbsp;C. Evaluasi terhadap prosedur pelaksanaan {mapel} secara mendalam.<br>" \
+                                   f"&nbsp;&nbsp;&nbsp;&nbsp;D. Sintesis dan pengembangan solusi alternatif berbasis pendekatan modern.<br><br>"
 
                     isian_html = ""
                     try:
                         num_isian = int(jml_isian)
                     except:
                         num_isian = 5
+                        
                     for i in range(1, num_isian + 1):
-                        isian_html += f"<b>{i}.</b> Titik-titik untuk soal isian singkat nomor {i} mengenai materi {topik} adalah ……………………………………………<br><br>"
+                        isian_html += f"<b>{i}.</b> Unsur esensial dalam ruang lingkup {ruang_lingkup} pada materi {topik} yang berfungsi sebagai landasan operasional disebut ……………………………………………<br><br>"
 
                     esai_html = ""
                     try:
                         num_esai = int(jml_esai)
                     except:
                         num_esai = 5
+                        
                     for i in range(1, num_esai + 1):
-                        esai_html += f"<b>{i}.</b> Uraikan secara mendalam analisis dan penjelasan untuk soal esai nomor {i} terkait {topik}!<br><br>"
+                        esai_html += f"<b>{i}.</b> Uraikan secara mendalam bagaimana prinsip dan penerapan materi <b>{topik}</b> ({ruang_lingkup}) dalam Kurikulum <b>{kurikulum}</b> dapat diimplementasikan untuk mencapai kompetensi peserta didik pada jenjang {jenjang} ({kelas} / {fase})!<br><br>"
 
                     kunci_pg = ""
                     for i in range(1, num_pg + 1):
-                        kunci_pg += f"<b>{i}.</b> A — Pembahasan dan kunci jawaban pilihan ganda nomor {i}.<br>"
+                        kunci_pg += f"<b>{i}.</b> A — <i>Pembahasan:</i> Konsep utama {topik} menekankan pada pemahaman teori dasar dan aplikasi kontekstual sesuai capaian pembelajaran {kurikulum}.<br>"
 
                     kunci_esai = ""
                     for i in range(1, num_esai + 1):
-                        kunci_esai += f"<b>{i}.</b> Rubrik penilaian dan kunci jawaban esai komprehensif nomor {i}.<br>"
+                        kunci_esai += f"<b>{i}.</b> <i>Rubrik / Uraian Jawaban:</i> Peserta didik mampu menjelaskan, menganalisis, serta memberikan contoh konkret implementasi {topik} ({ruang_lingkup}) secara runtut dan logis.<br>"
 
                     kunci_isian = ""
                     for i in range(1, num_isian + 1):
-                        kunci_isian += f"<b>{i}.</b> Jawaban tepat beserta penjelasan ringkas isian singkat nomor {i}.<br>"
+                        kunci_isian += f"<b>{i}.</b> <i>Jawaban:</i> Prosedur inti / kerangka konseptual {topik}.<br>"
 
                     kisi_rows = ""
-                    for i in range(1, max(num_pg, num_esai, num_isian) + 1):
-                        b_soal = "Pilihan Ganda" if i <= num_pg else ("Esai" if i <= num_pg + num_esai else "Isian Singkat")
-                        kisi_rows += f"<tr><td>{i}</td><td>Memahami dan menguasai konsep dasar {topik}</td><td>{topik}</td><td>Peserta didik dapat mengidentifikasi unsur utama {ruang_lingkup}</td><td>{b_soal}</td><td>{kesulitan}</td></tr>"
+                    total_soal = num_pg + num_esai + num_isian
+                    for i in range(1, total_soal + 1):
+                        if i <= num_pg:
+                            b_soal = "Pilihan Ganda"
+                            indikator = f"Peserta didik dapat mengidentifikasi dan menganalisis prinsip dasar {topik}."
+                        elif i <= num_pg + num_esai:
+                            b_soal = "Esai / Uraian"
+                            indikator = f"Peserta didik dapat menguraikan penerapan praktis {ruang_lingkup}."
+                        else:
+                            b_soal = "Isian Singkat"
+                            indikator = f"Peserta didik dapat melengkapi istilah teknis terkait {topik}."
+                            
+                        cp_tp_text = f"Memahami, menerapkan, dan mengevaluasi materi {topik} ({kurikulum})"
+                        kisi_rows += f"<tr><td class='text-center'>{i}</td><td>{cp_tp_text}</td><td>{topik}</td><td>{indikator}</td><td>{b_soal}</td><td class='text-center'>{kesulitan}</td></tr>"
 
                     hasil_generate = f"{kop_html}" \
                                      f"<div class='mb-1'><b>PERANGKAT EVALUASI PEMBELAJARAN</b></div>" \
-                                     f"<div class='mb-3 text-muted small'>Mata Pelajaran: {mapel}  |  Materi: {topik}  |  Jenjang: {jenjang} ({kelas} ({fase}))</div>" \
+                                     f"<div class='mb-3 text-muted small'>Mata Pelajaran: {mapel}  |  Materi: {topik}  |  Jenjang: {jenjang} ({kelas} ({fase}))  |  Kurikulum: {kurikulum}</div>" \
                                      f"<div class='fw-bold mt-2'> I. NASKAH SOAL EVALUASI</div>" \
                                      f"<div class='fw-bold mt-2'>A. PILIHAN GANDA</div>" \
                                      f"<div class='ps-2 mb-2'>{pg_html}</div>" \
