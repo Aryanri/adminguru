@@ -299,136 +299,184 @@ def generator(modul_slug):
                 jp_per_mgg = "3"
 
                 if modul_slug in ['soal_harian', 'soal_sts', 'soal_sas', 'asesmen_sumatif']:
-                    # PROMPT GENERATE AI:
-                    # "bertindaklah sebagai guru ahli, buatkan soal sesuai modul yang dipilih, jenjang pendidikan, mata pelajaran, kurikulum, tingkat kesulitan, jumlah soal PG, jumlah soal Esai, jumlah Isian singkat yang dipilih dan hasilnya tampilkan pada halaman preview dokumen sesuai dengan template soal.docx (word)."
-                    
-                    pg_templates = [
-                        f"Perhatikan konsep terkait <b>{topik}</b> berikut ini. Manakah pernyataan di bawah ini yang paling tepat menjelaskan fungsi utama dari <b>{ruang_lingkup}</b>?",
-                        f"Seorang peserta didik mengamati penerapan <b>{topik}</b> di lingkungan sekitarnya. Berdasarkan prinsip kurikulum, langkah awal yang sesuai dengan kaidah <b>{ruang_lingkup}</b> adalah...",
-                        f"Perhatikan karakteristik berikut! (1) Dinamis, (2) Terstruktur, (3) Berkelanjutan. Karakteristik yang paling mencerminkan esensi dari <b>{topik}</b> pada aspek <b>{ruang_lingkup}</b> ditunjukkan oleh nomor...",
-                        f"Apa dampak paling signifikan jika prinsip <b>{ruang_lingkup}</b> tidak diimplementasikan dengan baik dalam kajian <b>{topik}</b>?",
-                        f"Hubungan fungsional antara <b>{topik}</b> dan <b>{ruang_lingkup}</b> dalam konteks <b>{mapel}</b> paling tepat dianalogikan sebagai..."
-                    ]
-                    
-                    pg_options = [
-                        [f"Memperkuat dasar pemahaman teoretis peserta didik secara eksklusif.", f"Meningkatkan efektivitas penerapan dalam kehidupan sehari-hari.", f"Menghilangkan risiko kesalahan prosedural secara mutlak.", f"Menyediakan kerangka kerja konseptual yang statis."],
-                        [f"Melakukan evaluasi hasil secara menyeluruh.", f"Mengidentifikasi masalah utama secara sistematis.", f"Menyusun laporan hasil observasi akhir.", f"Menerapkan solusi tanpa analisis awal."],
-                        [f"(1) dan (2)", f"(1) dan (3)", f"(2) dan (3)", f"Semua benar"],
-                        [f"Proses pembelajaran menjadi lebih cepat namun kurang bermakna.", f"Hilangnya fondasi utama yang mendasari pemahaman utuh.", f"Tidak ada dampak yang terukur secara langsung.", f"Tercapainya tujuan alternatif di luar standar kompetensi."],
-                        [f"Pondasi dan bangunan utama.", f"Kendaraan dan bahan bakar.", f"Teori dan hipotesis semata.", f"Sebab dan akibat yang saling lepas."]
-                    ]
+                    prompt_ai = f"""Bertindaklah sebagai guru ahli pembuat instrumen evaluasi. Buatkan soal untuk parameter berikut:
+Mata Pelajaran: {mapel}
+Materi/Topik: {topik}
+Ruang Lingkup: {ruang_lingkup}
+Jenjang: {jenjang} ({kelas} / {fase})
+Kurikulum: {kurikulum}
+Level Kognitif: {kesulitan}
+Jumlah Soal PG: {jml_pg}
+Jumlah Soal Isian Singkat: {jml_isian}
+Jumlah Soal Esai: {jml_esai}
 
-                    pg_html = ""
-                    try:
-                        num_pg = int(jml_pg)
-                    except:
-                        num_pg = 10
-                        
-                    for i in range(1, num_pg + 1):
-                        q_idx = (i - 1) % 5
-                        pg_html += f"<b>{i}.</b> {pg_templates[q_idx]}<br>" \
-                                   f"&nbsp;&nbsp;&nbsp;&nbsp;A. {pg_options[q_idx][0]}<br>" \
-                                   f"&nbsp;&nbsp;&nbsp;&nbsp;B. {pg_options[q_idx][1]}<br>" \
-                                   f"&nbsp;&nbsp;&nbsp;&nbsp;C. {pg_options[q_idx][2]}<br>" \
-                                   f"&nbsp;&nbsp;&nbsp;&nbsp;D. {pg_options[q_idx][3]}<br><br>"
-
-                    isian_templates = [
-                        f"Proses utama dalam <b>{topik}</b> yang melibatkan <b>{ruang_lingkup}</b> secara langsung dan berkesinambungan dikenal dengan istilah ....................",
-                        f"Berdasarkan standar kompetensi, indikator utama keberhasilan dari penerapan <b>{topik}</b> adalah ....................",
-                        f"Elemen paling fundamental dari <b>{ruang_lingkup}</b> yang tidak boleh dilewatkan dalam analisis <b>{mapel}</b> disebut ....................",
-                        f"Tahapan akhir setelah melakukan kajian mendalam terhadap <b>{topik}</b> biasanya bertujuan untuk menghasilkan ....................",
-                        f"Istilah teknis yang umum digunakan untuk menggambarkan interaksi di dalam <b>{ruang_lingkup}</b> adalah ...................."
-                    ]
-
-                    isian_html = ""
-                    try:
-                        num_isian = int(jml_isian)
-                    except:
-                        num_isian = 5
-                        
-                    for i in range(1, num_isian + 1):
-                        q_idx = (i - 1) % 5
-                        isian_html += f"<b>{i}.</b> {isian_templates[q_idx]}<br><br>"
-
-                    esai_templates = [
-                        f"Jelaskan secara rinci bagaimana <b>{topik}</b> dapat diimplementasikan dalam kehidupan sehari-hari dengan mengacu pada kaidah <b>{ruang_lingkup}</b>!",
-                        f"Analisislah permasalahan yang sering muncul saat mempelajari <b>{topik}</b> dan berikan solusi konkret berdasarkan prinsip <b>{kurikulum}</b>!",
-                        f"Uraikan peran penting <b>{ruang_lingkup}</b> dalam meningkatkan pemahaman komprehensif peserta didik terhadap mata pelajaran <b>{mapel}</b>!",
-                        f"Bandingkan dua pendekatan berbeda dalam memahami <b>{topik}</b>, lalu tentukan pendekatan mana yang paling relevan dengan kondisi saat ini beserta alasannya!",
-                        f"Buatlah sebuah skenario atau contoh kasus singkat yang menggambarkan penerapan materi <b>{topik}</b> secara efektif!"
-                    ]
-
-                    esai_html = ""
-                    try:
-                        num_esai = int(jml_esai)
-                    except:
-                        num_esai = 5
-                        
-                    for i in range(1, num_esai + 1):
-                        q_idx = (i - 1) % 5
-                        esai_html += f"<b>{i}.</b> {esai_templates[q_idx]}<br><br>"
-
-                    kunci_pg = ""
-                    kunci_pg_ans = ["B", "B", "C", "B", "A"]
-                    for i in range(1, num_pg + 1):
-                        q_idx = (i - 1) % 5
-                        kunci_pg += f"<b>{i}.</b> {kunci_pg_ans[q_idx]} — <i>Pembahasan:</i> Pilihan ini paling tepat karena secara fungsional selaras dengan prinsip dasar <b>{topik}</b> pada batasan <b>{ruang_lingkup}</b>.<br>"
-
-                    kunci_esai = ""
-                    for i in range(1, num_esai + 1):
-                        kunci_esai += f"<b>{i}.</b> <i>Rubrik Jawaban:</i> Peserta didik mendapatkan skor maksimal (4) jika mampu menguraikan argumen secara logis, memberikan contoh relevan tentang <b>{topik}</b>, dan menyimpulkan sesuai konteks. (Skor 3: argumen logis tapi tanpa contoh, Skor 2: penjelasan kurang relevan, Skor 1: jawaban salah/tidak nyambung).<br>"
-
-                    kunci_isian = ""
-                    for i in range(1, num_isian + 1):
-                        kunci_isian += f"<b>{i}.</b> <i>Jawaban:</i> Tergantung konteks spesifik / Istilah teknis baku pada materi <b>{topik}</b>.<br>"
-
-                    kisi_rows = ""
-                    total_soal = num_pg + num_esai + num_isian
-                    for i in range(1, total_soal + 1):
-                        if i <= num_pg:
-                            b_soal = "Pilihan Ganda"
-                            indikator = f"Menentukan pernyataan yang tepat mengenai karakteristik {ruang_lingkup}."
-                        elif i <= num_pg + num_esai:
-                            b_soal = "Esai / Uraian"
-                            indikator = f"Menganalisis dan mengevaluasi studi kasus terkait {topik}."
-                        else:
-                            b_soal = "Isian Singkat"
-                            indikator = f"Menyebutkan istilah spesifik pada sub-materi {topik}."
-                            
-                        cp_tp_text = f"Memahami, menerapkan, dan mengevaluasi materi {topik} sesuai jenjang {jenjang}"
-                        kisi_rows += f"<tr><td class='text-center'>{i}</td><td>{cp_tp_text}</td><td>{topik}</td><td>{indikator}</td><td>{b_soal}</td><td class='text-center'>{kesulitan}</td></tr>"
-
-                    hasil_generate = f"{kop_html}" \
-                                     f"<div class='mb-1 text-center fs-5'><b>PERANGKAT EVALUASI PEMBELAJARAN</b></div>" \
-                                     f"<div class='mb-4 text-center text-muted small'>Mata Pelajaran: {mapel}  |  Materi: {topik}  |  Jenjang: {jenjang} ({kelas} ({fase}))  |  Kurikulum: {kurikulum}</div>" \
-                                     f"<div class='fw-bold mt-2 mb-2 bg-light p-2 border-start border-4 border-primary'>I. NASKAH SOAL EVALUASI</div>" \
-                                     f"<div class='fw-bold mt-3'>A. PILIHAN GANDA</div>" \
-                                     f"<div class='ps-2 mb-3'>{pg_html}</div>" \
-                                     f"<div class='fw-bold mt-3'>B. ISIAN SINGKAT</div>" \
-                                     f"<div class='ps-2 mb-3'>{isian_html}</div>" \
-                                     f"<div class='fw-bold mt-3'>C. ESAI / URAIAN</div>" \
-                                     f"<div class='ps-2 mb-4'>{esai_html}</div>" \
-                                     f"<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-success'>II. KUNCI JAWABAN DAN PEMBAHASAN</div>" \
-                                     f"<div class='fw-bold mt-3'>A. KUNCI JAWABAN PILIHAN GANDA</div>" \
-                                     f"<div class='ps-2 mb-3'>{kunci_pg}</div>" \
-                                     f"<div class='fw-bold mt-3'>B. KUNCI JAWABAN ESAI</div>" \
-                                     f"<div class='ps-2 mb-3'>{kunci_esai}</div>" \
-                                     f"<div class='fw-bold mt-3'>c. KUNCI JAWABAN ISIAN SINGKAT</div>" \
-                                     f"<div class='ps-2 mb-4'>{kunci_isian}</div>" \
-                                     f"<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-warning'>III. KISI-KISI PENULISAN SOAL</div>" \
-                                     f"<div class='table-responsive mt-2'>" \
-                                     f"<table class='table table-bordered align-middle'>" \
-                                     f"<thead class='table-light text-center'><tr><th>No</th><th>CP / TP</th><th>Materi</th><th>Indikator Soal</th><th>Bentuk Soal</th><th>Level</th></tr></thead>" \
-                                     f"<tbody>" \
-                                     f"{kisi_rows}" \
-                                     f"</tbody>" \
-                                     f"</table>" \
-                                     f"</div>"
-
+Keluarkan HANYA HTML MURNI (tanpa format markdown ```html, jangan gunakan tag body/html). 
+Gunakan struktur persis seperti ini:
+<div class='mb-1 text-center fs-5'><b>PERANGKAT EVALUASI PEMBELAJARAN</b></div>
+<div class='mb-4 text-center text-muted small'>Mata Pelajaran: {mapel} | Materi: {topik} | Jenjang: {jenjang} ({kelas})</div>
+<div class='fw-bold mt-2 mb-2 bg-light p-2 border-start border-4 border-primary'>I. NASKAH SOAL EVALUASI</div>
+<div class='fw-bold mt-3'>A. PILIHAN GANDA</div>
+<div class='ps-2 mb-3'>
+  <b>1.</b> [Soal PG 1 yang spesifik dan menantang]<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;A. [Opsi]<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;B. [Opsi]<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;C. [Opsi]<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;D. [Opsi]<br><br>
+</div>
+<div class='fw-bold mt-3'>B. ISIAN SINGKAT</div>
+<div class='ps-2 mb-3'>
+  <b>1.</b> [Soal Isian 1 yang spesifik] ....................<br><br>
+</div>
+<div class='fw-bold mt-3'>C. ESAI / URAIAN</div>
+<div class='ps-2 mb-4'>
+  <b>1.</b> [Soal Esai 1 yang menuntut analisis]<br><br>
+</div>
+<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-success'>II. KUNCI JAWABAN DAN PEMBAHASAN</div>
+<div class='fw-bold mt-3'>A. KUNCI PILIHAN GANDA</div>
+<div class='ps-2 mb-3'><b>1.</b> [Kunci] — <i>Pembahasan:</i> [Penjelasan singkat]<br></div>
+<div class='fw-bold mt-3'>B. KUNCI ISIAN SINGKAT</div>
+<div class='ps-2 mb-3'><b>1.</b> [Jawaban]<br></div>
+<div class='fw-bold mt-3'>C. KUNCI ESAI</div>
+<div class='ps-2 mb-4'><b>1.</b> <i>Rubrik:</i> [Kriteria jawaban benar]<br></div>
+<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-warning'>III. KISI-KISI PENULISAN SOAL</div>
+<div class='table-responsive mt-2'>
+<table class='table table-bordered align-middle'>
+<thead class='table-light text-center'><tr><th>No</th><th>CP / TP</th><th>Materi</th><th>Indikator Soal</th><th>Bentuk Soal</th><th>Level</th></tr></thead>
+<tbody>
+<tr><td class='text-center'>1</td><td>[Tujuan Pembelajaran]</td><td>{topik}</td><td>[Indikator Soal]</td><td>[PG/Isian/Esai]</td><td class='text-center'>{kesulitan}</td></tr>
+</tbody>
+</table>
+</div>
+"""
                 elif modul_slug == 'cp_tp_atp':
-                    hasil_generate = f"{kop_html}"                                      f"<div class='mb-3 p-3 bg-light border rounded small'>"                                      f"<b>IDENTITAS PENYUSUN DOKUMEN:</b><br>"                                      f"Nama Lengkap: {current_user.nama_lengkap}<br>"                                      f"NIP: {guru_nip}<br>"                                      f"Alamat Email: {guru_email}<br>"                                      f"Mata Pelajaran: {mapel}"                                      f"</div>"                                      f"<h3 class='text-center'>PEMETAAN CAPAIAN PEMBELAJARAN (CP), TUJUAN PEMBELAJARAN (TP)<br>DAN ALUR TUJUAN PEMBELAJARAN (ATP)</h3>"                                      f"<hr>"                                      f"<table class='table table-bordered mb-4'>"                                      f"<tr><th style='width: 25%'>Mata Pelajaran</th><td>{mapel}</td></tr>"                                      f"<tr><th>Kelas / Fase</th><td>{kelas} / {fase}</td></tr>"                                      f"<tr><th>Sekolah</th><td>{profile.nama_sekolah if profile else 'SD/MI / SMP/MTs / SMA/MA'}</td></tr>"                                      f"<tr><th>Tahun Pelajaran</th><td>2025/2026</td></tr>"                                      f"<tr><th>Semester</th><td>1 dan 2 (Ganjil & Genap)</td></tr>"                                      f"<tr><th>Alokasi Waktu</th><td>3 Jam Pelajaran per minggu</td></tr>"                                      f"</table>"                                      f"<h4 class='text-primary mt-4'>I. CAPAIAN PEMBELAJARAN (CP) - FASE {fase.split(' ')[0]}</h4>"                                      f"<table class='table table-bordered table-striped'>"                                      f"<thead class='table-dark'><tr><th style='width: 25%'>Elemen</th><th>Capaian Pembelajaran (CP)</th></tr></thead>"                                      f"<tbody>"                                      f"<tr><td class='fw-bold'>Pemahaman Konsep</td><td>Peserta didik mampu memahami dan menguasai materi pokok {topik} dengan ruang lingkup {ruang_lingkup} melalui pendekatan {metode} dan aktivitas {aktivitas}.</td></tr>"                                      f"<tr><td class='fw-bold'>Keterampilan Proses</td><td>Peserta didik mampu melakukan analisis kritis, pemecahan masalah, serta menerapkan prinsip-prinsip keilmuan {mapel} secara kontekstual.</td></tr>"                                      f"</tbody>"                                      f"</table>"                                      f"<h4 class='text-primary mt-4'>II. TUJUAN PEMBELAJARAN (TP) DAN ALUR TUJUAN PEMBELAJARAN (ATP)</h4>"                                      f"<h5 class='mt-3 text-secondary'>SEMESTER 1 (GANJIL)</h5>"                                      f"<table class='table table-bordered table-striped align-middle'>"                                      f"<thead class='table-dark text-center'><tr><th style='width: 5%'>No</th><th style='width: 20%'>Elemen</th><th style='width: 20%'>Materi/Bab</th><th>Tujuan Pembelajaran (TP)</th><th>Alur Tujuan Pembelajaran (ATP)</th><th style='width: 15%'>Justifikasi</th></tr></thead>"                                      f"<tbody>"                                      f"<tr><td class='text-center'>1</td><td>Pemahaman Konsep</td><td>Bab 1: Pengantar {topik}</td><td>Memahami konsep dasar {topik} dan ruang lingkup {ruang_lingkup}.</td><td>1. Menjelaskan definisi dasar.<br>2. Mengidentifikasi komponen utama.</td><td>Hierarki Konsep Dasar</td></tr>"                                      f"<tr><td class='text-center'>2</td><td>Keterampilan Proses</td><td>Bab 2: Analisis & Eksplorasi {ruang_lingkup}</td><td>Menerapkan metode {metode} dalam studi kasus nyata.</td><td>1. Melakukan observasi.<br>2. Menyusun laporan analisis.</td><td>Konkret ke Abstrak</td></tr>"                                      f"</tbody>"                                      f"</table>"                                      f"<h5 class='mt-4 text-secondary'>SEMESTER 2 (GENAP)</h5>"                                      f"<table class='table table-bordered table-striped align-middle'>"                                      f"<thead class='table-dark text-center'><tr><th style='width: 5%'>No</th><th style='width: 20%'>Elemen</th><th style='width: 20%'>Materi/Bab</th><th>Tujuan Pembelajaran (TP)</th><th>Alur Tujuan Pembelajaran (ATP)</th><th style='width: 15%'>Justifikasi</th></tr></thead>"                                      f"<tbody>"                                      f"<tr><td class='text-center'>3</td><td>Pemahaman Konsep</td><td>Bab 3: Pendalaman & Integrasi Materi</td><td>Mengevaluasi penerapan lanjutan {mapel} secara komprehensif.</td><td>1. Studi literatur.<br>2. Diskusi kelompok.</td><td>Mudah ke Sulit</td></tr>"                                      f"<tr><td class='text-center'>4</td><td>Keterampilan Proses</td><td>Bab 4: Proyek Akhir Semester ({aktivitas})</td><td>Membuat produk atau proyek nyata berbasis pemecahan masalah.</td><td>1. Perencanaan proyek.<br>2. Eksekusi & Presentasi.</td><td>Integrasi Antar Konsep</td></tr>"                                      f"</tbody>"                                      f"</table>"                                      f"<h4 class='text-primary mt-4'>III. CATATAN IMPLEMENTASI & ALOKASI WAKTU</h4>"                                      f"<div class='p-3 bg-light border rounded mb-4'>"                                      f"<b>Alokasi Waktu Total:</b><br>"                                      f"Semester 1: {sem1_jp} JP ({sem1_minggu} minggu × {jp_per_mgg} JP/minggu) | Semester 2: {sem2_jp} JP ({sem2_minggu} minggu × {jp_per_mgg} JP/minggu) | <b>Total: {int(sem1_jp)+int(sem2_jp)} JP</b><br><br>"                                      f"<b>Prinsip Pengurutan ATP:</b><br>"                                      f"1. Hierarki Konsep (dasar ke kompleks)<br>"                                      f"2. Konkret ke Abstrak<br>"                                      f"3. Mudah ke Sulit<br>"                                      f"4. Integrasi Antar Konsep dalam Satu Materi"                                      f"</div>"                                      f"<div class='row mt-5'>"                                      f"<div class='col-6'></div>"                                      f"<div class='col-6 text-center'>"                                      f"<p>Mengetahui,<br>Kepala Sekolah</p><br><br><br>"                                      f"<b>{profile.nama_kepsek if profile else 'Kepala Sekolah'}</b><br>"                                      f"NIP. {profile.nip_kepsek if profile else '-'}"                                      f"</div>"                                      f"</div>"
+                    prompt_ai = f"""Bertindaklah sebagai guru ahli pembuat dokumen administrasi. Buatkan dokumen CP, TP, dan ATP untuk parameter berikut:
+Mata Pelajaran: {mapel}
+Materi/Topik: {topik}
+Ruang Lingkup: {ruang_lingkup}
+Jenjang: {jenjang} ({kelas} / {fase})
+Kurikulum: {kurikulum}
+Pendekatan/Metode: {metode}
+Aktivitas: {aktivitas}
+
+Keluarkan HANYA HTML MURNI tanpa markdown ```html, tanpa tag html/body.
+Gunakan format tabel dan struktur yang rapi (mirip dokumen resmi):
+<h3 class='text-center'>PEMETAAN CAPAIAN PEMBELAJARAN (CP), TUJUAN PEMBELAJARAN (TP)<br>DAN ALUR TUJUAN PEMBELAJARAN (ATP)</h3>
+<hr>
+<table class='table table-bordered mb-4'>
+<tr><th style='width: 25%'>Mata Pelajaran</th><td>{mapel}</td></tr>
+<tr><th>Kelas / Fase</th><td>{kelas} / {fase}</td></tr>
+<tr><th>Tahun Pelajaran</th><td>2025/2026</td></tr>
+</table>
+<h4 class='text-primary mt-4'>I. CAPAIAN PEMBELAJARAN (CP) - FASE {fase.split(' ')[0]}</h4>
+[Buat tabel Elemen dan Capaian Pembelajaran secara mendalam terkait {topik}]
+<h4 class='text-primary mt-4'>II. TUJUAN PEMBELAJARAN (TP) DAN ALUR TUJUAN PEMBELAJARAN (ATP)</h4>
+[Buat tabel dengan kolom No, Elemen, Materi/Bab, Tujuan Pembelajaran (TP), Alur Tujuan Pembelajaran (ATP), dan Justifikasi]
+"""
                 else:
-                    hasil_generate = f"{kop_html}"                                      f"<div class='mb-3 p-3 bg-light border rounded small'>"                                      f"<b>IDENTITAS PENYUSUN DOKUMEN:</b><br>"                                      f"Nama Lengkap: {current_user.nama_lengkap}<br>"                                      f"NIP: {guru_nip}<br>"                                      f"Alamat Email: {guru_email}<br>"                                      f"Mata Pelajaran: {mapel}"                                      f"</div>"                                      f"<h3>DOKUMEN ADMINISTRASI GURU: {jenis.upper()}</h3>"                                      f"<hr><p><b>Jenjang:</b> {jenjang} | <b>Kelas & Fase:</b> {kelas} ({fase}) | <b>Kurikulum:</b> {kurikulum}</p>"                                      f"<p><b>Mata Pelajaran:</b> {mapel} | <b>Metode:</b> {metode}</p>"                                      f"<p><b>Topik Materi:</b> {topik}</p>"                                      f"<p><b>Ruang Lingkup:</b> {ruang_lingkup}</p>"                                      f"<p><b>Tingkat Kesulitan:</b> {kesulitan}</p>"                                      f"<h4>Rincian / Soal Tergenerate:</h4>"                                      f"<ul>"                                      f"<li>Jumlah Pilihan Ganda: {jml_pg} soal</li>"                                      f"<li>Jumlah Isian Singkat: {jml_isian} soal</li>"                                      f"<li>Jumlah Esai: {jml_esai} soal</li>"                                      f"</ul>"                                      f"<div style='border:1px dashed #ccc; padding:15px; background:#f9f9f9;'>"                                      f"<b>Konten AI (Ringkas & Langsung ke Inti):</b><br>"                                      f"1. Analisis Pembelajaran & Capaian Pembelajaran Kurikulum {kurikulum}.<br>"                                      f"2. Langkah kegiatan pembelajaran berbasis aktivitas {aktivitas}.<br>"                                      f"3. Instrumen Penilaian dan Rubrik Evaluasi Peserta Didik siap cetak."                                      f"</div>"                                      f"<div class='row mt-5'>"                                      f"<div class='col-6'></div>"                                      f"<div class='col-6 text-center'>"                                      f"<p>Mengetahui,<br>Kepala Sekolah</p><br><br><br>"                                      f"<b>{profile.nama_kepsek if profile else 'Kepala Sekolah'}</b><br>"                                      f"NIP. {profile.nip_kepsek if profile else '-'}"                                      f"</div>"                                      f"</div>"
+                    prompt_ai = f"""Bertindaklah sebagai guru ahli. Buatkan dokumen administrasi {jenis} untuk parameter berikut:
+Mata Pelajaran: {mapel}
+Materi/Topik: {topik}
+Ruang Lingkup: {ruang_lingkup}
+Jenjang: {jenjang} ({kelas} / {fase})
+Kurikulum: {kurikulum}
+Metode: {metode}
+Aktivitas: {aktivitas}
+
+Keluarkan HANYA HTML MURNI tanpa markdown ```html, tanpa tag body/html.
+Format dokumen semenarik dan serapi mungkin menyerupai dokumen administrasi guru profesional menggunakan Bootstrap classes jika perlu (table-bordered, dll).
+Beri judul dokumen <h3>{jenis.upper()}</h3>
+Buat struktur mendalam dan nyata (bukan sekedar kerangka kosong) yang berisi detail implementasi untuk {topik} dan {ruang_lingkup}.
+"""
+
+                import urllib.request
+                import json
+                
+                puter_key = os.environ.get("PUTER_API_KEY")
+                gemini_key = os.environ.get("GEMINI_API_KEY")
+                groq_key = os.environ.get("GROQ_API_KEY")
+                
+                ai_text = None
+                error_msgs = []
+                used_api = ""
+                
+                # 1. PUTER.JS / PUTER AI (OpenAI Compatible)
+                if puter_key and not ai_text:
+                    try:
+                        url = "https://api.puter.com/puterai/openai/v1/chat/completions"
+                        payload = {
+                            "model": "gpt-4o-mini",
+                            "messages": [{"role": "user", "content": prompt_ai}]
+                        }
+                        req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={
+                            'Content-Type': 'application/json',
+                            'Authorization': f'Bearer {puter_key}'
+                        })
+                        with urllib.request.urlopen(req, timeout=30) as response:
+                            res_json = json.loads(response.read().decode('utf-8'))
+                            ai_text = res_json['choices'][0]['message']['content']
+                            used_api = "Puter AI"
+                    except Exception as e:
+                        error_msgs.append(f"Puter API Error: {str(e)}")
+                        
+                # 2. GEMINI AI
+                if gemini_key and not ai_text:
+                    try:
+                        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+                        payload = {"contents": [{"parts": [{"text": prompt_ai}]}]}
+                        req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={'Content-Type': 'application/json'})
+                        with urllib.request.urlopen(req, timeout=30) as response:
+                            res_json = json.loads(response.read().decode('utf-8'))
+                            ai_text = res_json.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+                            used_api = "Gemini AI"
+                    except Exception as e:
+                        error_msgs.append(f"Gemini API Error: {str(e)}")
+                        
+                # 3. GROQ AI
+                if groq_key and not ai_text:
+                    try:
+                        url = "https://api.groq.com/openai/v1/chat/completions"
+                        payload = {
+                            "model": "llama-3.3-70b-versatile",
+                            "messages": [{"role": "user", "content": prompt_ai}]
+                        }
+                        req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={
+                            'Content-Type': 'application/json',
+                            'Authorization': f'Bearer {groq_key}'
+                        })
+                        with urllib.request.urlopen(req, timeout=30) as response:
+                            res_json = json.loads(response.read().decode('utf-8'))
+                            ai_text = res_json['choices'][0]['message']['content']
+                            used_api = "Groq AI"
+                    except Exception as e:
+                        error_msgs.append(f"Groq API Error: {str(e)}")
+                        
+                # FINAL CHECK
+                if ai_text:
+                    ai_text = ai_text.strip()
+                    if ai_text.startswith("```html"): ai_text = ai_text[7:]
+                    if ai_text.startswith("```"): ai_text = ai_text[3:]
+                    if ai_text.endswith("```"): ai_text = ai_text[:-3]
+                    
+                    identitas_html = f"<div class='mb-3 p-3 bg-light border rounded small'><b>IDENTITAS PENYUSUN:</b><br>Nama: {current_user.nama_lengkap}<br>NIP: {guru_nip}<br>Mapel: {mapel}</div>"
+                    kepsek_html = f"<div class='row mt-5'><div class='col-6'></div><div class='col-6 text-center'><p>Mengetahui,<br>Kepala Sekolah</p><br><br><br><b>{profile.nama_kepsek if profile else 'Kepala Sekolah'}</b><br>NIP. {profile.nip_kepsek if profile else '-'}</div></div>"
+                    
+                    if modul_slug in ['soal_harian', 'soal_sts', 'soal_sas', 'asesmen_sumatif']:
+                        hasil_generate = kop_html + f"<div class='text-end mb-2'><span class='badge bg-info'>Generated by {used_api}</span></div>" + ai_text
+                    else:
+                        hasil_generate = kop_html + identitas_html + f"<div class='text-end mb-2'><span class='badge bg-info'>Generated by {used_api}</span></div>" + ai_text + kepsek_html
+                        
+                else:
+                    # ALL FAILED OR NO KEYS
+                    hasil_generate = f"{kop_html}" \
+                                     f"<div class='alert alert-danger mt-4'>" \
+                                     f"<h4><i class='bi bi-exclamation-triangle'></i> API Key Diperlukan atau Terjadi Kesalahan</h4>" \
+                                     f"<p>Sistem mencoba menggunakan AI untuk generate modul <b>{jenis}</b>, namun tidak ada API Key yang valid atau semua API mengalami error.</p>" \
+                                     f"<p><b>Log Status:</b><br>" + ("<br>".join(error_msgs) if error_msgs else "Tidak ada API Key yang diatur di Environment Variables (Vercel).") + "</p>" \
+                                     f"<hr><p class='mb-0'><b>Cara memperbaiki (Tambahkan minimal satu di Vercel Env Vars):</b><br>" \
+                                     f"1. <code>PUTER_API_KEY</code> (Untuk Opsi 1 - Puter.js/OpenAI)<br>" \
+                                     f"2. <code>GEMINI_API_KEY</code> (Untuk Opsi 2 - Google Gemini AI)<br>" \
+                                     f"3. <code>GROQ_API_KEY</code> (Untuk Opsi 3 - Groq Llama/Mixtral)<br>" \
+                                     f"Lalu lakukan Redeploy.</p></div>"
                 
                 new_archive = Archive(
                     user_id=current_user.id,
