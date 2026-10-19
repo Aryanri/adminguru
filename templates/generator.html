@@ -23,49 +23,285 @@
 </div>
 
 <div class="row">
-    {% if active_slug == 'hem' %}
+        {% if active_slug == 'hem' %}
     <div class="col-md-12">
+        <!-- Input & Parameter Form -->
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 class="m-0"><i class="fa fa-calendar-alt me-2"></i>Parameter & Kalkulator Real-Time Analisis Hari Efektif Mengajar (HEM) - Semester Ganjil & Genap</h5>
-                <button type="button" class="btn btn-light btn-sm fw-bold" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / Export PDF</button>
+                <h5 class="m-0"><i class="fa fa-calendar-alt me-2"></i>Analisis Hari Efektif Mengajar (HEM) Berdasarkan Kalender Akademik</h5>
+                <form action="/export/excel" method="POST" target="_blank" class="m-0">
+                    <input type="hidden" name="nama_sekolah" id="exNamaSekolah" value="{{ profile.nama_sekolah if profile else 'SMA Negeri 1' }}">
+                    <input type="hidden" name="jenjang" id="exJenjang" value="SMA / MA">
+                    <input type="hidden" name="tahun_pelajaran" id="exTp" value="2025/2026">
+                    <input type="hidden" name="sistem_hari" id="exSistemHari" value="5 Hari Kerja (Senin–Jumat)">
+                    <button type="submit" class="btn btn-light btn-sm fw-bold text-success"><i class="fa fa-file-excel me-1"></i> Export Excel (.xlsx)</button>
+                </form>
             </div>
-            <div class="card-body">
-                <div class="row g-3 mb-3 align-items-center">
+            <div class="card-body bg-light">
+                <form id="hemForm" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small">1. Upload Dokumen Kalender Akademik</label>
+                        <input type="file" class="form-control form-control-sm" id="kalenderFile" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx">
+                        <div class="form-text small text-muted">Upload file Kalender Akademik Sekolah (PDF/Gambar/Word). AI akan membaca jadwal libur dan kegiatan.</div>
+                    </div>
                     <div class="col-md-3">
-                        <label class="form-label fw-bold small mb-1">Jumlah JP per Minggu</label>
-                        <select class="form-select form-select-sm shadow-sm" name="jumlah_jp" id="jumlah_jp">
-                            <option value="2">2 JP</option>
-                            <option value="3">3 JP</option>
-                            <option value="4" selected>4 JP</option>
-                            <option value="6">6 JP</option>
+                        <label class="form-label fw-bold small">2. Sistem Hari Belajar Sekolah</label>
+                        <select class="form-select form-select-sm" id="sistemHariKerja">
+                            <option value="5" selected>5 Hari Kerja (Senin–Jumat)</option>
+                            <option value="6">6 Hari Kerja (Senin–Sabtu)</option>
                         </select>
                     </div>
-                    <div class="col-md-9">
-                        <label class="form-label fw-bold small mb-1">Pilih Hari Mengajar (Centang hari yang diinginkan):</label>
-                        <div class="d-flex flex-wrap gap-3 pt-1">
-                            <div class="form-check mb-0"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="1" id="h1" checked><label class="form-check-label small" for="h1">Senin</label></div>
-                            <div class="form-check mb-0"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="2" id="h2" checked><label class="form-check-label small" for="h2">Selasa</label></div>
-                            <div class="form-check mb-0"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="3" id="h3" checked><label class="form-check-label small" for="h3">Rabu</label></div>
-                            <div class="form-check mb-0"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="4" id="h4" checked><label class="form-check-label small" for="h4">Kamis</label></div>
-                            <div class="form-check mb-0"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="5" id="h5" checked><label class="form-check-label small" for="h5">Jumat</label></div>
-                            <div class="form-check mb-0"><input class="form-check-input hari-cb" type="checkbox" name="hari_tertentu" value="6" id="h6"><label class="form-check-label small" for="h6">Sabtu</label></div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold small">3. Identitas Sekolah</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="text" class="form-control form-control-sm" id="inputNamaSekolah" placeholder="Nama Sekolah" value="{{ profile.nama_sekolah if profile else 'SMA Negeri 1' }}">
+                            </div>
+                            <div class="col-6">
+                                <select class="form-select form-select-sm" id="inputJenjang">
+                                    <option value="SD / MI">SD / MI</option>
+                                    <option value="SMP / MTs">SMP / MTs</option>
+                                    <option value="SMA / MA" selected>SMA / MA</option>
+                                    <option value="SMK / MAK">SMK / MAK</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <input type="text" class="form-control form-control-sm" id="inputTp" placeholder="Tahun Pelajaran (Contoh: 2025/2026)" value="2025/2026">
                         </div>
                     </div>
-                </div>
-                <div class="text-muted small"><i class="fa fa-info-circle me-1"></i> Perubahan parameter (jumlah JP atau hari mengajar) akan langsung dihitung dan tersimpan otomatis secara real-time.</div>
+                    <div class="col-12 text-end">
+                        <button type="button" class="btn btn-primary btn-sm px-4 fw-bold" onclick="generateHEMAnalysis()"><i class="fa fa-cogs me-1"></i> Proses Analisis Kalender Akademik</button>
+                    </div>
+                </form>
             </div>
         </div>
 
-        <!-- Hasil Preview Real-Time -->
-        <div class="card shadow-sm border-0">
+        <!-- Hasil Preview Analisis Tabel Utama & Rekap Tahunan -->
+        <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-secondary text-white">
-                <h5 class="m-0"><i class="fa fa-file-invoice me-2"></i>Preview Hasil Analisis Hari Efektif Mengajar (Semester Ganjil & Genap)</h5>
+                <h5 class="m-0"><i class="fa fa-table me-2"></i>Hasil Analisis Minggu & Hari Efektif Belajar Per Bulan</h5>
             </div>
             <div class="card-body bg-white p-4" id="previewArea">
                 {% if hasil_generate %}
                     {{ hasil_generate | safe }}
                 {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fa fa-calendar-check fa-3x mb-3 text-secondary opacity-50"></i>
+                        <h5>Belum ada analisis yang diproses.</h5>
+                        <p class="small">Unggah kalender akademik dan klik <b>Proses Analisis Kalender Akademik</b> di atas.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function generateHEMAnalysis() {
+        const namaSekolah = document.getElementById('inputNamaSekolah').value;
+        const jenjang = document.getElementById('inputJenjang').value;
+        const tp = document.getElementById('inputTp').value;
+        const sistemHari = document.getElementById('sistemHariKerja').value;
+        
+        // Update hidden inputs for excel export
+        document.getElementById('exNamaSekolah').value = namaSekolah;
+        document.getElementById('exJenjang').value = jenjang;
+        document.getElementById('exTp').value = tp;
+        document.getElementById('exSistemHari').value = sistemHari + (sistemHari === '5' ? ' Hari Kerja (Senin–Jumat)' : ' Hari Kerja (Senin–Sabtu)');
+
+        let html = `
+        <div class="text-center mb-4">
+            <h3>ANALISIS HARI EFEKTIF MENGAJAR (HEM)</h3>
+            <p class="text-muted mb-1">Sekolah: <b>${namaSekolah}</b> | Jenjang: <b>${jenjang}</b> | Tahun Pelajaran: <b>${tp}</b></p>
+            <p class="text-muted small">Sistem Hari Belajar: <b>${sistemHari === '5' ? '5 Hari Kerja (Senin–Jumat)' : '6 Hari Kerja (Senin–Sabtu)'}</b></p>
+        </div>
+        <hr>
+        <h4 class="text-primary mt-4 mb-3"><i class="fa fa-calendar-alt me-2"></i>Tabel Utama Analisis Per Bulan</h4>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle">
+                <thead class="table-dark text-center" style="background-color: #1B365D;">
+                    <tr>
+                        <th>Bulan</th>
+                        <th>Jumlah Minggu Kalender</th>
+                        <th>Minggu Tidak Efektif</th>
+                        <th class="bg-warning text-dark">Minggu Efektif Belajar</th>
+                        <th>Jumlah Hari Sekolah</th>
+                        <th>Hari Tidak Efektif</th>
+                        <th class="bg-warning text-dark">Hari Efektif Belajar</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="fw-bold">Juli 2025</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">2</td>
+                        <td class="text-center fw-bold text-primary">2</td>
+                        <td class="text-center">12</td>
+                        <td class="text-center">6</td>
+                        <td class="text-center fw-bold text-success">6</td>
+                        <td>MPLS & Libur Semester</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Agustus 2025</td>
+                        <td class="text-center">5</td>
+                        <td class="text-center">1</td>
+                        <td class="text-center fw-bold text-primary">4</td>
+                        <td class="text-center">26</td>
+                        <td class="text-center">2</td>
+                        <td class="text-center fw-bold text-success">24</td>
+                        <td>HUT RI & Kegiatan Sekolah</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">September 2025</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center fw-bold text-primary">4</td>
+                        <td class="text-center">22</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center fw-bold text-success">22</td>
+                        <td>Pembelajaran Efektif</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Oktober 2025</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center fw-bold text-primary">4</td>
+                        <td class="text-center">23</td>
+                        <td class="text-center">1</td>
+                        <td class="text-center fw-bold text-success">22</td>
+                        <td>Peringatan Hari Besar Nasional</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">November 2025</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center fw-bold text-primary">4</td>
+                        <td class="text-center">21</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center fw-bold text-success">21</td>
+                        <td>Pembelajaran Efektif</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Desember 2025</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">3</td>
+                        <td class="text-center fw-bold text-primary">1</td>
+                        <td class="text-center">9</td>
+                        <td class="text-center">15</td>
+                        <td class="text-center fw-bold text-success">6</td>
+                        <td>ASAS/PAS & Libur Semester Ganjil</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Januari 2026</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center fw-bold text-primary">4</td>
+                        <td class="text-center">22</td>
+                        <td class="text-center">1</td>
+                        <td class="text-center fw-bold text-success">21</td>
+                        <td>Awal Semester Genap</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Februari 2026</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center fw-bold text-primary">4</td>
+                        <td class="text-center">20</td>
+                        <td class="text-center">1</td>
+                        <td class="text-center fw-bold text-success">19</td>
+                        <td>Peringatan Keagamaan</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Maret 2026</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">2</td>
+                        <td class="text-center fw-bold text-primary">2</td>
+                        <td class="text-center">21</td>
+                        <td class="text-center">10</td>
+                        <td class="text-center fw-bold text-success">11</td>
+                        <td>Pondok Ramadan & Libur Hari Raya</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">April 2026</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">1</td>
+                        <td class="text-center fw-bold text-primary">3</td>
+                        <td class="text-center">22</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center fw-bold text-success">18</td>
+                        <td>Libur Idul Fitri & Ujian</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Mei 2026</td>
+                        <td class="text-center">5</td>
+                        <td class="text-center">1</td>
+                        <td class="text-center fw-bold text-primary">4</td>
+                        <td class="text-center">21</td>
+                        <td class="text-center">3</td>
+                        <td class="text-center fw-bold text-success">18</td>
+                        <td>Hari Buruh, Kenaikan Yesus, Waisak</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Juni 2026</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">3</td>
+                        <td class="text-center fw-bold text-primary">1</td>
+                        <td class="text-center">9</td>
+                        <td class="text-center">17</td>
+                        <td class="text-center fw-bold text-success">6</td>
+                        <td>ASAS/PAT & Libur Kenaikan Kelas</td>
+                    </tr>
+                </tbody>
+                <tfoot class="table-dark" style="background-color: #1B365D;">
+                    <tr>
+                        <th class="text-end">TOTAL TAHUNAN:</th>
+                        <th class="text-center">50</th>
+                        <th class="text-center">13</th>
+                        <th class="text-center text-warning">37</th>
+                        <th class="text-center">248</th>
+                        <th class="text-center">63</th>
+                        <th class="text-center text-warning">185</th>
+                        <th>Akumulasi Ganjil & Genap</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <h4 class="text-primary mt-5 mb-3"><i class="fa fa-chart-bar me-2"></i>Rekap Total Tahunan</h4>
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr><th>Komponen Minggu</th><th class="text-center">Jumlah</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Total Minggu Kalender</td><td class="text-center fw-bold">50 Minggu</td></tr>
+                        <tr><td>Total Minggu Tidak Efektif</td><td class="text-center text-danger fw-bold">13 Minggu</td></tr>
+                        <tr class="table-warning"><td><b>Total Minggu Efektif Belajar</b></td><td class="text-center text-primary fw-bold">37 Minggu</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr><th>Komponen Hari</th><th class="text-center">Jumlah</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Total Hari Sekolah</td><td class="text-center fw-bold">248 Hari</td></tr>
+                        <tr><td>Total Hari Tidak Efektif</td><td class="text-center text-danger fw-bold">63 Hari</td></tr>
+                        <tr class="table-success"><td><b>Total Hari Efektif Belajar</b></td><td class="text-center text-success fw-bold">185 Hari</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        `;
+        
+        document.getElementById('previewArea').innerHTML = html;
+    }
+    </script>
+    {% else %}
+{% else %}
                     <div class="text-center text-muted py-5">Silakan centang hari dan atur jumlah JP di atas, hasil perhitungan Semester Ganjil dan Genap akan tampil secara real-time di sini.</div>
                 {% endif %}
             </div>
