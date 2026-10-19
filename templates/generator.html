@@ -45,11 +45,17 @@
                         </select>
                     </div>
                     <div class="col-md-5">
-                        <label class="form-label fw-bold small mb-1">Upload Kalender Akademik (PDF / Gambar):</label>
-                        <input type="file" class="form-control shadow-sm border-0 py-2" id="kalenderFile" accept=".pdf,.png,.jpg,.jpeg">
+                        <label class="form-label fw-bold small mb-1">Pilih Tahun Pelajaran:</label>
+                        <select class="form-select shadow-sm border-0 py-2" id="tahunAjaran">
+                            <option value="2024">2024/2025</option>
+                            <option value="2025">2025/2026</option>
+                            <option value="2026" selected>2026/2027</option>
+                            <option value="2027">2027/2028</option>
+                            <option value="2028">2028/2029</option>
+                        </select>
                     </div>
                     <div class="col-md-3">
-                        <button type="button" class="btn btn-primary w-100 py-2 fw-bold shadow-sm" onclick="generateHEMFromCalendar()">
+                        <button type="button" class="btn btn-primary w-100 py-2 fw-bold shadow-sm" onclick="calculateHEM()">
                             <i class="fa fa-sync-alt me-1"></i> Generate Preview
                         </button>
                     </div>
@@ -60,7 +66,7 @@
                             <i class="fa fa-info-circle text-primary fa-2x me-3"></i> 
                             <div>
                                 <b class="text-primary" style="font-size: 14px;">Tugas Analisis Asisten Kalender Akademik:</b><br>
-                                <span class="text-muted">Sistem membaca dokumen kalender akademik yang diunggah untuk mengekstrak dan menghitung secara presisi <b>Jumlah Minggu Efektif Belajar</b> dan <b>Jumlah Hari Efektif Belajar</b> setiap bulan sebagai dasar penyusunan Prota & Prosem.</span>
+                                <span class="text-muted">Sistem memproyeksikan kalender akademik berdasarkan <b>Tahun Pelajaran</b> yang dipilih untuk menghitung estimasi <b>Jumlah Minggu Efektif Belajar</b> dan <b>Jumlah Hari Efektif Belajar</b> setiap bulan sebagai dasar penyusunan Prota & Prosem.</span>
                             </div>
                         </div>
                     </div>
@@ -105,7 +111,8 @@
         const sistemHariEl = document.getElementById('sistemHari');
         const workDaysCount = sistemHariEl ? parseInt(sistemHariEl.value) : 5; // 5 or 6
 
-        let year = new Date().getFullYear();
+        const tahunAjaranEl = document.getElementById('tahunAjaran');
+        let year = tahunAjaranEl ? parseInt(tahunAjaranEl.value) : new Date().getFullYear();
         let months = [
             { name: 'Juli', monthIdx: 6, year: year, ket: 'Permulaan Tahun Ajaran' },
             { name: 'Agustus', monthIdx: 7, year: year, ket: 'Efektif Normal / HUT RI' },
@@ -335,7 +342,9 @@
 
     function initHEM() {
         const sistemHariEl = document.getElementById('sistemHari');
+        const tahunAjaranEl = document.getElementById('tahunAjaran');
         if (sistemHariEl) sistemHariEl.addEventListener('change', calculateHEM);
+        if (tahunAjaranEl) tahunAjaranEl.addEventListener('change', calculateHEM);
         calculateHEM();
     }
 
