@@ -323,59 +323,51 @@ def generator(modul_slug):
                     except:
                         total_soal = 20
                         
-                    prompt_ai = f"""Bertindaklah sebagai guru ahli pembuat instrumen evaluasi. Buatkan soal untuk parameter berikut:
-Mata Pelajaran: {mapel}
-Materi/Topik: {topik}
-Ruang Lingkup: {ruang_lingkup}
-Jenjang: {jenjang} ({kelas} / {fase})
-Kurikulum: {kurikulum}
-Level Kognitif: {kesulitan}
-Jumlah Soal PG: {jml_pg}
-Jumlah Soal Isian Singkat: {jml_isian}
-Jumlah Soal Esai: {jml_esai}
-Total Keseluruhan Soal: {total_soal} soal
+                    prompt_ai = f"""Bertindaklah sebagai guru profesional pembuat instrumen evaluasi. Buatkan naskah soal lengkap berkualitas tinggi untuk mata pelajaran {mapel}, topik {topik}, ruang lingkup {ruang_lingkup}, jenjang {jenjang} ({kelas} / {fase}), kurikulum {kurikulum}, level kognitif {kesulitan}.
+Jumlah Soal:
+- Pilihan Ganda (PG): {jml_pg} soal (lengkap opsi A, B, C, D)
+- Isian Singkat: {jml_isian} soal
+- Esai / Uraian: {jml_esai} soal
 
-PENTING: Pada bagian "III. KISI-KISI PENULISAN SOAL", Anda WAJIB membuat baris tabel (<tr>) SEBANYAK TOTAL KESELURUHAN SOAL ({total_soal} baris). Setiap soal yang dibuat di bagian naskah soal harus ada pemetaan kisi-kisinya di tabel ini.
+Format Output: HANYA HTML murni (tanpa markdown ```html, tanpa tag body/html).
+Gunakan struktur berikut:
+<div class='mb-1 text-center fs-5'><b>NASKAH {jenis.upper()}</b></div>
+<div class='mb-4 text-center text-muted small'>Mata Pelajaran: {mapel} | Kelas: {kelas} | Topik: {topik}</div>
 
-Keluarkan HANYA HTML MURNI (tanpa format markdown ```html, jangan gunakan tag body/html). 
-Gunakan struktur persis seperti ini:
-<div class='mb-1 text-center fs-5'><b>PERANGKAT EVALUASI PEMBELAJARAN</b></div>
-<div class='mb-4 text-center text-muted small'>Mata Pelajaran: {mapel} | Materi: {topik} | Jenjang: {jenjang} ({kelas})</div>
-<div class='fw-bold mt-2 mb-2 bg-light p-2 border-start border-4 border-primary'>I. NASKAH SOAL EVALUASI</div>
-<div class='fw-bold mt-3'>A. PILIHAN GANDA</div>
+<div class='fw-bold mt-3 mb-2 bg-light p-2 border-start border-4 border-primary'>I. SOAL PILIHAN GANDA</div>
 <div class='ps-2 mb-3'>
-  <b>1.</b> [Soal PG 1 yang spesifik dan menantang]<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;A. [Opsi]<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;B. [Opsi]<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;C. [Opsi]<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;D. [Opsi]<br><br>
+  <b>1.</b> [Pertanyaan soal PG 1]<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;A. [Opsi A]<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;B. [Opsi B]<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;C. [Opsi C]<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;D. [Opsi D]<br><br>
 </div>
-<div class='fw-bold mt-3'>B. ISIAN SINGKAT</div>
+
+<div class='fw-bold mt-3 mb-2 bg-light p-2 border-start border-4 border-primary'>II. SOAL ISIAN SINGKAT</div>
 <div class='ps-2 mb-3'>
-  <b>1.</b> [Soal Isian 1 yang spesifik] ....................<br><br>
+  <b>1.</b> [Pertanyaan isian singkat 1] ....................<br><br>
 </div>
-<div class='fw-bold mt-3'>C. ESAI / URAIAN</div>
+
+<div class='fw-bold mt-3 mb-2 bg-light p-2 border-start border-4 border-primary'>III. SOAL ESAI / URAIAN</div>
 <div class='ps-2 mb-4'>
-  <b>1.</b> [Soal Esai 1 yang menuntut analisis]<br><br>
+  <b>1.</b> [Pertanyaan esai 1]<br><br>
 </div>
-<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-success'>II. KUNCI JAWABAN DAN PEMBAHASAN</div>
-<div class='fw-bold mt-3'>A. KUNCI PILIHAN GANDA</div>
-<div class='ps-2 mb-3'><b>1.</b> [Kunci] — <i>Pembahasan:</i> [Penjelasan singkat]<br></div>
-<div class='fw-bold mt-3'>B. KUNCI ISIAN SINGKAT</div>
-<div class='ps-2 mb-3'><b>1.</b> [Jawaban]<br></div>
-<div class='fw-bold mt-3'>C. KUNCI ESAI</div>
-<div class='ps-2 mb-4'><b>1.</b> <i>Rubrik:</i> [Kriteria jawaban benar]<br></div>
-<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-warning'>III. KISI-KISI PENULISAN SOAL</div>
+
+<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-success'>IV. KUNCI JAWABAN DAN PEMBAHASAN</div>
+<div class='mb-3'><b>A. Kunci Pilihan Ganda:</b><br>1. [Kunci] - Pembahasan singkat...<br></div>
+<div class='mb-3'><b>B. Kunci Isian Singkat:</b><br>1. [Jawaban]<br></div>
+<div class='mb-3'><b>C. Kunci Esai & Rubrik:</b><br>1. [Rubrik penilaian]<br></div>
+
+<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-warning'>V. KISI-KISI PENULISAN SOAL</div>
 <div class='table-responsive mt-2'>
 <table class='table table-bordered align-middle'>
-<thead class='table-light text-center'><tr><th>No</th><th>CP / TP</th><th>Materi</th><th>Indikator Soal</th><th>Bentuk Soal</th><th>Level</th></tr></thead>
+<thead class='table-light text-center'><tr><th>No</th><th>Materi / Indikator</th><th>Bentuk Soal</th><th>Level</th></tr></thead>
 <tbody>
-<tr><td class='text-center'>1</td><td>[Tujuan Pembelajaran]</td><td>{topik}</td><td>[Indikator Soal PG 1]</td><td>PG</td><td class='text-center'>{kesulitan}</td></tr>
-<!-- LANJUTKAN MEMBUAT BARIS (<tr>) UNTUK SEMUA SOAL PG, LALU SEMUA SOAL ISIAN, LALU SEMUA SOAL ESAI. PASTIKAN JUMLAH BARIS SAMA PERSIS DENGAN TOTAL SOAL ({total_soal} BARIS). -->
+<tr><td class='text-center'>1</td><td>{topik}</td><td>PG</td><td class='text-center'>{kesulitan}</td></tr>
 </tbody>
 </table>
 </div>
-"""
+""" """
                 elif modul_slug == 'cp_tp_atp':
                     prompt_ai = f"""Bertindaklah sebagai guru ahli pembuat dokumen administrasi. Buatkan dokumen CP, TP, dan ATP untuk parameter berikut:
 Mata Pelajaran: {mapel}
