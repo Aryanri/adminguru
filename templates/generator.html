@@ -68,39 +68,6 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-8 mt-3">
-                        <label class="form-label fw-bold small">4. Pilihan Hari Mengajar (Centang Hari)</label>
-                        <div class="d-flex flex-wrap gap-2 mt-1">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input hari-cb" type="checkbox" id="cbSenin" value="1" checked>
-                                <label class="form-check-label small" for="cbSenin">Senin</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input hari-cb" type="checkbox" id="cbSelasa" value="2" checked>
-                                <label class="form-check-label small" for="cbSelasa">Selasa</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input hari-cb" type="checkbox" id="cbRabu" value="3">
-                                <label class="form-check-label small" for="cbRabu">Rabu</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input hari-cb" type="checkbox" id="cbKamis" value="4">
-                                <label class="form-check-label small" for="cbKamis">Kamis</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input hari-cb" type="checkbox" id="cbJumat" value="5">
-                                <label class="form-check-label small" for="cbJumat">Jumat</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input hari-cb" type="checkbox" id="cbSabtu" value="6">
-                                <label class="form-check-label small" for="cbSabtu">Sabtu</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mt-3">
-                        <label class="form-label fw-bold small">5. Jumlah JP per Minggu</label>
-                        <input type="number" class="form-control form-control-sm" id="inputJP" placeholder="Misal: 4" value="4" min="1" max="40">
-                    </div>
                     <div class="col-12 text-end">
                         <button type="button" class="btn btn-primary btn-sm px-4 fw-bold" onclick="generateHEMAnalysis()"><i class="fa fa-cogs me-1"></i> Proses Analisis Kalender Akademik</button>
                     </div>
@@ -128,149 +95,248 @@
     </div>
 
     <script>
-        function getWeekNumber(d) {
-        d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
-        var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-        var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1)/7);
-        return d.getUTCFullYear() + '-' + weekNo;
-    }
-
-    const nationalHolidays2026 = {
-        "2025-07-07": "Tahun Baru Islam",
-        "2025-08-17": "Hari Kemerdekaan RI",
-        "2025-09-05": "Maulid Nabi Muhammad SAW",
-        "2025-12-25": "Hari Raya Natal",
-        "2026-01-01": "Tahun Baru Masehi",
-        "2026-01-16": "Isra Mikraj",
-        "2026-02-17": "Tahun Baru Imlek",
-        "2026-03-19": "Hari Raya Nyepi",
-        "2026-04-03": "Wafat Yesus Kristus",
-        "2026-05-01": "Hari Buruh",
-        "2026-05-14": "Kenaikan Yesus Kristus",
-        "2026-05-27": "Idul Adha",
-        "2026-05-31": "Hari Raya Waisak",
-        "2026-06-01": "Hari Lahir Pancasila"
-    };
-
     function generateHEMAnalysis() {
         const namaSekolah = document.getElementById('inputNamaSekolah').value;
         const jenjang = document.getElementById('inputJenjang').value;
         const tp = document.getElementById('inputTp').value;
         const sistemHari = document.getElementById('sistemHariKerja').value;
-        const jp = parseInt(document.getElementById('inputJP').value) || 4;
-
-        let targetDays = [];
-        document.querySelectorAll('.hari-cb:checked').forEach(cb => {
-            targetDays.push(parseInt(cb.value));
-        });
-
-        if (targetDays.length === 0) {
-            alert("Silakan pilih minimal 1 hari mengajar!");
-            return;
-        }
-
+        
         // Update hidden inputs for excel export
         document.getElementById('exNamaSekolah').value = namaSekolah;
         document.getElementById('exJenjang').value = jenjang;
         document.getElementById('exTp').value = tp;
         document.getElementById('exSistemHari').value = sistemHari + (sistemHari === '5' ? ' Hari Kerja (Senin–Jumat)' : ' Hari Kerja (Senin–Sabtu)');
 
-        const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-        const months = [
-            { name: 'Juli', monthIdx: 6, year: 2025 },
-            { name: 'Agustus', monthIdx: 7, year: 2025 },
-            { name: 'September', monthIdx: 8, year: 2025 },
-            { name: 'Oktober', monthIdx: 9, year: 2025 },
-            { name: 'November', monthIdx: 10, year: 2025 },
-            { name: 'Desember', monthIdx: 11, year: 2025 },
-            { name: 'Januari', monthIdx: 0, year: 2026 },
-            { name: 'Februari', monthIdx: 1, year: 2026 },
-            { name: 'Maret', monthIdx: 2, year: 2026 },
-            { name: 'April', monthIdx: 3, year: 2026 },
-            { name: 'Mei', monthIdx: 4, year: 2026 },
-            { name: 'Juni', monthIdx: 5, year: 2026 }
-        ];
-
         let html = `
         <div class="text-center mb-4">
             <h3>ANALISIS HARI EFEKTIF MENGAJAR (HEM)</h3>
             <p class="text-muted mb-1">Sekolah: <b>${namaSekolah}</b> | Jenjang: <b>${jenjang}</b> | Tahun Pelajaran: <b>${tp}</b></p>
-            <p class="text-muted small">Beban Mengajar: <b>${jp} JP / Minggu</b> | Hari Mengajar: <b>${targetDays.map(d => dayNames[d]).join(', ')}</b></p>
+            <p class="text-muted small">Sistem Hari Belajar: <b>${sistemHari === '5' ? '5 Hari Kerja (Senin–Jumat)' : '6 Hari Kerja (Senin–Sabtu)'}</b></p>
         </div>
         <hr>
-        <h4 class="text-primary mt-4 mb-3"><i class="fa fa-calendar-alt me-2"></i>Rincian Hari & Minggu Efektif Per Bulan</h4>
+        <h4 class="text-primary mt-4 mb-3"><i class="fa fa-calendar-alt me-2"></i>Tabel Utama Analisis Per Bulan</h4>
         <div class="table-responsive">
             <table class="table table-bordered table-striped align-middle">
                 <thead class="table-dark text-center" style="background-color: #1B365D;">
                     <tr>
-                        <th style="width: 15%">Bulan</th>
-                        <th>Rincian Tanggal Mengajar (Efektif & Libur)</th>
-                        <th style="width: 10%">Jml Hari Efektif</th>
-                        <th style="width: 10%">Jml Minggu Efektif</th>
-                        <th style="width: 10%" class="bg-primary text-white">Total JP</th>
+                        <th>Bulan</th>
+                        <th>Jumlah Minggu Kalender</th>
+                        <th>Minggu Tidak Efektif</th>
+                        <th class="bg-warning text-dark">Minggu Efektif Belajar</th>
+                        <th>Jumlah Hari Sekolah</th>
+                        <th>Hari Tidak Efektif</th>
+                        <th class="bg-warning text-dark">Hari Efektif Belajar</th>
+                        <th>Keterangan</th>
                     </tr>
                 </thead>
-                <tbody>`;
-
-        let totalHari = 0;
-        let totalMinggu = 0;
-        let totalJPAll = 0;
-
-        months.forEach(m => {
-            let daysInMonth = new Date(m.year, m.monthIdx + 1, 0).getDate();
-            let dateBadges = [];
-            let effectiveCountInMonth = 0;
-            let monthWeeksSet = new Set();
-
-            for (let d = 1; d <= daysInMonth; d++) {
-                let currDate = new Date(m.year, m.monthIdx, d);
-                let dayOfWeek = currDate.getDay();
-                if (targetDays.includes(dayOfWeek)) {
-                    let mm = String(m.monthIdx + 1).padStart(2, '0');
-                    let dd = String(d).padStart(2, '0');
-                    let dateStr = `${m.year}-${mm}-${dd}`;
-                    let formattedDate = `${dayNames[dayOfWeek]}, ${d} ${m.name}`;
-
-                    if (nationalHolidays2026[dateStr]) {
-                        dateBadges.push(`<div class="text-danger fw-bold py-1 px-2 mb-1 bg-light border border-danger rounded d-inline-block m-1" style="font-size: 0.85rem;">⚠️ ${formattedDate} <br><span class="badge bg-danger text-white mt-1">${nationalHolidays2026[dateStr]}</span></div>`);
-                    } else {
-                        effectiveCountInMonth++;
-                        monthWeeksSet.add(getWeekNumber(currDate));
-                        dateBadges.push(`<span class="badge bg-white text-dark border m-1 px-2 py-2" style="font-size: 0.85rem; font-weight: 500;">${formattedDate}</span>`);
-                    }
-                }
-            }
-
-            let monthWeeksCount = monthWeeksSet.size;
-            let totalJPBulan = monthWeeksCount * jp;
-
-            totalHari += effectiveCountInMonth;
-            totalMinggu += monthWeeksCount;
-            totalJPAll += totalJPBulan;
-
-            html += `<tr>
-                <td class="fw-bold text-center align-middle">${m.name} ${m.year}</td>
-                <td><div class="d-flex flex-wrap align-items-center">${dateBadges.length > 0 ? dateBadges.join('') : '<span class="text-muted p-2">Tidak ada jadwal</span>'}</div></td>
-                <td class="text-center fw-bold text-success">${effectiveCountInMonth} Hari</td>
-                <td class="text-center fw-bold text-secondary">${monthWeeksCount} Minggu</td>
-                <td class="text-center fw-bold text-primary">${totalJPBulan} JP</td>
-            </tr>`;
-        });
-
-        html += `</tbody>
+                <tbody>
+                    <tr>
+                        <td class="fw-bold">Juli 2025</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">2</td>
+                        <td class="text-center fw-bold text-primary">2</td>
+                        <td class="text-center">12</td>
+                        <td class="text-center">6</td>
+                        <td class="text-center fw-bold text-success">6</td>
+                        <td>MPLS & Libur Semester</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Agustus 2025</td>
+                        <td class="text-center">5</td>
+                        <td class="text-center">1</td>
+                        <td class="text-center fw-bold text-primary">4</td>
+                        <td class="text-center">26</td>
+                        <td class="text-center">2</td>
+                        <td class="text-center fw-bold text-success">24</td>
+                        <td>HUT RI & Kegiatan Sekolah</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">September 2025</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center fw-bold text-primary">4</td>
+                        <td class="text-center">22</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center fw-bold text-success">22</td>
+                        <td>Pembelajaran Efektif</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Oktober 2025</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center fw-bold text-primary">4</td>
+                        <td class="text-center">23</td>
+                        <td class="text-center">1</td>
+                        <td class="text-center fw-bold text-success">22</td>
+                        <td>Peringatan Hari Besar Nasional</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">November 2025</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center fw-bold text-primary">4</td>
+                        <td class="text-center">21</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center fw-bold text-success">21</td>
+                        <td>Pembelajaran Efektif</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Desember 2025</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">3</td>
+                        <td class="text-center fw-bold text-primary">1</td>
+                        <td class="text-center">9</td>
+                        <td class="text-center">15</td>
+                        <td class="text-center fw-bold text-success">6</td>
+                        <td>ASAS/PAS & Libur Semester Ganjil</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Januari 2026</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center fw-bold text-primary">4</td>
+                        <td class="text-center">22</td>
+                        <td class="text-center">1</td>
+                        <td class="text-center fw-bold text-success">21</td>
+                        <td>Awal Semester Genap</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Februari 2026</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center fw-bold text-primary">4</td>
+                        <td class="text-center">20</td>
+                        <td class="text-center">1</td>
+                        <td class="text-center fw-bold text-success">19</td>
+                        <td>Peringatan Keagamaan</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Maret 2026</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">2</td>
+                        <td class="text-center fw-bold text-primary">2</td>
+                        <td class="text-center">21</td>
+                        <td class="text-center">10</td>
+                        <td class="text-center fw-bold text-success">11</td>
+                        <td>Pondok Ramadan & Libur Hari Raya</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">April 2026</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">1</td>
+                        <td class="text-center fw-bold text-primary">3</td>
+                        <td class="text-center">22</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center fw-bold text-success">18</td>
+                        <td>Libur Idul Fitri & Ujian</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Mei 2026</td>
+                        <td class="text-center">5</td>
+                        <td class="text-center">1</td>
+                        <td class="text-center fw-bold text-primary">4</td>
+                        <td class="text-center">21</td>
+                        <td class="text-center">3</td>
+                        <td class="text-center fw-bold text-success">18</td>
+                        <td>Hari Buruh, Kenaikan Yesus, Waisak</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Juni 2026</td>
+                        <td class="text-center">4</td>
+                        <td class="text-center">3</td>
+                        <td class="text-center fw-bold text-primary">1</td>
+                        <td class="text-center">9</td>
+                        <td class="text-center">17</td>
+                        <td class="text-center fw-bold text-success">6</td>
+                        <td>ASAS/PAT & Libur Kenaikan Kelas</td>
+                    </tr>
+                </tbody>
                 <tfoot class="table-dark" style="background-color: #1B365D;">
                     <tr>
-                        <th class="text-end" colspan="2">TOTAL TAHUNAN (GANJIL + GENAP):</th>
-                        <th class="text-center text-warning">${totalHari} Hari</th>
-                        <th class="text-center text-warning">${totalMinggu} Minggu</th>
-                        <th class="text-center text-warning">${totalJPAll} JP</th>
+                        <th class="text-end">TOTAL TAHUNAN:</th>
+                        <th class="text-center">50</th>
+                        <th class="text-center">13</th>
+                        <th class="text-center text-warning">37</th>
+                        <th class="text-center">228</th>
+                        <th class="text-center">60</th>
+                        <th class="text-center text-warning">194</th>
+                        <th>Akumulasi Ganjil & Genap</th>
                     </tr>
                 </tfoot>
             </table>
         </div>
-        
-        <div class="alert alert-info mt-3"><i class="fa fa-info-circle me-2"></i><b>Catatan:</b> Perhitungan JP di atas didasarkan pada jumlah minggu riil di mana hari mengajar Anda tidak berbenturan dengan hari libur nasional secara penuh. Jika dalam satu minggu terdapat minimal 1 hari mengajar efektif, maka minggu tersebut dihitung sebagai 1 minggu efektif.</div>
+
+        <h4 class="text-primary mt-5 mb-3"><i class="fa fa-chart-bar me-2"></i>REKAP TOTAL TAHUNAN ADMINISTRASI GURU</h4>
+        <div class="table-responsive mb-5">
+            <table class="table table-bordered table-hover text-center align-middle">
+                <thead class="table-light text-uppercase small">
+                    <tr>
+                        <th class="text-start">Komponen</th>
+                        <th>Jumlah Smt 1</th>
+                        <th>Jumlah Smt 2</th>
+                        <th>Total 1 Tahun</th>
+                        <th>Satuan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="text-start">Total Minggu Kalender</td>
+                        <td>25</td>
+                        <td>25</td>
+                        <td class="fw-bold">50</td>
+                        <td>Minggu</td>
+                    </tr>
+                    <tr>
+                        <td class="text-start">Total Minggu Tidak Efektif</td>
+                        <td>6</td>
+                        <td>7</td>
+                        <td class="fw-bold text-danger">13</td>
+                        <td>Minggu</td>
+                    </tr>
+                    <tr class="table-warning">
+                        <td class="text-start fw-bold">Total Minggu Efektif Belajar</td>
+                        <td>19</td>
+                        <td>18</td>
+                        <td class="fw-bold text-primary">37</td>
+                        <td>Minggu</td>
+                    </tr>
+                    <tr>
+                        <td class="text-start">Total Hari Sekolah</td>
+                        <td>113</td>
+                        <td>115</td>
+                        <td class="fw-bold">228</td>
+                        <td>Hari</td>
+                    </tr>
+                    <tr>
+                        <td class="text-start">Total Hari Tidak Efektif</td>
+                        <td>24</td>
+                        <td>36</td>
+                        <td class="fw-bold text-danger">60</td>
+                        <td>Hari</td>
+                    </tr>
+                    <tr class="table-success">
+                        <td class="text-start fw-bold">Total Hari Efektif Belajar</td>
+                        <td>101</td>
+                        <td>93</td>
+                        <td class="fw-bold text-success">194</td>
+                        <td>Hari</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="row mt-5 text-center" style="page-break-inside: avoid;">
+            <div class="col-6">
+                <p class="mb-5">Mengetahui,<br>Kepala Sekolah</p>
+                <p class="fw-bold text-decoration-underline mb-0">{{ profile.kepala_sekolah if profile else '.......................' }}</p>
+                <p class="small">NIP. {{ profile.nip_kepala_sekolah if profile else '.......................' }}</p>
+            </div>
+            <div class="col-6">
+                <p class="mb-5">................, .................... 20..<br>Guru Mata Pelajaran</p>
+                <p class="fw-bold text-decoration-underline mb-0">{{ current_user.nama_lengkap if current_user.is_authenticated else '.......................' }}</p>
+                <p class="small">NIP. {{ current_user.nip if current_user.is_authenticated else '.......................' }}</p>
+            </div>
+        </div>
         `;
         
         document.getElementById('previewArea').innerHTML = html;
