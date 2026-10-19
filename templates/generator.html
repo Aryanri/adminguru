@@ -69,11 +69,8 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-tasks me-1 text-primary"></i> Metode Pembelajaran</label>
-                        <select class="form-select shadow-sm border-0 py-2" name="metode" id="selectMetode">
-                            <option value="Project Based Learning (PjBL)">Project Based Learning (PjBL)</option>
-                            <option value="Problem Based Learning (PBL)">Problem Based Learning (PBL)</option>
-                            <option value="Inquiry Learning">Inquiry Learning</option>
-                            <option value="Discovery Learning">Discovery Learning</option>
+                        <select class="form-select shadow-sm border-0 py-2" name="metode" id="selectMetode" required>
+                            <!-- Dinamis via JS -->
                         </select>
                     </div>
                     <div class="mb-3">
@@ -307,13 +304,67 @@ document.addEventListener("DOMContentLoaded", function() {
         ]
     };
 
-    const aktivitasData = [
-        "Projek Penguatan Profil Pelajar Pancasila (P5) terintegrasi materi",
-        "Pembelajaran Berbasis Inkuiri & Eksplorasi Konsep Mendalam",
-        "Diferensiasi Pembelajaran (Konten, Proses, & Produk Peserta Didik)",
-        "Diskusi Kelompok Kolaboratif & Presentasi Studi Kasus",
-        "Praktik Mandiri Berbasis Digital / LKPD Interaktif"
-    ];
+    const metodeData = {
+        "SD / MI": [
+            "Pendekatan Tematik / Terpadu",
+            "Pembelajaran Berbasis Permainan (Game-based Learning)",
+            "Project Based Learning (PjBL)",
+            "Problem Based Learning (PBL)",
+            "Discovery Learning"
+        ],
+        "SMP / MTs": [
+            "Problem Based Learning (PBL)",
+            "Project Based Learning (PjBL)",
+            "Discovery Learning",
+            "Inquiry Learning",
+            "Flipped Classroom"
+        ],
+        "SMA / MA": [
+            "Problem Based Learning (PBL)",
+            "Project Based Learning (PjBL)",
+            "Inquiry Learning",
+            "Flipped Classroom",
+            "Teaching at the Right Level (TaRL)"
+        ],
+        "SMK / MAK": [
+            "Project Based Learning (PjBL)",
+            "Teaching Factory (TEFA)",
+            "Problem Based Learning (PBL)",
+            "PjBL Terintegrasi",
+            "Praktik Kerja Industri / DUDI"
+        ]
+    };
+
+    const aktivitasData = {
+        "SD / MI": [
+            "Bermain Peran (Role Play) & Permainan Interaktif",
+            "Diferensiasi Konten (Visual, Auditori, Kinestetik)",
+            "Projek Penguatan Profil Pelajar Pancasila (P5)",
+            "Unjuk Kerja / Praktik Sederhana",
+            "Eksplorasi Lingkungan Sekitar"
+        ],
+        "SMP / MTs": [
+            "Diferensiasi Pembelajaran (Konten/Proses/Produk)",
+            "Diskusi Kelompok Kolaboratif",
+            "Projek P5 Terintegrasi Materi",
+            "Penugasan Mandiri Terbimbing",
+            "Eksplorasi & Presentasi Kasus"
+        ],
+        "SMA / MA": [
+            "Eksplorasi Konsep Mendalam & Analisis Kritis",
+            "Diferensiasi Produk dan Proses Tingkat Lanjut",
+            "Studi Kasus (Case Study) & Pemecahan Masalah",
+            "Praktik Mandiri Berbasis Digital / LKPD Interaktif",
+            "Projek P5 Berkelanjutan"
+        ],
+        "SMK / MAK": [
+            "Praktik Kejuruan / Bengkel / Laboratorium",
+            "Projek Riil berbasis Teaching Factory (TEFA)",
+            "Diferensiasi Berbasis Konsentrasi Keahlian",
+            "Simulasi Kerja / Guru Tamu Industri",
+            "Projek P5 Tema Kebekerjaan & Wirausaha"
+        ]
+    };
 
     function updateKelasFase() {
         if (!jenjangSelect || !kelasFaseSelect) return;
@@ -327,7 +378,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 opt.textContent = item.text;
                 kelasFaseSelect.appendChild(opt);
             });
-            if (currentVal) kelasFaseSelect.value = currentVal;
+            if (currentVal && Array.from(kelasFaseSelect.options).some(o => o.value === currentVal)) {
+                kelasFaseSelect.value = currentVal;
+            }
         }
     }
 
@@ -343,27 +396,54 @@ document.addEventListener("DOMContentLoaded", function() {
                 opt.textContent = m;
                 mapelSelect.appendChild(opt);
             });
-            if (currentVal) mapelSelect.value = currentVal;
+            if (currentVal && Array.from(mapelSelect.options).some(o => o.value === currentVal)) {
+                mapelSelect.value = currentVal;
+            }
+        }
+    }
+
+    function updateMetode() {
+        if (!jenjangSelect || !selectMetode) return;
+        const jenjang = jenjangSelect.value;
+        const currentVal = selectMetode.value;
+        selectMetode.innerHTML = "";
+        if (metodeData[jenjang]) {
+            metodeData[jenjang].forEach(met => {
+                const opt = document.createElement('option');
+                opt.value = met;
+                opt.textContent = met;
+                selectMetode.appendChild(opt);
+            });
+            if (currentVal && Array.from(selectMetode.options).some(o => o.value === currentVal)) {
+                selectMetode.value = currentVal;
+            }
         }
     }
 
     function updateAktivitas() {
-        if (!aktivitasSelect) return;
+        if (!jenjangSelect || !aktivitasSelect) return;
+        const jenjang = jenjangSelect.value;
         const currentVal = aktivitasSelect.value;
         aktivitasSelect.innerHTML = "";
-        aktivitasData.forEach(akt => {
-            const opt = document.createElement('option');
-            opt.value = akt;
-            opt.textContent = akt;
-            aktivitasSelect.appendChild(opt);
-        });
-        if (currentVal) aktivitasSelect.value = currentVal;
+        if (aktivitasData[jenjang]) {
+            aktivitasData[jenjang].forEach(akt => {
+                const opt = document.createElement('option');
+                opt.value = akt;
+                opt.textContent = akt;
+                aktivitasSelect.appendChild(opt);
+            });
+            if (currentVal && Array.from(aktivitasSelect.options).some(o => o.value === currentVal)) {
+                aktivitasSelect.value = currentVal;
+            }
+        }
     }
 
     if (jenjangSelect) {
         jenjangSelect.addEventListener('change', function() {
             updateKelasFase();
             updateMapel();
+            updateMetode();
+            updateAktivitas();
             saveInputs();
         });
     }
@@ -378,6 +458,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     updateKelasFase();
     updateMapel();
+    updateMetode();
     updateAktivitas();
     loadInputs();
 
