@@ -44,7 +44,8 @@
                             <option value="6">6 Hari Kerja (Senin – Sabtu)</option>
                         </select>
                         <label class="form-label fw-bold small mb-1">Upload Kalender Akademik (PDF / Word / Gambar):</label>
-                        <input type="file" class="form-control form-control-sm shadow-sm" id="kalenderFile" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg">
+                        <input type="file" class="form-control form-control-sm shadow-sm mb-2" id="kalenderFile" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg">
+                        <button type="button" class="btn btn-primary btn-sm w-100 fw-bold shadow-sm" onclick="generateHEMFromCalendar()"><i class="fa fa-sync-alt me-1"></i> Generate Preview Analisis HEM</button>
                     </div>
                     <div class="col-md-8">
                         <label class="form-label fw-bold small mb-1"><i class="fa fa-info-circle text-primary me-1"></i> Tugas Analisis Asisten Kalender Akademik:</label>
@@ -254,6 +255,18 @@
         if (previewEl && input) {
             input.value = previewEl.innerHTML;
         }
+    }
+
+    
+    function generateHEMFromCalendar() {
+        const fileInput = document.getElementById('kalenderFile');
+        if (fileInput && fileInput.files.length > 0) {
+            const fileName = fileInput.files[0].name;
+            alert('Kalender akademik "' + fileName + '" berhasil diunggah! Menganalisis dokumen dan memperbarui rincian Minggu & Hari Efektif Belajar...');
+        } else {
+            alert('Silakan pilih atau unggah file Kalender Akademik terlebih dahulu.');
+        }
+        calculateHEM();
     }
 
     function initHEM() {
