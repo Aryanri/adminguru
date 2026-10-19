@@ -37,14 +37,14 @@
             </div>
             <div class="card-body bg-light p-4">
                 <div class="row g-3 align-items-end mb-3">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label fw-bold small mb-1">Sistem Hari Kerja:</label>
                         <select class="form-select shadow-sm border-0 py-2" name="sistem_hari" id="sistemHari">
                             <option value="5" selected>5 Hari Kerja (Senin – Jumat)</option>
                             <option value="6">6 Hari Kerja (Senin – Sabtu)</option>
                         </select>
                     </div>
-                    <div class="col-md-5">
+                    <div class="col-md-6">
                         <label class="form-label fw-bold small mb-1">Pilih Tahun Pelajaran:</label>
                         <select class="form-select shadow-sm border-0 py-2" id="tahunAjaran">
                             <option value="2024">2024/2025</option>
@@ -53,11 +53,6 @@
                             <option value="2027">2027/2028</option>
                             <option value="2028">2028/2029</option>
                         </select>
-                    </div>
-                    <div class="col-md-3">
-                        <button type="button" class="btn btn-primary w-100 py-2 fw-bold shadow-sm" onclick="calculateHEM()">
-                            <i class="fa fa-sync-alt me-1"></i> Generate Preview
-                        </button>
                     </div>
                 </div>
                 <div class="row mt-4">
@@ -278,67 +273,7 @@
     }
 
     
-    function generateHEMFromCalendar() {
-        const fileInput = document.getElementById('kalenderFile');
-        const sistemHariEl = document.getElementById('sistemHari');
-        
-        if (!fileInput || fileInput.files.length === 0) {
-            alert('Silakan pilih atau unggah file Kalender Akademik (PDF/JPG/PNG) terlebih dahulu.');
-            return;
-        }
-
-        const file = fileInput.files[0];
-        const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
-        
-        // Cek file type (Word akan ditolak di server, kita berikan peringatan awal jika memungkinkan)
-        if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
-             alert('Mohon maaf, AI Vision Google saat ini hanya mendukung analisis file PDF atau Gambar. Mohon Convert Word ke PDF lalu unggah kembali.');
-             return;
-        }
-
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('sistem_hari', sistemHariEl ? sistemHariEl.value : '5');
-
-        const previewEl = document.getElementById('previewArea');
-        previewEl.innerHTML = `
-            <div class="text-center py-5 my-4">
-                <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
-                <h5 class="fw-bold text-primary">AI Sedang Membaca & Menganalisis Dokumen...</h5>
-                <p class="text-muted small">Proses ini membutuhkan waktu beberapa saat untuk mengekstrak data dari kalender akademik Anda.</p>
-            </div>`;
-
-        fetch('/api/analyze_calendar', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                previewEl.innerHTML = data.html;
-                
-                // Simpan otomatis hasil analisis baru
-                fetch('/api/save_hem', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        jumlah_jp: sistemHariEl ? sistemHariEl.value : '5',
-                        hari_tertentu: [],
-                        hasil_konten: data.html
-                    })
-                }).catch(e => console.log('Auto-save error:', e));
-                
-            } else {
-                alert('Gagal menganalisis dokumen: ' + data.message);
-                calculateHEM(); // Tampilkan standar jika gagal
-            }
-        })
-        .catch(error => {
-            console.error('Error API AI:', error);
-            alert('Terjadi kesalahan saat menghubungi server AI. Pastikan file valid dan API key sudah terkonfigurasi.');
-            calculateHEM(); // Tampilkan standar jika gagal
-        });
-    }
+    
 
     function initHEM() {
         const sistemHariEl = document.getElementById('sistemHari');
@@ -365,6 +300,7 @@
                 <script src="https://js.puter.com/v2/"></script>
                 <div id="puterStatusBox" class="alert alert-info py-2 small d-flex justify-content-between align-items-center mb-3">
                     <span><i class="fa fa-circle-notch fa-spin me-1"></i> Memeriksa sesi Puter.js...</span>
+                    <button type="button" class="btn btn-sm btn-outline-danger d-none" id="btnPuterLogout" onclick="logoutPuter()"><i class="fa fa-sign-out-alt"></i> Logout Akun</button>
                 </div>
                 <form method="POST" id="generatorForm">
                     <input type="hidden" name="ai_generated_content" id="ai_generated_content" value="">
@@ -738,14 +674,29 @@ document.addEventListener("DOMContentLoaded", function() {
         try {
             if (puter.auth.isSignedIn()) {
                 const user = await puter.auth.getUser();
-                if (puterStatusBox) puterStatusBox.innerHTML = `<span><i class="fa fa-check-circle text-success me-1"></i> Terhubung ke Puter AI sebagai <b>${user.username}</b></span>`;
+                if (puterStatusBox) {
+                    puterStatusBox.innerHTML = `
+                        <span><i class="fa fa-check-circle text-success me-1"></i> Terhubung ke Puter AI: <b>${user.username}</b></span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="logoutPuter()"><i class="fa fa-sign-out-alt"></i> Ganti Akun</button>
+                    `;
+                }
             } else {
                 await puter.auth.signIn();
+                window.location.reload();
             }
         } catch (e) {
             console.error("Puter Auth Error:", e);
         }
     }
+    
+    window.logoutPuter = function() {
+        if (typeof puter !== 'undefined' && puter.auth.isSignedIn()) {
+            puter.auth.signOut();
+            alert('Berhasil logout dari akun Puter.js');
+            window.location.reload();
+        }
+    };
+    
     initPuter();
 });
 

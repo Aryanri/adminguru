@@ -420,9 +420,9 @@ Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik ses
                 import json
                 import random
                 
-                puter_key = os.environ.get("PUTER_API_KEY")
-                gemini_key = os.environ.get("GEMINI_API_KEY")
-                groq_key = os.environ.get("GROQ_API_KEY")
+                puter_key = os.environ.get("PUTER_API_KEY", "").strip() if os.environ.get("PUTER_API_KEY") else None
+                gemini_key = os.environ.get("GEMINI_API_KEY", "").strip() if os.environ.get("GEMINI_API_KEY") else None
+                groq_key = os.environ.get("GROQ_API_KEY", "").strip() if os.environ.get("GROQ_API_KEY") else None
                 
                 ai_text = None
                 error_msgs = []
@@ -469,7 +469,7 @@ Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik ses
                                 
                         elif engine == 'gemini':
                             try:
-                                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+                                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={gemini_key}"
                                 payload = {"contents": [{"parts": [{"text": prompt_ai}]}]}
                                 req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={'Content-Type': 'application/json'})
                                 with urllib.request.urlopen(req, timeout=30) as response:
@@ -483,7 +483,7 @@ Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik ses
                             try:
                                 url = "https://api.groq.com/openai/v1/chat/completions"
                                 payload = {
-                                    "model": "llama-3.3-70b-versatile",
+                                    "model": "llama3-70b-8192",
                                     "messages": [{"role": "user", "content": prompt_ai}]
                                 }
                                 req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={
@@ -837,7 +837,7 @@ def analyze_calendar():
     prompt = f"Berdasarkan gambar atau dokumen Kalender Akademik terlampir, buatkan Laporan Analisis Minggu & Hari Efektif Mengajar (HEM) dari bulan Juli hingga Juni tahun ajaran tersebut. Sekolah ini menggunakan sistem {sistem_hari} hari kerja per minggu. Ekstrak dan hitung secara teliti: Jumlah Minggu Kalender, Minggu Tidak Efektif, Minggu Efektif Belajar, Jumlah Hari Sekolah, Hari Tidak Efektif, Hari Efektif Belajar, dan Keterangan agenda (libur/ujian/MPLS). Keluarkan HANYA baris-baris tabel dalam format HTML <tr>...</tr> (tanpa tag <table> atau <tbody>) untuk langsung dimasukkan ke tabel web. Berikan output yang bersih tanpa awalan markdown."
     
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={gemini_key}"
         payload = {
             "contents": [{
                 "parts": [
