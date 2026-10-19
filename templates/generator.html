@@ -113,23 +113,25 @@
 
         const prompt = `Bertindaklah sebagai asisten analisis kalender akademik sekolah yang ahli dalam administrasi pendidikan dan perencanaan waktu pembelajaran guru.
 Analisis dokumen kalender akademik untuk ${namaSekolah} (${jenjang}) dengan sistem ${sistemHari} Hari Kerja.
-Tugas Anda adalah membaca dan menganalisis dokumen tersebut untuk menghasilkan:
-1. Jumlah Minggu Efektif Belajar setiap bulan
-2. Jumlah Hari Efektif Belajar setiap bulan
+Tugas Anda adalah menghitung dan membuat tabel analisis lengkap per bulan:
+1. Bulan
+2. Jumlah Minggu Kalender
+3. Minggu Tidak Efektif
+4. Minggu Efektif Belajar
+5. Jumlah Hari Sekolah
+6. Hari Tidak Efektif
+7. Hari Efektif Belajar
+8. Keterangan (Libur Nasional, Ujian, Kegiatan, dll)
 
-Gunakan hanya informasi dari dokumen kalender akademik yang diunggah.
-Buatkan hasil analisis dalam bentuk tabel lengkap per bulan dengan kolom:
-- Bulan
-- Jumlah Minggu Kalender
-- Minggu Tidak Efektif
-- Minggu Efektif Belajar
-- Jumlah Hari Sekolah
-- Hari Tidak Efektif
-- Hari Efektif Belajar
-- Keterangan
+Serta buatkan Tabel Rekap Total Tahunan:
+- Total Minggu Kalender
+- Total Minggu Tidak Efektif
+- Total Minggu Efektif Belajar
+- Total Hari Sekolah
+- Total Hari Tidak Efektif
+- Total Hari Efektif Belajar
 
-Serta tambahkan tabel REKAP TOTAL TAHUNAN untuk seluruh komponen total minggu dan total hari.
-Keluarkan HANYA HTML MURNI (tanpa format markdown \`\`\`html) dengan styling rapi, warna tema biru tua, abu-abu lembut, dan aksen oranye/kuning pada minggu & hari efektif belajar.`;
+Keluarkan HANYA HTML MURNI (tanpa format markdown ```html) dengan styling rapi, warna tema biru tua, abu-abu lembut, dan aksen oranye/kuning pada minggu & hari efektif belajar.`;
 
         try {
             let aiText = "";
@@ -178,10 +180,10 @@ Keluarkan HANYA HTML MURNI (tanpa format markdown \`\`\`html) dengan styling rap
                 <thead class="table-dark text-center" style="background-color: #1A365D;">
                     <tr>
                         <th>Bulan</th>
-                        <th>Jumlah Minggu Kalender</th>
+                        <th>Jml Minggu Kalender</th>
                         <th>Minggu Tidak Efektif</th>
                         <th style="background-color: #D69E2E; color: #fff;">Minggu Efektif Belajar</th>
-                        <th>Jumlah Hari Sekolah</th>
+                        <th>Jml Hari Sekolah</th>
                         <th>Hari Tidak Efektif</th>
                         <th style="background-color: #2B6CB0; color: #fff;">Hari Efektif Belajar</th>
                         <th>Keterangan</th>
@@ -189,7 +191,7 @@ Keluarkan HANYA HTML MURNI (tanpa format markdown \`\`\`html) dengan styling rap
                 </thead>
                 <tbody>
                     <tr><td class="fw-bold">Juli 2026</td><td class="text-center">4</td><td class="text-center">2</td><td class="text-center fw-bold text-success bg-light">2</td><td class="text-center">26</td><td class="text-center">14</td><td class="text-center fw-bold text-primary bg-light">12</td><td>MPLS, Libur Kenaikan Kelas</td></tr>
-                    <tr><td class="fw-bold">Agustus 2026</td><td class="text-center">5</td><td class="text-center">0</td><td class="text-center fw-bold text-success bg-light">5</td><td class="text-center">26</td><td class="text-center">1</td><td class="text-center fw-bold text-primary bg-light">25</td><td>HUT RI</td></tr>
+                    <tr><td class="fw-bold">Agustus 2026</td><td class="text-center">5</td><td class="text-center">0</td><td class="text-center fw-bold text-success bg-light">5</td><td class="text-center">26</td><td class="text-center">1</td><td class="text-center fw-bold text-primary bg-light">25</td><td> HUT RI</td></tr>
                     <tr><td class="fw-bold">September 2026</td><td class="text-center">4</td><td class="text-center">0</td><td class="text-center fw-bold text-success bg-light">4</td><td class="text-center">26</td><td class="text-center">0</td><td class="text-center fw-bold text-primary bg-light">26</td><td>Pembelajaran Efektif</td></tr>
                     <tr><td class="fw-bold">Oktober 2026</td><td class="text-center">4</td><td class="text-center">0</td><td class="text-center fw-bold text-success bg-light">4</td><td class="text-center">27</td><td class="text-center">0</td><td class="text-center fw-bold text-primary bg-light">27</td><td>Pembelajaran Efektif</td></tr>
                     <tr><td class="fw-bold">November 2026</td><td class="text-center">5</td><td class="text-center">0</td><td class="text-center fw-bold text-success bg-light">5</td><td class="text-center">26</td><td class="text-center">0</td><td class="text-center fw-bold text-primary bg-light">26</td><td>Pembelajaran Efektif</td></tr>
@@ -260,7 +262,6 @@ Keluarkan HANYA HTML MURNI (tanpa format markdown \`\`\`html) dengan styling rap
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-layer-group me-1 text-primary"></i> Kelas & Fase</label>
                         <select class="form-select shadow-sm border-0 py-2" name="kelas_fase" id="kelasFaseSelect" required>
-                            <!-- Dinamis via JS -->
                         </select>
                     </div>
                     <div class="mb-3">
@@ -273,7 +274,6 @@ Keluarkan HANYA HTML MURNI (tanpa format markdown \`\`\`html) dengan styling rap
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-book-open me-1 text-primary"></i> Mata Pelajaran</label>
                         <select class="form-select shadow-sm border-0 py-2" name="mapel" id="mapelSelect" required>
-                            <!-- Dinamis via JS -->
                         </select>
                     </div>
                     <div class="mb-3">
@@ -296,7 +296,6 @@ Keluarkan HANYA HTML MURNI (tanpa format markdown \`\`\`html) dengan styling rap
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-bolt me-1 text-primary"></i> Aktivitas Pembelajaran Utama</label>
                         <select class="form-select shadow-sm border-0 py-2" name="aktivitas" id="aktivitasSelect" required>
-                            <!-- Dinamis via JS -->
                         </select>
                     </div>
                     <div class="mb-3">
@@ -692,80 +691,14 @@ document.addEventListener("DOMContentLoaded", function() {
                 let prompt_ai = "";
                 
                 if (['soal_harian', 'soal_sts', 'soal_sas', 'asesmen_sumatif'].includes(modulSlug)) {
-                    prompt_ai = `Bertindaklah sebagai guru ahli pembuat instrumen evaluasi. Buatkan soal untuk parameter berikut:
-Mata Pelajaran: ${mapel}
-Materi/Topik: ${topik}
-Ruang Lingkup: ${ruang_lingkup}
-Jenjang: ${jenjang} (${kelas_fase})
-Kurikulum: ${kurikulum}
-Level Kognitif: ${kesulitan}
-Jumlah Soal PG: ${jml_pg}
-Jumlah Soal Isian Singkat: ${jml_isian}
-Jumlah Soal Esai: ${jml_esai}
-Total Keseluruhan Soal: ${total_soal} soal
-
-PENTING: Pada bagian "III. KISI-KISI PENULISAN SOAL", Anda WAJIB membuat baris tabel (<tr>) SEBANYAK TOTAL KESELURUHAN SOAL (${total_soal} baris). Setiap soal yang dibuat di naskah soal harus ada pemetaan kisi-kisinya di tabel.
-
-Keluarkan HANYA HTML MURNI (tanpa format markdown \`\`\`html, jangan gunakan tag body/html). Gunakan struktur persis seperti ini:
-<div class='mb-1 text-center fs-5'><b>PERANGKAT EVALUASI PEMBELAJARAN</b></div>
-<div class='mb-4 text-center text-muted small'>Mata Pelajaran: ${mapel} | Materi: ${topik} | Jenjang: ${jenjang}</div>
-<div class='fw-bold mt-2 mb-2 bg-light p-2 border-start border-4 border-primary'>I. NASKAH SOAL EVALUASI</div>
-<div class='fw-bold mt-3'>A. PILIHAN GANDA</div>
-<div class='ps-2 mb-3'><b>1.</b> [Soal PG 1 yang spesifik dan menantang]<br>&nbsp;&nbsp;&nbsp;&nbsp;A. [Opsi]<br>&nbsp;&nbsp;&nbsp;&nbsp;B. [Opsi]<br>&nbsp;&nbsp;&nbsp;&nbsp;C. [Opsi]<br>&nbsp;&nbsp;&nbsp;&nbsp;D. [Opsi]<br><br></div>
-<div class='fw-bold mt-3'>B. ISIAN SINGKAT</div>
-<div class='ps-2 mb-3'><b>1.</b> [Soal Isian 1 yang spesifik] ....................<br><br></div>
-<div class='fw-bold mt-3'>C. ESAI / URAIAN</div>
-<div class='ps-2 mb-4'><b>1.</b> [Soal Esai 1 yang menuntut analisis]<br><br></div>
-<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-success'>II. KUNCI JAWABAN DAN PEMBAHASAN</div>
-<div class='fw-bold mt-3'>A. KUNCI PILIHAN GANDA</div>
-<div class='ps-2 mb-3'><b>1.</b> [Kunci] — <i>Pembahasan:</i> [Penjelasan singkat]<br></div>
-<div class='fw-bold mt-3'>B. KUNCI ISIAN SINGKAT</div>
-<div class='ps-2 mb-3'><b>1.</b> [Jawaban]<br></div>
-<div class='fw-bold mt-3'>C. KUNCI ESAI</div>
-<div class='ps-2 mb-4'><b>1.</b> <i>Rubrik:</i> [Kriteria jawaban benar]<br></div>
-<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-warning'>III. KISI-KISI PENULISAN SOAL</div>
-<div class='table-responsive mt-2'>
-<table class='table table-bordered align-middle'>
-<thead class='table-light text-center'><tr><th>No</th><th>CP / TP</th><th>Materi</th><th>Indikator Soal</th><th>Bentuk Soal</th><th>Level</th></tr></thead>
-<tbody><tr><td class='text-center'>1</td><td>[Tujuan Pembelajaran]</td><td>${topik}</td><td>[Indikator Soal PG 1]</td><td>PG</td><td class='text-center'>${kesulitan}</td></tr>
-</tbody>
-</table></div>`;
+                    prompt_ai = `Bertindaklah sebagai guru ahli pembuat instrumen evaluasi. Buatkan soal untuk parameter berikut:\nMata Pelajaran: ${mapel}\nMateri/Topik: ${topik}\nRuang Lingkup: ${ruang_lingkup}\nJenjang: ${jenjang} (${kelas_fase})\nKurikulum: ${kurikulum}\nLevel Kognitif: ${kesulitan}\nJumlah Soal PG: ${jml_pg}\nJumlah Soal Isian Singkat: ${jml_isian}\nJumlah Soal Esai: ${jml_esai}\nTotal Keseluruhan Soal: ${total_soal} soal\n\nPENTING: Pada bagian "III. KISI-KISI PENULISAN SOAL", Anda WAJIB membuat baris tabel (<tr>) SEBANYAK TOTAL KESELURUHAN SOAL (${total_soal} baris).\n\nKeluarkan HANYA HTML MURNI (tanpa format markdown, tanpa tag body/html).`;
                 } else if (modulSlug === 'cp_tp_atp') {
-                    prompt_ai = `Bertindaklah sebagai guru ahli pembuat dokumen administrasi. Buatkan dokumen CP, TP, dan ATP untuk parameter berikut:
-Mata Pelajaran: ${mapel}
-Materi/Topik: ${topik}
-Ruang Lingkup: ${ruang_lingkup}
-Jenjang: ${jenjang} (${kelas_fase})
-Kurikulum: ${kurikulum}
-Pendekatan/Metode: ${metode}
-Aktivitas: ${aktivitas}
-
-Keluarkan HANYA HTML MURNI tanpa markdown \`\`\`html, tanpa tag html/body.
-Gunakan format tabel dan struktur yang rapi (mirip dokumen resmi):
-<h3 class='text-center'>PEMETAAN CAPAIAN PEMBELAJARAN (CP), TUJUAN PEMBELAJARAN (TP)<br>DAN ALUR TUJUAN PEMBELAJARAN (ATP)</h3>
-<hr>
-<table class='table table-bordered mb-4'><tr><th style='width: 25%'>Mata Pelajaran</th><td>${mapel}</td></tr><tr><th>Kelas / Fase</th><td>${kelas_fase}</td></tr><tr><th>Tahun Pelajaran</th><td>2025/2026</td></tr></table>
-<h4 class='text-primary mt-4'>I. CAPAIAN PEMBELAJARAN (CP)</h4>
-[Buat tabel Elemen dan Capaian Pembelajaran secara mendalam terkait ${topik}]
-<h4 class='text-primary mt-4'>II. TUJUAN PEMBELAJARAN (TP) DAN ALUR TUJUAN PEMBELAJARAN (ATP)</h4>
-[Buat tabel dengan kolom No, Elemen, Materi/Bab, Tujuan Pembelajaran (TP), Alur Tujuan Pembelajaran (ATP), dan Justifikasi]`;
+                    prompt_ai = `Bertindaklah sebagai guru ahli pembuat dokumen administrasi. Buatkan dokumen CP, TP, dan ATP untuk parameter berikut:\nMata Pelajaran: ${mapel}\nMateri/Topik: ${topik}\nJenjang: ${jenjang} (${kelas_fase})\nKurikulum: ${kurikulum}. Keluarkan HANYA HTML MURNI tanpa markdown.`;
                 } else {
-                    prompt_ai = `Bertindaklah sebagai guru ahli. Buatkan dokumen administrasi ${currentJenis} untuk parameter berikut:
-Mata Pelajaran: ${mapel}
-Materi/Topik: ${topik}
-Ruang Lingkup: ${ruang_lingkup}
-Jenjang: ${jenjang} (${kelas_fase})
-Kurikulum: ${kurikulum}
-Metode: ${metode}
-Aktivitas: ${aktivitas}
-
-Keluarkan HANYA HTML MURNI tanpa markdown \`\`\`html, tanpa tag body/html.
-Format dokumen semenarik dan serapi mungkin menyerupai dokumen administrasi guru profesional menggunakan Bootstrap classes jika perlu (table-bordered, dll).
-Beri judul dokumen <h3>${currentJenis.toUpperCase()}</h3>
-Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik sesuai mata pelajaran ${mapel}.`;
+                    prompt_ai = `Bertindaklah sebagai guru ahli. Buatkan dokumen administrasi ${currentJenis} untuk mata pelajaran ${mapel}, topik ${topik}, jenjang ${jenjang} (${kelas_fase}). Keluarkan HANYA HTML MURNI tanpa markdown.`;
                 }
 
-                statusText.textContent = "Sedang generate dokumen dengan Puter AI... (Harap tunggu)";
+                statusText.textContent = "Sedang generate dokumen dengan Puter AI...";
                 progressBar.style.width = "70%";
                 
                 const response = await puter.ai.chat(prompt_ai, {model: 'gpt-4o-mini'});
@@ -780,23 +713,18 @@ Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik ses
                 
                 statusText.textContent = "Dokumen siap! Menyimpan data...";
                 progressBar.style.width = "100%";
-                
                 form.submit();
                 
             } catch (error) {
-                console.log("Puter AI Client-Side failed, falling back to backend APIs", error);
-                statusText.textContent = "Puter AI Gagal, beralih ke Fallback Server (Gemini/Groq)...";
+                console.log("Puter AI failed, falling back", error);
+                statusText.textContent = "Beralih ke Server Fallback...";
                 progressBar.style.width = "85%";
                 form.submit();
             }
         });
     }
 });
-</script>
-{% endif %}
-{% endblock %}
 
-<script>
 function prepareWordExport() {
     const container = document.querySelector('.document-preview-container');
     const input = document.getElementById('exportWordContent');
@@ -805,3 +733,5 @@ function prepareWordExport() {
     }
 }
 </script>
+
+{% endblock %}
