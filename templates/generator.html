@@ -52,11 +52,9 @@
                         </select>
                     </div>
                     <div class="col-md-5">
-                        <label class="form-label fw-bold small">3. Identitas Sekolah</label>
+                        <label class="form-label fw-bold small">3. Identitas Sekolah: <span class="text-primary">{{ profile.nama_sekolah if profile else 'SMA Negeri 1' }}</span></label>
+                        <input type="hidden" id="inputNamaSekolah" value="{{ profile.nama_sekolah if profile else 'SMA Negeri 1' }}">
                         <div class="row g-2">
-                            <div class="col-6">
-                                <input type="text" class="form-control form-control-sm" id="inputNamaSekolah" placeholder="Nama Sekolah" value="{{ profile.nama_sekolah if profile else 'SMA Negeri 1' }}">
-                            </div>
                             <div class="col-6">
                                 <select class="form-select form-select-sm" id="inputJenjang">
                                     <option value="SD / MI">SD / MI</option>
@@ -65,9 +63,9 @@
                                     <option value="SMK / MAK">SMK / MAK</option>
                                 </select>
                             </div>
-                        </div>
-                        <div class="mt-2">
-                            <input type="text" class="form-control form-control-sm" id="inputTp" placeholder="Tahun Pelajaran (Contoh: 2025/2026)" value="2025/2026">
+                            <div class="col-6">
+                                <input type="text" class="form-control form-control-sm" id="inputTp" placeholder="Tahun Pelajaran" value="2025/2026">
+                            </div>
                         </div>
                     </div>
                     <div class="col-12 text-end">
