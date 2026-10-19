@@ -418,6 +418,7 @@ Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik ses
 
                 import urllib.request
                 import json
+                import random
                 
                 puter_key = os.environ.get("PUTER_API_KEY")
                 gemini_key = os.environ.get("GEMINI_API_KEY")
@@ -427,62 +428,70 @@ Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik ses
                 error_msgs = []
                 used_api = ""
                 
-                # 0. PUTER.JS CLIENT-SIDE (Jika berhasil di-generate via JavaScript di frontend)
+                # 0. PUTER.JS CLIENT-SIDE (Prioritas jika client berhasil bypass)
                 ai_generated_content = request.form.get('ai_generated_content')
                 if ai_generated_content and ai_generated_content.strip():
                     ai_text = ai_generated_content
                     used_api = "Puter AI (Client-Side)"
                 
-                # 1. PUTER.JS / PUTER AI (OpenAI Compatible) - Backend Fallback
-                if puter_key and not ai_text:
-                    try:
-                        url = "https://api.puter.com/puterai/openai/v1/chat/completions"
-                        payload = {
-                            "model": "gpt-4o-mini",
-                            "messages": [{"role": "user", "content": prompt_ai}]
-                        }
-                        req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={
-                            'Content-Type': 'application/json',
-                            'Authorization': f'Bearer {puter_key}'
-                        })
-                        with urllib.request.urlopen(req, timeout=30) as response:
-                            res_json = json.loads(response.read().decode('utf-8'))
-                            ai_text = res_json['choices'][0]['message']['content']
-                            used_api = "Puter AI (Server-Side)"
-                    except Exception as e:
-                        error_msgs.append(f"Puter API Error: {str(e)}")
+                # Rotasi AI Engine untuk menyeimbangkan Load & Rate Limit Token
+                engines = []
+                if puter_key: engines.append('puter')
+                if gemini_key: engines.append('gemini')
+                if groq_key: engines.append('groq')
+                random.shuffle(engines) # Acak urutan eksekusi API
+                
+                if not ai_text:
+                    for engine in engines:
+                        if ai_text: break # Jika sudah berhasil di engine sebelumnya, hentikan rotasi
                         
-                # 2. GEMINI AI
-                if gemini_key and not ai_text:
-                    try:
-                        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
-                        payload = {"contents": [{"parts": [{"text": prompt_ai}]}]}
-                        req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={'Content-Type': 'application/json'})
-                        with urllib.request.urlopen(req, timeout=30) as response:
-                            res_json = json.loads(response.read().decode('utf-8'))
-                            ai_text = res_json.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
-                            used_api = "Gemini AI"
-                    except Exception as e:
-                        error_msgs.append(f"Gemini API Error: {str(e)}")
-                        
-                # 3. GROQ AI
-                if groq_key and not ai_text:
-                    try:
-                        url = "https://api.groq.com/openai/v1/chat/completions"
-                        payload = {
-                            "model": "llama-3.3-70b-versatile",
-                            "messages": [{"role": "user", "content": prompt_ai}]
-                        }
-                        req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={
-                            'Content-Type': 'application/json',
-                            'Authorization': f'Bearer {groq_key}'
-                        })
-                        with urllib.request.urlopen(req, timeout=30) as response:
-                            res_json = json.loads(response.read().decode('utf-8'))
-                            ai_text = res_json['choices'][0]['message']['content']
-                            used_api = "Groq AI"
-                    except Exception as e:
-                        error_msgs.append(f"Groq API Error: {str(e)}")
+                        if engine == 'puter':
+                            try:
+                                url = "https://api.puter.com/puterai/openai/v1/chat/completions"
+                                payload = {
+                                    "model": "gpt-4o-mini",
+                                    "messages": [{"role": "user", "content": prompt_ai}]
+                                }
+                                req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={
+                                    'Content-Type': 'application/json',
+                                    'Authorization': f'Bearer {puter_key}'
+                                })
+                                with urllib.request.urlopen(req, timeout=30) as response:
+                                    res_json = json.loads(response.read().decode('utf-8'))
+                                    ai_text = res_json['choices'][0]['message']['content']
+                                    used_api = "Puter AI (Server-Side)"
+                            except Exception as e:
+                                error_msgs.append(f"Puter API Error: {str(e)}")
+                                
+                        elif engine == 'gemini':
+                            try:
+                                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+                                payload = {"contents": [{"parts": [{"text": prompt_ai}]}]}
+                                req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={'Content-Type': 'application/json'})
+                                with urllib.request.urlopen(req, timeout=30) as response:
+                                    res_json = json.loads(response.read().decode('utf-8'))
+                                    ai_text = res_json.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+                                    used_api = "Gemini AI"
+                            except Exception as e:
+                                error_msgs.append(f"Gemini API Error: {str(e)}")
+                                
+                        elif engine == 'groq':
+                            try:
+                                url = "https://api.groq.com/openai/v1/chat/completions"
+                                payload = {
+                                    "model": "llama-3.3-70b-versatile",
+                                    "messages": [{"role": "user", "content": prompt_ai}]
+                                }
+                                req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={
+                                    'Content-Type': 'application/json',
+                                    'Authorization': f'Bearer {groq_key}'
+                                })
+                                with urllib.request.urlopen(req, timeout=30) as response:
+                                    res_json = json.loads(response.read().decode('utf-8'))
+                                    ai_text = res_json['choices'][0]['message']['content']
+                                    used_api = "Groq AI"
+                            except Exception as e:
+                                error_msgs.append(f"Groq API Error: {str(e)}")
                         
                 if ai_text:
                     ai_text = ai_text.strip()
