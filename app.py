@@ -790,3 +790,95 @@ def export_excel():
         as_attachment=True,
         download_name="Analisis_Hari_Efektif_Mengajar_HEM.xlsx"
     )
+
+@app.route('/api/analyze_calendar', methods=['POST'])
+@login_required
+def analyze_calendar():
+    import base64
+    import urllib.request
+    import json
+    
+    if 'file' not in request.files:
+        return jsonify({'status': 'error', 'message': 'Tidak ada file yang diunggah.'}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'status': 'error', 'message': 'File kosong.'}), 400
+        
+    sistem_hari = request.form.get('sistem_hari', '5')
+    
+    file_bytes = file.read()
+    b64_data = base64.b64encode(file_bytes).decode('utf-8')
+    mime_type = file.mimetype
+    
+    if 'word' in mime_type or 'officedocument' in mime_type or 'msword' in mime_type:
+        return jsonify({'status': 'error', 'message': 'Untuk saat ini API AI Vision hanya mendukung format PDF atau Gambar (JPG/PNG). Mohon convert Word ke PDF terlebih dahulu.'}), 400
+        
+    if mime_type not in ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']:
+        mime_type = 'application/pdf'
+        
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+    if not gemini_key:
+        return jsonify({'status': 'error', 'message': 'GEMINI_API_KEY tidak dikonfigurasi di pengaturan/Environment. Fitur analisis dokumen AI Vision membutuhkan API Key Google Gemini.'}), 400
+        
+    prompt = f"Berdasarkan gambar atau dokumen Kalender Akademik terlampir, buatkan Laporan Analisis Minggu & Hari Efektif Mengajar (HEM) dari bulan Juli hingga Juni tahun ajaran tersebut. Sekolah ini menggunakan sistem {sistem_hari} hari kerja per minggu. Ekstrak dan hitung secara teliti: Jumlah Minggu Kalender, Minggu Tidak Efektif, Minggu Efektif Belajar, Jumlah Hari Sekolah, Hari Tidak Efektif, Hari Efektif Belajar, dan Keterangan agenda (libur/ujian/MPLS). Keluarkan HANYA baris-baris tabel dalam format HTML <tr>...</tr> (tanpa tag <table> atau <tbody>) untuk langsung dimasukkan ke tabel web. Berikan output yang bersih tanpa awalan markdown."
+    
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+        payload = {
+            "contents": [{
+                "parts": [
+                    {"text": prompt},
+                    {
+                        "inlineData": {
+                            "mimeType": mime_type,
+                            "data": b64_data
+                        }
+                    }
+                ]
+            }]
+        }
+        
+        req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req, timeout=60) as response:
+            res_json = json.loads(response.read().decode('utf-8'))
+            ai_text = res_json.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+            
+            ai_text = ai_text.strip()
+            if ai_text.startswith("```html"): ai_text = ai_text[7:]
+            if ai_text.startswith("```"): ai_text = ai_text[3:]
+            if ai_text.endswith("```"): ai_text = ai_text[:-3]
+            
+            htmlOutput = f'''
+            <div class="text-center mb-4">
+                <h3 style="color: #1e3d59; font-weight: bold;">LAPORAN ANALISIS MINGGU & HARI EFEKTIF MENGAJAR (HEM)</h3>
+                <p class="text-muted">Dianalisis secara otomatis oleh AI Vision berdasarkan Kalender Akademik yang diunggah | Sistem: <b>{sistem_hari} Hari Kerja</b></p>
+            </div>
+            <hr style="border: 2px solid #1e3d59;">
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered align-middle" style="border-color: #cbd5e1;">
+                    <thead style="background-color: #1e3d59; color: white; text-align: center;">
+                        <tr>
+                            <th style="width: 16%;">Bulan</th>
+                            <th style="width: 10%;">Jumlah Minggu Kalender</th>
+                            <th style="width: 10%;">Minggu Tidak Efektif</th>
+                            <th style="width: 12%; background-color: #17b978;">Minggu Efektif Belajar</th>
+                            <th style="width: 10%;">Jumlah Hari Sekolah</th>
+                            <th style="width: 10%;">Hari Tidak Efektif</th>
+                            <th style="width: 12%; background-color: #ffc107; color: #333;">Hari Efektif Belajar</th>
+                            <th>Keterangan / Agenda</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {ai_text}
+                    </tbody>
+                </table>
+            </div>
+            <div class="alert alert-success py-2 small fw-bold"><i class="fa fa-check-circle me-1"></i> Data di atas adalah hasil perhitungan otomatis AI dari dokumen kalender Anda. Mohon verifikasi ulang kesesuaiannya.</div>
+            '''
+            return jsonify({'status': 'success', 'html': htmlOutput})
+    except urllib.error.HTTPError as e:
+        err_msg = e.read().decode('utf-8')
+        return jsonify({'status': 'error', 'message': f'Google AI Error: {err_msg}'}), 500
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500

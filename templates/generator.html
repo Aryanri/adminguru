@@ -260,13 +260,64 @@
     
     function generateHEMFromCalendar() {
         const fileInput = document.getElementById('kalenderFile');
-        if (fileInput && fileInput.files.length > 0) {
-            const fileName = fileInput.files[0].name;
-            alert('Kalender akademik "' + fileName + '" berhasil diunggah! Menganalisis dokumen dan memperbarui rincian Minggu & Hari Efektif Belajar...');
-        } else {
-            alert('Silakan pilih atau unggah file Kalender Akademik terlebih dahulu.');
+        const sistemHariEl = document.getElementById('sistemHari');
+        
+        if (!fileInput || fileInput.files.length === 0) {
+            alert('Silakan pilih atau unggah file Kalender Akademik (PDF/JPG/PNG) terlebih dahulu.');
+            return;
         }
-        calculateHEM();
+
+        const file = fileInput.files[0];
+        const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+        
+        // Cek file type (Word akan ditolak di server, kita berikan peringatan awal jika memungkinkan)
+        if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+             alert('Mohon maaf, AI Vision Google saat ini hanya mendukung analisis file PDF atau Gambar. Mohon Convert Word ke PDF lalu unggah kembali.');
+             return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('sistem_hari', sistemHariEl ? sistemHariEl.value : '5');
+
+        const previewEl = document.getElementById('previewArea');
+        previewEl.innerHTML = `
+            <div class="text-center py-5 my-4">
+                <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                <h5 class="fw-bold text-primary">AI Sedang Membaca & Menganalisis Dokumen...</h5>
+                <p class="text-muted small">Proses ini membutuhkan waktu beberapa saat untuk mengekstrak data dari kalender akademik Anda.</p>
+            </div>`;
+
+        fetch('/api/analyze_calendar', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                previewEl.innerHTML = data.html;
+                
+                // Simpan otomatis hasil analisis baru
+                fetch('/api/save_hem', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jumlah_jp: sistemHariEl ? sistemHariEl.value : '5',
+                        hari_tertentu: [],
+                        hasil_konten: data.html
+                    })
+                }).catch(e => console.log('Auto-save error:', e));
+                
+            } else {
+                alert('Gagal menganalisis dokumen: ' + data.message);
+                calculateHEM(); // Tampilkan standar jika gagal
+            }
+        })
+        .catch(error => {
+            console.error('Error API AI:', error);
+            alert('Terjadi kesalahan saat menghubungi server AI. Pastikan file valid dan API key sudah terkonfigurasi.');
+            calculateHEM(); // Tampilkan standar jika gagal
+        });
     }
 
     function initHEM() {
