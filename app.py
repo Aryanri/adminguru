@@ -434,12 +434,16 @@ Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik ses
                     ai_text = ai_generated_content
                     used_api = "Puter AI (Client-Side)"
                 
-                # Rotasi AI Engine untuk menyeimbangkan Load & Rate Limit Token
+                # Prioritaskan Puter AI, fallback ke Gemini / Groq jika limit/sibuk
                 engines = []
-                if puter_key: engines.append('puter')
-                if gemini_key: engines.append('gemini')
-                if groq_key: engines.append('groq')
-                random.shuffle(engines) # Acak urutan eksekusi API
+                fallback_engines = []
+                if gemini_key: fallback_engines.append('gemini')
+                if groq_key: fallback_engines.append('groq')
+                random.shuffle(fallback_engines) # Acak fallback (Gemini/Groq)
+                
+                if puter_key:
+                    engines.append('puter')
+                engines.extend(fallback_engines)
                 
                 if not ai_text:
                     for engine in engines:
