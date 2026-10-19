@@ -52,13 +52,7 @@
                             <!-- Dinamis via JS -->
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-book me-1 text-primary"></i> Kurikulum</label>
-                        <select class="form-select shadow-sm border-0 py-2" name="kurikulum" id="kurikulumSelect" required>
-                            <option value="Kurikulum Merdeka (Kumer)" selected>Kurikulum Merdeka (Kumer)</option>
-                            <option value="Kurikulum 2013 (K-13 Revisi)">Kurikulum 2013 (K-13 Revisi)</option>
-                        </select>
-                    </div>
+
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-book-open me-1 text-primary"></i> Mata Pelajaran</label>
                         <select class="form-select shadow-sm border-0 py-2" name="mapel" id="mapelSelect" required>
@@ -167,8 +161,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     const jenjangSelect = document.getElementById('jenjangSelect');
     const kelasFaseSelect = document.getElementById('kelasFaseSelect');
-    const kurikulumSelect = document.getElementById('kurikulumSelect');
-    const mapelSelect = document.getElementById('mapelSelect');
+        const mapelSelect = document.getElementById('mapelSelect');
     const aktivitasSelect = document.getElementById('aktivitasSelect');
     const inputTopik = document.getElementById('inputTopik');
     const inputRuangLingkup = document.getElementById('inputRuangLingkup');
@@ -184,8 +177,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const data = {
             jenjang: jenjangSelect ? jenjangSelect.value : '',
             kelas_fase: kelasFaseSelect ? kelasFaseSelect.value : '',
-            kurikulum: kurikulumSelect ? kurikulumSelect.value : '',
-            mapel: mapelSelect ? mapelSelect.value : '',
+                        mapel: mapelSelect ? mapelSelect.value : '',
             topik: inputTopik ? inputTopik.value : '',
             ruang_lingkup: inputRuangLingkup ? inputRuangLingkup.value : '',
             metode: selectMetode ? selectMetode.value : '',
@@ -207,8 +199,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 updateKelasFase();
                 updateMapel();
                 if (kelasFaseSelect && data.kelas_fase) kelasFaseSelect.value = data.kelas_fase;
-                if (kurikulumSelect && data.kurikulum) kurikulumSelect.value = data.kurikulum;
-                updateAktivitas();
+                                updateAktivitas();
                 if (mapelSelect && data.mapel) mapelSelect.value = data.mapel;
                 if (inputTopik && data.topik) inputTopik.value = data.topik;
                 if (inputRuangLingkup && data.ruang_lingkup) inputRuangLingkup.value = data.ruang_lingkup;
@@ -302,22 +293,13 @@ document.addEventListener("DOMContentLoaded", function() {
         ]
     };
 
-    const aktivitasData = {
-        "Kurikulum Merdeka (Kumer)": [
-            "Projek Penguatan Profil Pelajar Pancasila (P5) terintegrasi materi",
-            "Pembelajaran Berbasis Inkuiri & Eksplorasi Konsep Mendalam",
-            "Diferensiasi Pembelajaran (Konten, Proses, & Produk Peserta Didik)",
-            "Diskusi Kelompok Kolaboratif & Presentasi Studi Kasus",
-            "Praktik Mandiri Berbasis Digital / LKPD Interaktif"
-        ],
-        "Kurikulum 2013 (K-13 Revisi)": [
-            "Pendekatan Saintifik 5M (Mengamati, Menanya, Mengumpulkan Informasi, Menalar, Mengomunikasikan)",
-            "Problem Solving & Diskusi Kelompok Terbimbing",
-            "Eksperimen / Praktikum Laboratorium & Penugasan Portofolio",
-            "Tanya Jawab Interaktif & Latihan Soal Terstruktur",
-            "Model Pembelajaran Langsung (Direct Instruction) & Ceramah Variatif"
-        ]
-    };
+    const aktivitasData = [
+        "Projek Penguatan Profil Pelajar Pancasila (P5) terintegrasi materi",
+        "Pembelajaran Berbasis Inkuiri & Eksplorasi Konsep Mendalam",
+        "Diferensiasi Pembelajaran (Konten, Proses, & Produk Peserta Didik)",
+        "Diskusi Kelompok Kolaboratif & Presentasi Studi Kasus",
+        "Praktik Mandiri Berbasis Digital / LKPD Interaktif"
+    ];
 
     function updateKelasFase() {
         if (!jenjangSelect || !kelasFaseSelect) return;
@@ -352,19 +334,16 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function updateAktivitas() {
-        if (!kurikulumSelect || !aktivitasSelect) return;
-        const kurikulum = kurikulumSelect.value;
+        if (!aktivitasSelect) return;
         const currentVal = aktivitasSelect.value;
         aktivitasSelect.innerHTML = "";
-        if (aktivitasData[kurikulum]) {
-            aktivitasData[kurikulum].forEach(akt => {
-                const opt = document.createElement('option');
-                opt.value = akt;
-                opt.textContent = akt;
-                aktivitasSelect.appendChild(opt);
-            });
-            if (currentVal) aktivitasSelect.value = currentVal;
-        }
+        aktivitasData.forEach(akt => {
+            const opt = document.createElement('option');
+            opt.value = akt;
+            opt.textContent = akt;
+            aktivitasSelect.appendChild(opt);
+        });
+        if (currentVal) aktivitasSelect.value = currentVal;
     }
 
     if (jenjangSelect) {
@@ -375,12 +354,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    if (kurikulumSelect) {
-        kurikulumSelect.addEventListener('change', function() {
-            updateAktivitas();
-            saveInputs();
-        });
-    }
+
 
     const allFormInputs = document.querySelectorAll('#generatorForm input, #generatorForm select');
     allFormInputs.forEach(el => {
@@ -436,7 +410,7 @@ async function handlePuterGeneration(event) {
 
     const jenjang = document.getElementById('jenjangSelect').value;
     const kelasFase = document.getElementById('kelasFaseSelect').value;
-    const kurikulum = document.getElementById('kurikulumSelect').value;
+    const kurikulum = 'Kurikulum Merdeka';
     const mapel = document.getElementById('mapelSelect').value;
     const topik = document.getElementById('inputTopik').value;
     const ruangLingkup = document.getElementById('inputRuangLingkup').value;

@@ -277,7 +277,7 @@ def generator(modul_slug):
             kelas = parts[0].strip() if len(parts) > 0 else 'Kelas 7'
             fase = parts[1].strip() if len(parts) > 1 else 'Fase D (Kelas 7-9)'
 
-            kurikulum = request.form.get('kurikulum', 'Kurikulum Merdeka (Kumer)')
+            kurikulum = 'Kurikulum Merdeka'
             mapel = request.form.get('mapel', 'Pendidikan Agama Islam dan Budi Pekerti')
             topik = request.form.get('topik', 'Materi Pembelajaran')
             ruang_lingkup = request.form.get('ruang_lingkup', 'Sub-Materi Utama')
