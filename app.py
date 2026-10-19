@@ -247,6 +247,8 @@ def dashboard():
 
 @app.route('/generator/<modul_slug>', methods=['GET', 'POST'])
 @login_required
+@app.route('/generator/<modul_slug>', methods=['GET', 'POST'])
+@login_required
 def generator(modul_slug):
     all_modules = CustomModule.query.filter_by(aktif=True).all()
     hasil_generate = None
@@ -264,8 +266,6 @@ def generator(modul_slug):
     jenis = mod_obj.nama_modul
     profile = SchoolProfile.query.first()
 
-
-
     if request.method == 'POST':
         try:
             if modul_slug == 'hem':
@@ -279,260 +279,45 @@ def generator(modul_slug):
 
             kurikulum = request.form.get('kurikulum', 'Kurikulum Merdeka (Kumer)')
             mapel = request.form.get('mapel', 'Pendidikan Agama Islam dan Budi Pekerti')
-            metode = request.form.get('metode', 'Project Based Learning (PjBL)')
-            aktivitas = request.form.get('aktivitas', 'Pembelajaran Berbasis Inkuiri')
-            kesulitan = request.form.get('kesulitan', 'C3')
-            jml_pg = request.form.get('jml_pg', '10')
-            jml_esai = request.form.get('jml_esai', '5')
-            jml_isian = request.form.get('jml_isian', '5')
             topik = request.form.get('topik', 'Materi Pembelajaran')
             ruang_lingkup = request.form.get('ruang_lingkup', 'Sub-Materi Utama')
+            kesulitan = request.form.get('kesulitan', 'C3')
             
-            param_str = f"AIV3-{jenis}-{jenjang}-{kelas}-{fase}-{kurikulum}-{mapel}-{topik}-{ruang_lingkup}-{kesulitan}-{current_user.id}"
+            param_str = f"PUTERAI-{jenis}-{jenjang}-{kelas}-{fase}-{kurikulum}-{mapel}-{topik}-{ruang_lingkup}-{kesulitan}-{current_user.id}"
             param_hash = hashlib.md5(param_str.encode('utf-8')).hexdigest()
             
-            cached = Archive.query.filter_by(parameter_hash=param_hash).first()
-            if cached:
-                hasil_generate = cached.hasil_konten
-                log_activity(current_user.id, f"Mengambil Arsip Cache untuk {jenis}: {topik}")
-                flash('Hasil diambil dari Cache Arsip (Menghemat Token API).', 'info')
+            ai_text = request.form.get('ai_generated_content', '')
+            if not ai_text.strip():
+                flash('Konten AI gagal digenerate oleh Puter.js di browser. Mohon ulangi beberapa saat lagi.', 'danger')
+                return redirect(url_for('generator', modul_slug=modul_slug))
+                
+            kop_html = ""
+            if profile and profile.kop_sekolah:
+                kop_html = f"<div class='text-center mb-3'><img src='{url_for('uploaded_file', filename=profile.kop_sekolah)}' style='max-width:100%; height:auto; max-height:140px;' alt='Kop Surat'></div><hr style='border: 2px solid #333;'>"
             else:
-                kop_html = ""
-                if profile and profile.kop_sekolah:
-                    kop_html = f"<div class='text-center mb-3'><img src='{url_for('uploaded_file', filename=profile.kop_sekolah)}' style='max-width:100%; height:auto; max-height:140px;' alt='Kop Surat'></div><hr style='border: 2px solid #333;'>"
-                else:
-                    kop_html = f"<div class='text-center mb-3'><h3>{profile.nama_sekolah if profile else 'SEMENCA'}</h3><p>{profile.alamat if profile else ''}</p></div><hr style='border: 2px solid #333;'>"
+                kop_html = f"<div class='text-center mb-3'><h3>{profile.nama_sekolah if profile else 'SEMENCA'}</h3><p>{profile.alamat if profile else ''}</p></div><hr style='border: 2px solid #333;'>"
 
-                guru_nip = current_user.nip if current_user.nip else '-'
-                guru_email = current_user.email if current_user.email else '-'
-                guru_mapel = current_user.mapel if current_user.mapel else (mapel if mapel else '-')
-
-                hem_saved = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi="Analisis Hari Efektif Mengajar (HEM)").order_by(Archive.created_at.desc()).first()
-                sem1_jp = "48"
-                sem2_jp = "48"
-                sem1_minggu = "16"
-                sem2_minggu = "16"
-                jp_per_mgg = "3"
-
-                if modul_slug in ['soal_harian', 'soal_sts', 'soal_sas', 'asesmen_sumatif']:
-                    try:
-                        total_soal = int(jml_pg) + int(jml_isian) + int(jml_esai)
-                    except:
-                        total_soal = 20
-                        
-                    prompt_ai = f"""Bertindaklah sebagai guru ahli pembuat instrumen evaluasi. Buatkan soal untuk parameter berikut:
-Mata Pelajaran: {mapel}
-Materi/Topik: {topik}
-Ruang Lingkup: {ruang_lingkup}
-Jenjang: {jenjang} ({kelas} / {fase})
-Kurikulum: {kurikulum}
-Level Kognitif: {kesulitan}
-Jumlah Soal PG: {jml_pg}
-Jumlah Soal Isian Singkat: {jml_isian}
-Jumlah Soal Esai: {jml_esai}
-Total Keseluruhan Soal: {total_soal} soal
-
-PENTING: Pada bagian "III. KISI-KISI PENULISAN SOAL", Anda WAJIB membuat baris tabel (<tr>) SEBANYAK TOTAL KESELURUHAN SOAL ({total_soal} baris). Setiap soal yang dibuat di bagian naskah soal harus ada pemetaan kisi-kisinya di tabel ini.
-
-Keluarkan HANYA HTML MURNI (tanpa format markdown ```html, jangan gunakan tag body/html). 
-Gunakan struktur persis seperti ini:
-<div class='mb-1 text-center fs-5'><b>PERANGKAT EVALUASI PEMBELAJARAN</b></div>
-<div class='mb-4 text-center text-muted small'>Mata Pelajaran: {mapel} | Materi: {topik} | Jenjang: {jenjang} ({kelas})</div>
-<div class='fw-bold mt-2 mb-2 bg-light p-2 border-start border-4 border-primary'>I. NASKAH SOAL EVALUASI</div>
-<div class='fw-bold mt-3'>A. PILIHAN GANDA</div>
-<div class='ps-2 mb-3'>
-  <b>1.</b> [Soal PG 1 yang spesifik dan menantang]<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;A. [Opsi]<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;B. [Opsi]<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;C. [Opsi]<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;D. [Opsi]<br><br>
-</div>
-<div class='fw-bold mt-3'>B. ISIAN SINGKAT</div>
-<div class='ps-2 mb-3'>
-  <b>1.</b> [Soal Isian 1 yang spesifik] ....................<br><br>
-</div>
-<div class='fw-bold mt-3'>C. ESAI / URAIAN</div>
-<div class='ps-2 mb-4'>
-  <b>1.</b> [Soal Esai 1 yang menuntut analisis]<br><br>
-</div>
-<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-success'>II. KUNCI JAWABAN DAN PEMBAHASAN</div>
-<div class='fw-bold mt-3'>A. KUNCI PILIHAN GANDA</div>
-<div class='ps-2 mb-3'><b>1.</b> [Kunci] — <i>Pembahasan:</i> [Penjelasan singkat]<br></div>
-<div class='fw-bold mt-3'>B. KUNCI ISIAN SINGKAT</div>
-<div class='ps-2 mb-3'><b>1.</b> [Jawaban]<br></div>
-<div class='fw-bold mt-3'>C. KUNCI ESAI</div>
-<div class='ps-2 mb-4'><b>1.</b> <i>Rubrik:</i> [Kriteria jawaban benar]<br></div>
-<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-warning'>III. KISI-KISI PENULISAN SOAL</div>
-<div class='table-responsive mt-2'>
-<table class='table table-bordered align-middle'>
-<thead class='table-light text-center'><tr><th>No</th><th>CP / TP</th><th>Materi</th><th>Indikator Soal</th><th>Bentuk Soal</th><th>Level</th></tr></thead>
-<tbody>
-<tr><td class='text-center'>1</td><td>[Tujuan Pembelajaran]</td><td>{topik}</td><td>[Indikator Soal PG 1]</td><td>PG</td><td class='text-center'>{kesulitan}</td></tr>
-<!-- LANJUTKAN MEMBUAT BARIS (<tr>) UNTUK SEMUA SOAL PG, LALU SEMUA SOAL ISIAN, LALU SEMUA SOAL ESAI. PASTIKAN JUMLAH BARIS SAMA PERSIS DENGAN TOTAL SOAL ({total_soal} BARIS). -->
-</tbody>
-</table>
-</div>
-"""
-                elif modul_slug == 'cp_tp_atp':
-                    prompt_ai = f"""Bertindaklah sebagai guru ahli pembuat dokumen administrasi. Buatkan dokumen CP, TP, dan ATP untuk parameter berikut:
-Mata Pelajaran: {mapel}
-Materi/Topik: {topik}
-Ruang Lingkup: {ruang_lingkup}
-Jenjang: {jenjang} ({kelas} / {fase})
-Kurikulum: {kurikulum}
-Pendekatan/Metode: {metode}
-Aktivitas: {aktivitas}
-
-Keluarkan HANYA HTML MURNI tanpa markdown ```html, tanpa tag html/body.
-Gunakan format tabel dan struktur yang rapi (mirip dokumen resmi):
-<h3 class='text-center'>PEMETAAN CAPAIAN PEMBELAJARAN (CP), TUJUAN PEMBELAJARAN (TP)<br>DAN ALUR TUJUAN PEMBELAJARAN (ATP)</h3>
-<hr>
-<table class='table table-bordered mb-4'>
-<tr><th style='width: 25%'>Mata Pelajaran</th><td>{mapel}</td></tr>
-<tr><th>Kelas / Fase</th><td>{kelas} / {fase}</td></tr>
-<tr><th>Tahun Pelajaran</th><td>2025/2026</td></tr>
-</table>
-<h4 class='text-primary mt-4'>I. CAPAIAN PEMBELAJARAN (CP) - FASE {fase.split(' ')[0]}</h4>
-[Buat tabel Elemen dan Capaian Pembelajaran secara mendalam terkait {topik}]
-<h4 class='text-primary mt-4'>II. TUJUAN PEMBELAJARAN (TP) DAN ALUR TUJUAN PEMBELAJARAN (ATP)</h4>
-[Buat tabel dengan kolom No, Elemen, Materi/Bab, Tujuan Pembelajaran (TP), Alur Tujuan Pembelajaran (ATP), dan Justifikasi]
-"""
-                else:
-                    prompt_ai = f"""Bertindaklah sebagai guru ahli. Buatkan dokumen administrasi {jenis} untuk parameter berikut:
-Mata Pelajaran: {mapel}
-Materi/Topik: {topik}
-Ruang Lingkup: {ruang_lingkup}
-Jenjang: {jenjang} ({kelas} / {fase})
-Kurikulum: {kurikulum}
-Metode: {metode}
-Aktivitas: {aktivitas}
-
-Keluarkan HANYA HTML MURNI tanpa markdown ```html, tanpa tag body/html.
-Format dokumen semenarik dan serapi mungkin menyerupai dokumen administrasi guru profesional menggunakan Bootstrap classes jika perlu (table-bordered, dll).
-Beri judul dokumen <h3>{jenis.upper()}</h3>
-Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik sesuai mata pelajaran {mapel}. Jangan hanya mengulang kata-kata dari prompt atau memberikan template kosong. Buat materi nyata yang siap digunakan guru di kelas untuk topik {topik} dengan ruang lingkup {ruang_lingkup}.
-"""
-
-                import urllib.request
-                import json
-                import random
+            guru_nip = current_user.nip if current_user.nip else '-'
+            identitas_html = f"<div class='mb-3 p-3 bg-light border rounded small'><b>IDENTITAS PENYUSUN:</b><br>Nama: {current_user.nama_lengkap}<br>NIP: {guru_nip}<br>Mapel: {mapel}</div>"
+            kepsek_html = f"<div class='row mt-5'><div class='col-6'></div><div class='col-6 text-center'><p>Mengetahui,<br>Kepala Sekolah</p><br><br><br><b>{profile.nama_kepsek if profile else 'Kepala Sekolah'}</b><br>NIP. {profile.nip_kepsek if profile else '-'}</div></div>"
+            
+            if modul_slug in ['soal_harian', 'soal_sts', 'soal_sas', 'asesmen_sumatif']:
+                hasil_generate = kop_html + ai_text
+            else:
+                hasil_generate = kop_html + identitas_html + ai_text + kepsek_html
                 
-                puter_key = os.environ.get("PUTER_API_KEY", "").strip() if os.environ.get("PUTER_API_KEY") else None
-                gemini_key = os.environ.get("GEMINI_API_KEY", "").strip() if os.environ.get("GEMINI_API_KEY") else None
-                groq_key = os.environ.get("GROQ_API_KEY", "").strip() if os.environ.get("GROQ_API_KEY") else None
-                
-                ai_text = None
-                error_msgs = []
-                used_api = ""
-                
-                # 0. PUTER.JS CLIENT-SIDE (Prioritas jika client berhasil bypass)
-                ai_generated_content = request.form.get('ai_generated_content')
-                if ai_generated_content and ai_generated_content.strip():
-                    ai_text = ai_generated_content
-                    used_api = "Puter AI (Client-Side)"
-                
-                # Prioritaskan Puter AI, fallback ke Gemini / Groq jika limit/sibuk
-                engines = []
-                fallback_engines = []
-                if gemini_key: fallback_engines.append('gemini')
-                if groq_key: fallback_engines.append('groq')
-                random.shuffle(fallback_engines) # Acak fallback (Gemini/Groq)
-                
-                if puter_key:
-                    engines.append('puter')
-                engines.extend(fallback_engines)
-                
-                if not ai_text:
-                    for engine in engines:
-                        if ai_text: break # Jika sudah berhasil di engine sebelumnya, hentikan rotasi
-                        
-                        if engine == 'puter':
-                            try:
-                                url = "https://api.puter.com/puterai/openai/v1/chat/completions"
-                                payload = {
-                                    "model": "gpt-4o-mini",
-                                    "messages": [{"role": "user", "content": prompt_ai}]
-                                }
-                                req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={
-                                    'Content-Type': 'application/json',
-                                    'Authorization': f'Bearer {puter_key}'
-                                })
-                                with urllib.request.urlopen(req, timeout=30) as response:
-                                    res_json = json.loads(response.read().decode('utf-8'))
-                                    ai_text = res_json['choices'][0]['message']['content']
-                                    used_api = "Puter AI (Server-Side)"
-                            except Exception as e:
-                                error_msgs.append(f"Puter API Error: {str(e)}")
-                                
-                        elif engine == 'gemini':
-                            try:
-                                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={gemini_key}"
-                                payload = {"contents": [{"parts": [{"text": prompt_ai}]}]}
-                                req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={'Content-Type': 'application/json'})
-                                with urllib.request.urlopen(req, timeout=30) as response:
-                                    res_json = json.loads(response.read().decode('utf-8'))
-                                    ai_text = res_json.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
-                                    used_api = "Gemini AI"
-                            except Exception as e:
-                                error_msgs.append(f"Gemini API Error: {str(e)}")
-                                
-                        elif engine == 'groq':
-                            try:
-                                url = "https://api.groq.com/openai/v1/chat/completions"
-                                payload = {
-                                    "model": "llama3-70b-8192",
-                                    "messages": [{"role": "user", "content": prompt_ai}]
-                                }
-                                req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={
-                                    'Content-Type': 'application/json',
-                                    'Authorization': f'Bearer {groq_key}'
-                                })
-                                with urllib.request.urlopen(req, timeout=30) as response:
-                                    res_json = json.loads(response.read().decode('utf-8'))
-                                    ai_text = res_json['choices'][0]['message']['content']
-                                    used_api = "Groq AI"
-                            except Exception as e:
-                                error_msgs.append(f"Groq API Error: {str(e)}")
-                        
-                if ai_text:
-                    ai_text = ai_text.strip()
-                    if ai_text.startswith("```html"): ai_text = ai_text[7:]
-                    if ai_text.startswith("```"): ai_text = ai_text[3:]
-                    if ai_text.endswith("```"): ai_text = ai_text[:-3]
-                    
-                    identitas_html = f"<div class='mb-3 p-3 bg-light border rounded small'><b>IDENTITAS PENYUSUN:</b><br>Nama: {current_user.nama_lengkap}<br>NIP: {guru_nip}<br>Mapel: {mapel}</div>"
-                    kepsek_html = f"<div class='row mt-5'><div class='col-6'></div><div class='col-6 text-center'><p>Mengetahui,<br>Kepala Sekolah</p><br><br><br><b>{profile.nama_kepsek if profile else 'Kepala Sekolah'}</b><br>NIP. {profile.nip_kepsek if profile else '-'}</div></div>"
-                    
-                    if modul_slug in ['soal_harian', 'soal_sts', 'soal_sas', 'asesmen_sumatif']:
-                        hasil_generate = kop_html + ai_text
-                    else:
-                        hasil_generate = kop_html + identitas_html + ai_text + kepsek_html
-                        
-                else:
-                    # ALL FAILED OR NO KEYS
-                    hasil_generate = f"{kop_html}" \
-                                     f"<div class='alert alert-danger mt-4'>" \
-                                     f"<h4><i class='bi bi-exclamation-triangle'></i> API Key Diperlukan atau Terjadi Kesalahan</h4>" \
-                                     f"<p>Sistem mencoba menggunakan AI untuk generate modul <b>{jenis}</b>, namun tidak ada API Key yang valid atau semua API mengalami error.</p>" \
-                                     f"<p><b>Log Status:</b><br>" + ("<br>".join(error_msgs) if error_msgs else "Tidak ada API Key yang diatur di Environment Variables (Vercel).") + "</p>" \
-                                     f"<hr><p class='mb-0'><b>Cara memperbaiki (Tambahkan minimal satu di Vercel Env Vars):</b><br>" \
-                                     f"1. <code>PUTER_API_KEY</code> (Untuk Opsi 1 - Puter.js/OpenAI)<br>" \
-                                     f"2. <code>GEMINI_API_KEY</code> (Untuk Opsi 2 - Google Gemini AI)<br>" \
-                                     f"3. <code>GROQ_API_KEY</code> (Untuk Opsi 3 - Groq Llama/Mixtral)<br>" \
-                                     f"Lalu lakukan Redeploy.</p></div>"
-                
-                new_archive = Archive(
-                    user_id=current_user.id,
-                    jenis_administrasi=jenis,
-                    topik=topik,
-                    ruang_lingkup=ruang_lingkup,
-                    parameter_hash=param_hash,
-                    hasil_konten=hasil_generate
-                )
-                db.session.add(new_archive)
-                db.session.commit()
-                log_activity(current_user.id, f"Generate baru administrasi {jenis} ({topik}).")
-                flash('Modul berhasil digenerate oleh AI dan disimpan ke arsip.', 'success')
+            new_archive = Archive(
+                user_id=current_user.id,
+                jenis_administrasi=jenis,
+                topik=topik,
+                ruang_lingkup=ruang_lingkup,
+                parameter_hash=param_hash,
+                hasil_konten=hasil_generate
+            )
+            db.session.add(new_archive)
+            db.session.commit()
+            log_activity(current_user.id, f"Generate administrasi {jenis} ({topik}) via Puter.js.")
+            flash('Modul berhasil digenerate oleh Puter.js AI dan disimpan ke arsip.', 'success')
         except Exception as e:
             db.session.rollback()
             print("Generator POST Error:", str(e))
@@ -540,10 +325,6 @@ Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik ses
             return redirect(url_for('generator', modul_slug=modul_slug))
             
     return render_template('generator.html', all_modules=all_modules, hasil_generate=hasil_generate, active_slug=modul_slug, current_jenis=jenis)
-
-
-
-
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_file(os.path.join(app.config['UPLOAD_FOLDER'], filename))

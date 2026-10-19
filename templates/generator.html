@@ -2,8 +2,8 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-12">
-        <h2><i class="fa fa-magic me-2 text-primary"></i>Generator Administrasi Mengajar AI</h2>
-        <p class="text-muted">Pilih tab jenis modul administrasi di bawah untuk generate otomatis dokumen siap cetak.</p>
+        <h2><i class="fa fa-magic me-2 text-primary"></i>Generator Administrasi Mengajar AI (Puter.js)</h2>
+        <p class="text-muted">Semua proses pembuatan dokumen digenerate secara langsung di browser Anda menggunakan Puter.js AI (GPT-4o-mini).</p>
     </div>
 </div>
 
@@ -23,7 +23,7 @@
 </div>
 
 <div class="row">
-    <!-- Generator Form (Standard untuk Semua Modul termasuk HEM) -->
+    <!-- Generator Form -->
     <div class="col-md-5">
         <div class="card shadow-lg border-0 mb-4 rounded-3 overflow-hidden">
             <div class="card-header bg-gradient bg-primary text-white py-3 px-4">
@@ -33,9 +33,9 @@
                 <script src="https://js.puter.com/v2/"></script>
                 <div id="puterStatusBox" class="alert alert-info py-2 small d-flex justify-content-between align-items-center mb-3">
                     <span><i class="fa fa-circle-notch fa-spin me-1"></i> Memeriksa sesi Puter.js...</span>
-                    <button type="button" class="btn btn-sm btn-outline-danger d-none" id="btnPuterLogout" onclick="logoutPuter()"><i class="fa fa-sign-out-alt"></i> Logout Akun</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger d-none" id="btnPuterLogout" onclick="logoutPuter()"><i class="fa fa-sign-out-alt"></i> Logout</button>
                 </div>
-                <form method="POST" id="generatorForm">
+                <form method="POST" id="generatorForm" onsubmit="handlePuterGeneration(event)">
                     <input type="hidden" name="ai_generated_content" id="ai_generated_content" value="">
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-graduation-cap me-1 text-primary"></i> Jenjang Pendidikan</label>
@@ -67,11 +67,11 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-bookmark me-1 text-primary"></i> Topik / Materi Pokok</label>
-                        <input type="text" class="form-control shadow-sm border-0 py-2" name="topik" id="inputTopik" placeholder="Contoh: Analisis Kalender Akademik 2026/2027" required>
+                        <input type="text" class="form-control shadow-sm border-0 py-2" name="topik" id="inputTopik" placeholder="Contoh: Perangkat Pembelajaran Bab 1" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-compass me-1 text-primary"></i> Ruang Lingkup / Sub-Materi</label>
-                        <input type="text" class="form-control shadow-sm border-0 py-2" name="ruang_lingkup" id="inputRuangLingkup" placeholder="Contoh: Semester Ganjil & Genap" required>
+                        <input type="text" class="form-control shadow-sm border-0 py-2" name="ruang_lingkup" id="inputRuangLingkup" placeholder="Contoh: Konsep Dasar & Aplikasi" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-tasks me-1 text-primary"></i> Metode Pembelajaran</label>
@@ -91,7 +91,7 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-signal me-1 text-primary"></i> Tingkat Kesulitan</label>
                         <select class="form-select shadow-sm border-0 py-2" name="kesulitan" id="selectKesulitan">
-                            <option value="C1">C1 (Cipta/Ingat)</option>
+                            <option value="C1">C1 (Ingat)</option>
                             <option value="C2">C2 (Paham)</option>
                             <option value="C3" selected>C3 (Aplikasi)</option>
                             <option value="C4">C4 (Analisis)</option>
@@ -99,7 +99,7 @@
                             <option value="C6">C6 (Kreasi)</option>
                         </select>
                     </div>
-                    <div class="row">
+                    <div class="row" id="soalParamsBox" style="display: none;">
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-bold text-dark small text-uppercase mb-1">Jml PG</label>
                             <input type="number" class="form-control shadow-sm border-0 py-2" name="jml_pg" id="inputJmlPg" value="10" min="1" max="50">
@@ -113,13 +113,15 @@
                             <input type="number" class="form-control shadow-sm border-0 py-2" name="jml_isian" id="inputJmlIsian" value="5" min="0" max="20">
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm mt-2 rounded-2"><i class="fa fa-robot me-2"></i> Generate Dokumen AI</button>
+                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm mt-2 rounded-2" id="btnSubmitGen">
+                        <i class="fa fa-robot me-2"></i> Generate dengan Puter.js AI
+                    </button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Preview Dokumen Terestetik & Pas dengan Web -->
+    <!-- Preview Dokumen -->
     <div class="col-md-7">
         <div class="card shadow-lg border-0 rounded-3 overflow-hidden">
             <div class="card-header bg-success text-white d-flex justify-content-between align-items-center py-3 px-4">
@@ -134,7 +136,7 @@
                     <form action="/export/excel" method="POST" class="m-0">
                         <button type="submit" class="btn btn-light btn-sm fw-bold shadow-sm px-3 text-success"><i class="fa fa-file-excel me-1"></i> Export Excel</button>
                     </form>
-                    <button type="button" class="btn btn-light btn-sm fw-bold shadow-sm px-3" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / Export PDF</button>
+                    <button type="button" class="btn btn-light btn-sm fw-bold shadow-sm px-3" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / PDF</button>
                 </div>
                 {% endif %}
             </div>
@@ -143,10 +145,10 @@
                     {% if hasil_generate %}
                         {{ hasil_generate | safe }}
                     {% else %}
-                        <div class="text-center text-muted py-5 my-5">
+                        <div class="text-center text-muted py-5 my-5" id="placeholderPreview">
                             <i class="fa fa-file-invoice fa-3x mb-3 text-secondary opacity-50"></i>
                             <h5 class="fw-bold">Belum ada dokumen yang digenerate.</h5>
-                            <p class="small text-muted">Lengkapi form parameter di sebelah kiri lalu klik <b>Generate Dokumen AI</b>.</p>
+                            <p class="small text-muted">Lengkapi form parameter di sebelah kiri lalu klik <b>Generate dengan Puter.js AI</b>.</p>
                         </div>
                     {% endif %}
                 </div>
@@ -157,6 +159,12 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+    const slug = "{{ active_slug }}";
+    const soalBox = document.getElementById('soalParamsBox');
+    if (['soal_harian', 'soal_sts', 'soal_sas', 'asesmen_sumatif'].includes(slug)) {
+        if (soalBox) soalBox.style.display = 'flex';
+    }
+
     const jenjangSelect = document.getElementById('jenjangSelect');
     const kelasFaseSelect = document.getElementById('kelasFaseSelect');
     const kurikulumSelect = document.getElementById('kurikulumSelect');
@@ -170,7 +178,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const inputJmlEsai = document.getElementById('inputJmlEsai');
     const inputJmlIsian = document.getElementById('inputJmlIsian');
 
-    const STORAGE_KEY = 'gurava_generator_params';
+    const STORAGE_KEY = 'gurava_generator_params_' + slug;
 
     function saveInputs() {
         const data = {
@@ -416,6 +424,133 @@ document.addEventListener("DOMContentLoaded", function() {
     
     initPuter();
 });
+
+async function handlePuterGeneration(event) {
+    event.preventDefault();
+    const btn = document.getElementById('btnSubmitGen');
+    const previewContainer = document.querySelector('.document-preview-container');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i> Puter.js AI Sedang Generate...';
+    previewContainer.innerHTML = '<div class="text-center py-5 my-5"><div class="spinner-border text-primary mb-3" role="status"></div><h5 class="fw-bold">Puter.js AI sedang menyusun dokumen profesional...</h5><p class="text-muted small">Harap tunggu sebentar, dokumen akademis sedang digenerate secara real-time.</p></div>';
+
+    const jenjang = document.getElementById('jenjangSelect').value;
+    const kelasFase = document.getElementById('kelasFaseSelect').value;
+    const kurikulum = document.getElementById('kurikulumSelect').value;
+    const mapel = document.getElementById('mapelSelect').value;
+    const topik = document.getElementById('inputTopik').value;
+    const ruangLingkup = document.getElementById('inputRuangLingkup').value;
+    const metode = document.getElementById('selectMetode').value;
+    const aktivitas = document.getElementById('aktivitasSelect').value;
+    const kesulitan = document.getElementById('selectKesulitan').value;
+    const jenisModul = "{{ current_jenis }}";
+    const slug = "{{ active_slug }}";
+
+    let prompt = "";
+    if (['soal_harian', 'soal_sts', 'soal_sas', 'asesmen_sumatif'].includes(slug)) {
+        const jmlPg = document.getElementById('inputJmlPg').value;
+        const jmlEsai = document.getElementById('inputJmlEsai').value;
+        const jmlIsian = document.getElementById('inputJmlIsian').value;
+        const totalSoal = parseInt(jmlPg) + parseInt(jmlIsian) + parseInt(jmlEsai);
+
+        prompt = `Bertindaklah sebagai guru ahli pembuat instrumen evaluasi. Buatkan soal untuk parameter berikut:
+Mata Pelajaran: ${mapel}
+Materi/Topik: ${topik}
+Ruang Lingkup: ${ruangLingkup}
+Jenjang: ${jenjang} (${kelasFase})
+Kurikulum: ${kurikulum}
+Level Kognitif: ${kesulitan}
+Jumlah Soal PG: ${jmlPg}
+Jumlah Soal Isian Singkat: ${jmlIsian}
+Jumlah Soal Esai: ${jmlEsai}
+Total Keseluruhan Soal: ${totalSoal} soal
+
+PENTING: Pada bagian "III. KISI-KISI PENULISAN SOAL", Anda WAJIB membuat baris tabel (<tr>) SEBANYAK TOTAL KESELURUHAN SOAL (${totalSoal} baris).
+
+Keluarkan HANYA HTML MURNI (tanpa format markdown ```html, jangan gunakan tag body/html). 
+Gunakan struktur persis seperti ini:
+<div class='mb-1 text-center fs-5'><b>PERANGKAT EVALUASI PEMBELAJARAN</b></div>
+<div class='mb-4 text-center text-muted small'>Mata Pelajaran: ${mapel} | Materi: ${topik} | Jenjang: ${jenjang}</div>
+<div class='fw-bold mt-2 mb-2 bg-light p-2 border-start border-4 border-primary'>I. NASKAH SOAL EVALUASI</div>
+<div class='fw-bold mt-3'>A. PILIHAN GANDA</div>
+<div class='ps-2 mb-3'><b>1.</b> [Soal PG 1]<br>&nbsp;&nbsp;&nbsp;&nbsp;A. [Opsi]<br>&nbsp;&nbsp;&nbsp;&nbsp;B. [Opsi]<br>&nbsp;&nbsp;&nbsp;&nbsp;C. [Opsi]<br>&nbsp;&nbsp;&nbsp;&nbsp;D. [Opsi]<br><br></div>
+<div class='fw-bold mt-3'>B. ISIAN SINGKAT</div><div class='ps-2 mb-3'><b>1.</b> [Soal Isian 1] ....................<br><br></div>
+<div class='fw-bold mt-3'>C. ESAI / URAIAN</div><div class='ps-2 mb-4'><b>1.</b> [Soal Esai 1]<br><br></div>
+<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-success'>II. KUNCI JAWABAN DAN PEMBAHASAN</div>
+<div class='fw-bold mt-3'>A. KUNCI PILIHAN GANDA</div><div class='ps-2 mb-3'><b>1.</b> [Kunci] — Pembahasan: [Penjelasan]<br></div>
+<div class='fw-bold mt-3'>B. KUNCI ISIAN SINGKAT</div><div class='ps-2 mb-3'><b>1.</b> [Jawaban]<br></div>
+<div class='fw-bold mt-3'>C. KUNCI ESAI</div><div class='ps-2 mb-4'><b>1.</b> Rubrik: [Kriteria]<br></div>
+<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-warning'>III. KISI-KISI PENULISAN SOAL</div>
+<div class='table-responsive mt-2'>
+<table class='table table-bordered align-middle'>
+<thead class='table-light text-center'><tr><th>No</th><th>CP / TP</th><th>Materi</th><th>Indikator Soal</th><th>Bentuk Soal</th><th>Level</th></tr></thead>
+<tbody>
+<tr><td class='text-center'>1</td><td>[Tujuan Pembelajaran]</td><td>${topik}</td><td>[Indikator Soal 1]</td><td>PG</td><td class='text-center'>${kesulitan}</td></tr>
+</tbody>
+</table>
+</div>`;
+    } else if (slug === 'cp_tp_atp') {
+        prompt = `Bertindaklah sebagai guru ahli pembuat dokumen administrasi. Buatkan dokumen CP, TP, dan ATP untuk parameter berikut:
+Mata Pelajaran: ${mapel}
+Materi/Topik: ${topik}
+Ruang Lingkup: ${ruangLingkup}
+Jenjang: ${jenjang} (${kelasFase})
+Kurikulum: ${kurikulum}
+Pendekatan/Metode: ${metode}
+Aktivitas: ${aktivitas}
+
+Keluarkan HANYA HTML MURNI tanpa markdown ```html, tanpa tag html/body.
+Gunakan format tabel dan struktur yang rapi:
+<h3 class='text-center'>PEMETAAN CAPAIAN PEMBELAJARAN (CP), TUJUAN PEMBELAJARAN (TP)<br>DAN ALUR TUJUAN PEMBELAJARAN (ATP)</h3>
+<hr>
+<table class='table table-bordered mb-4'>
+<tr><th style='width: 25%'>Mata Pelajaran</th><td>${mapel}</td></tr>
+<tr><th>Kelas / Fase</th><td>${kelasFase}</td></tr>
+<tr><th>Tahun Pelajaran</th><td>2026/2027</td></tr>
+</table>
+<h4 class='text-primary mt-4'>I. CAPAIAN PEMBELAJARAN (CP)</h4>
+[Buat tabel Elemen dan Capaian Pembelajaran secara mendalam terkait ${topik}]
+<h4 class='text-primary mt-4'>II. TUJUAN PEMBELAJARAN (TP) DAN ALUR TUJUAN PEMBELAJARAN (ATP)</h4>
+[Buat tabel dengan kolom No, Elemen, Materi/Bab, Tujuan Pembelajaran (TP), Alur Tujuan Pembelajaran (ATP), dan Justifikasi]`;
+    } else {
+        prompt = `Bertindaklah sebagai guru ahli. Buatkan dokumen administrasi ${jenisModul} untuk parameter berikut:
+Mata Pelajaran: ${mapel}
+Materi/Topik: ${topik}
+Ruang Lingkup: ${ruangLingkup}
+Jenjang: ${jenjang} (${kelasFase})
+Kurikulum: ${kurikulum}
+Metode: ${metode}
+Aktivitas: ${aktivitas}
+
+Keluarkan HANYA HTML MURNI tanpa markdown ```html, tanpa tag body/html.
+Format dokumen semenarik dan serapi mungkin menyerupai dokumen administrasi guru profesional menggunakan Bootstrap classes (table-bordered, dll).
+Beri judul dokumen <h3>${jenisModul.toUpperCase()}</h3>
+Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik sesuai mata pelajaran ${mapel} untuk topik ${topik} dengan ruang lingkup ${ruangLingkup}.`;
+    }
+
+    try {
+        if (typeof puter === 'undefined' || !puter.ai) {
+            throw new Error("Puter.js AI belum dimuat atau tidak tersedia.");
+        }
+
+        const response = await puter.ai.chat(prompt, { model: 'gpt-4o-mini' });
+        let rawHtml = typeof response === 'string' ? response : (response.message ? response.message.content : response.toString());
+        
+        rawHtml = rawHtml.trim();
+        if (rawHtml.startsWith("```html")) rawHtml = rawHtml.slice(7);
+        if (rawHtml.startsWith("```")) rawHtml = rawHtml.slice(3);
+        if (rawHtml.endswith("```")) rawHtml = rawHtml.slice(0, -3);
+
+        document.getElementById('ai_generated_content').value = rawHtml;
+        document.getElementById('generatorForm').submit();
+    } catch (err) {
+        console.error("Puter AI Error:", err);
+        alert("Gagal melakukan generate dengan Puter.js AI: " + err.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa fa-robot me-2"></i> Generate dengan Puter.js AI';
+        previewContainer.innerHTML = '<div class="text-center text-muted py-5 my-5"><i class="fa fa-exclamation-triangle fa-3x mb-3 text-danger"></i><h5 class="fw-bold">Gagal Generate Puter.js AI</h5><p class="small text-muted">' + err.message + '</p></div>';
+    }
+}
 
 function prepareWordExport() {
     const container = document.querySelector('.document-preview-container');
