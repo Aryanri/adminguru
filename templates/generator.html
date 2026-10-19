@@ -23,328 +23,386 @@
 </div>
 
 <div class="row">
-        {% if active_slug == 'hem' %}
+    {% if active_slug == 'hem' %}
     <div class="col-md-12">
-        <!-- Input & Parameter Form -->
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 class="m-0"><i class="fa fa-calendar-alt me-2"></i>Analisis Hari Efektif Mengajar (HEM) Berdasarkan Kalender Akademik</h5>
-                <form action="/export/excel" method="POST" target="_blank" class="m-0">
-                    <input type="hidden" name="nama_sekolah" id="exNamaSekolah" value="{{ profile.nama_sekolah if profile else 'SMA Negeri 1' }}">
-                    <input type="hidden" name="jenjang" id="exJenjang" value="SMA / MA">
-                    <input type="hidden" name="tahun_pelajaran" id="exTp" value="2025/2026">
-                    <input type="hidden" name="sistem_hari" id="exSistemHari" value="5 Hari Kerja (Senin–Jumat)">
-                    <button type="submit" class="btn btn-light btn-sm fw-bold text-success"><i class="fa fa-file-excel me-1"></i> Export Excel (.xlsx)</button>
-                </form>
+                <h5 class="m-0"><i class="fa fa-file-excel me-2"></i>Analisis Hari Efektif Mengajar (HEM) Berbasis Dokumen Kalender Akademik</h5>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-light btn-sm fw-bold shadow-sm px-3 text-success" onclick="exportHEMExcel()"><i class="fa fa-file-excel me-1"></i> Export Excel</button>
+                    <button type="button" class="btn btn-light btn-sm fw-bold shadow-sm px-3" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / Export PDF</button>
+                </div>
             </div>
             <div class="card-body bg-light">
-                <form id="hemForm" class="row g-3">
+                <div class="row g-3">
                     <div class="col-md-4">
-                        <label class="form-label fw-bold small">1. Upload Dokumen Kalender Akademik</label>
-                        <input type="file" class="form-control form-control-sm" id="kalenderFile" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx">
-                        <div class="form-text small text-muted">Upload file Kalender Akademik Sekolah (PDF/Gambar/Word). AI akan membaca jadwal libur dan kegiatan.</div>
+                        <label class="form-label fw-bold small mb-1"><i class="fa fa-upload me-1 text-primary"></i> 1. Upload Dokumen Kalender Akademik</label>
+                        <input class="form-control form-control-sm shadow-sm" type="file" id="kalenderFile" accept=".pdf,.docx,.doc,.png,.jpg,.jpeg">
+                        <div class="form-text small">Format: PDF, Word, atau Gambar Kalender Akademik Sekolah.</div>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label fw-bold small">2. Sistem Hari Belajar Sekolah</label>
-                        <select class="form-select form-select-sm" id="sistemHariKerja">
-                            <option value="5" selected>5 Hari Kerja (Senin–Jumat)</option>
-                            <option value="6">6 Hari Kerja (Senin–Sabtu)</option>
+                        <label class="form-label fw-bold small mb-1"><i class="fa fa-calendar-day me-1 text-primary"></i> 2. Sistem Hari Belajar Sekolah</label>
+                        <select class="form-select form-select-sm shadow-sm" id="sistemHari">
+                            <option value="5">5 Hari Kerja (Senin–Jumat)</option>
+                            <option value="6" selected>6 Hari Kerja (Senin–Sabtu)</option>
                         </select>
                     </div>
                     <div class="col-md-5">
-                        <label class="form-label fw-bold small">3. Identitas Sekolah: <span class="text-primary">{{ profile.nama_sekolah if profile else 'SMA Negeri 1' }}</span></label>
-                        <input type="hidden" id="inputNamaSekolah" value="{{ profile.nama_sekolah if profile else 'SMA Negeri 1' }}">
+                        <label class="form-label fw-bold small mb-1"><i class="fa fa-school me-1 text-primary"></i> 3. Identitas Sekolah</label>
                         <div class="row g-2">
                             <div class="col-6">
-                                <select class="form-select form-select-sm" id="inputJenjang">
+                                <input type="text" class="form-control form-control-sm shadow-sm" id="namaSekolahInput" placeholder="Nama Sekolah" value="{{ profile.nama_sekolah if profile else '' }}">
+                            </div>
+                            <div class="col-6">
+                                <select class="form-select form-select-sm shadow-sm" id="jenjangInput">
                                     <option value="SD / MI">SD / MI</option>
-                                    <option value="SMP / MTs">SMP / MTs</option>
-                                    <option value="SMA / MA" selected>SMA / MA</option>
+                                    <option value="SMP / MTs" selected>SMP / MTs</option>
+                                    <option value="SMA / MA">SMA / MA</option>
                                     <option value="SMK / MAK">SMK / MAK</option>
                                 </select>
                             </div>
-                            <div class="col-6">
-                                <input type="text" class="form-control form-control-sm" id="inputTp" placeholder="Tahun Pelajaran" value="2025/2026">
-                            </div>
                         </div>
                     </div>
-                    <div class="col-12 text-end">
-                        <button type="button" class="btn btn-primary btn-sm px-4 fw-bold" onclick="generateHEMAnalysis()"><i class="fa fa-cogs me-1"></i> Proses Analisis Kalender Akademik</button>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-12 text-end">
+                        <button type="button" class="btn btn-primary btn-sm fw-bold px-4 shadow-sm" onclick="runHemAnalysis()"><i class="fa fa-robot me-1"></i> Jalankan Analisis AI Kalender</button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
 
-        <!-- Hasil Preview Analisis Tabel Utama & Rekap Tahunan -->
-        <div class="card shadow-sm border-0 mb-4">
+        <!-- Hasil Preview Analisis HEM -->
+        <div class="card shadow-sm border-0">
             <div class="card-header bg-secondary text-white">
-                <h5 class="m-0"><i class="fa fa-table me-2"></i>Hasil Analisis Minggu & Hari Efektif Belajar Per Bulan</h5>
+                <h5 class="m-0"><i class="fa fa-table me-2"></i>Hasil Analisis Hari & Minggu Efektif Belajar</h5>
             </div>
             <div class="card-body bg-white p-4" id="previewArea">
                 {% if hasil_generate %}
                     {{ hasil_generate | safe }}
                 {% else %}
                     <div class="text-center text-muted py-5">
-                        <i class="fa fa-calendar-check fa-3x mb-3 text-secondary opacity-50"></i>
-                        <h5>Belum ada analisis yang diproses.</h5>
-                        <p class="small">Unggah kalender akademik dan klik <b>Proses Analisis Kalender Akademik</b> di atas.</p>
+                        <i class="fa fa-calendar-alt fa-3x mb-3 text-secondary opacity-50"></i>
+                        <h5 class="fw-bold">Belum ada hasil analisis kalender akademik.</h5>
+                        <p class="small text-muted">Upload dokumen kalender akademik dan klik <b>Jalankan Analisis AI Kalender</b> di atas.</p>
                     </div>
                 {% endif %}
             </div>
         </div>
     </div>
 
-        <script>
-    const nationalHolidays2026 = {
-        "2026-01-01": "Tahun Baru Masehi",
-        "2026-01-16": "Isra Mikraj",
-        "2026-02-17": "Tahun Baru Imlek",
-        "2026-03-19": "Hari Suci Nyepi",
-        "2026-04-03": "Wafat Yesus Kristus",
-        "2026-05-01": "Hari Buruh",
-        "2026-05-14": "Kenaikan Yesus Kristus",
-        "2026-05-27": "Idul Adha",
-        "2026-05-31": "Hari Raya Waisak",
-        "2026-06-01": "Hari Lahir Pancasila",
-        "2026-06-18": "Tahun Baru Islam",
-        "2026-08-17": "Hari Kemerdekaan",
-        "2026-08-25": "Maulid Nabi",
-        "2026-12-25": "Hari Raya Natal"
-    };
+    <script>
+    async function runHemAnalysis() {
+        const fileInput = document.getElementById('kalenderFile');
+        const sistemHari = document.getElementById('sistemHari').value;
+        const namaSekolah = document.getElementById('namaSekolahInput').value;
+        const jenjang = document.getElementById('jenjangInput').value;
+        const previewEl = document.getElementById('previewArea');
 
-    function generateHEMAnalysis() {
-        const namaSekolah = document.getElementById('inputNamaSekolah').value;
-        const jenjang = document.getElementById('inputJenjang').value;
-        const tp = document.getElementById('inputTp').value;
-        const sistemHari = parseInt(document.getElementById('sistemHariKerja').value);
-        
-        // Update hidden inputs for excel export
-        document.getElementById('exNamaSekolah').value = namaSekolah;
-        document.getElementById('exJenjang').value = jenjang;
-        document.getElementById('exTp').value = tp;
-        document.getElementById('exSistemHari').value = sistemHari + ' Hari Kerja';
+        previewEl.innerHTML = `<div class="text-center py-5"><div class="spinner-border text-primary mb-3" role="status"></div><h5 class="fw-bold">Menganalisis Kalender Akademik dengan AI...</h5><p class="text-muted small">Mengekstrak minggu efektif, hari libur, asesmen, dan menghitung hari efektif per bulan.</p></div>`;
 
-        // Parse years from tp e.g. "2025/2026"
-        let parts = tp.split('/');
-        let startYear = parts.length > 0 && !isNaN(parseInt(parts[0])) ? parseInt(parts[0]) : 2025;
-        let endYear = parts.length > 1 && !isNaN(parseInt(parts[1])) ? parseInt(parts[1])) : startYear + 1;
+        let fileDataUri = null;
+        if (fileInput.files && fileInput.files[0]) {
+            const file = fileInput.files[0];
+            fileDataUri = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+            });
+        }
 
-        // Months definition: Smt 1 (July - Dec of startYear), Smt 2 (Jan - June of endYear)
-        let monthsDef = [
-            { name: "Juli " + startYear, mIdx: 6, yr: startYear, smt: 1, desc: "MPLS & Kegiatan Awal" },
-            { name: "Agustus " + startYear, mIdx: 7, yr: startYear, smt: 1, desc: "HUT RI & Pembelajaran" },
-            { name: "September " + startYear, mIdx: 8, yr: startYear, smt: 1, desc: "Pembelajaran Efektif" },
-            { name: "Oktober " + startYear, mIdx: 9, yr: startYear, smt: 1, desc: "Pembelajaran Efektif" },
-            { name: "November " + startYear, mIdx: 10, yr: startYear, smt: 1, desc: "Pembelajaran Efektif" },
-            { name: "Desember " + startYear, mIdx: 11, yr: startYear, smt: 1, desc: "ASAS/PAS & Libur Semester" },
-            { name: "Januari " + endYear, mIdx: 0, yr: endYear, smt: 2, desc: "Awal Semester Genap" },
-            { name: "Februari " + endYear, mIdx: 1, yr: endYear, smt: 2, desc: "Pembelajaran Efektif" },
-            { name: "Maret " + endYear, mIdx: 2, yr: endYear, smt: 2, desc: "Pondok Ramadan & Libur" },
-            { name: "April " + endYear, mIdx: 3, yr: endYear, smt: 2, desc: "Ujian & Libur Hari Raya" },
-            { name: "Mei " + endYear, mIdx: 4, yr: endYear, smt: 2, desc: "Hari Besar Nasional" },
-            { name: "Juni " + endYear, mIdx: 5, yr: endYear, smt: 2, desc: "ASAS/PAT & Kenaikan Kelas" }
-        ];
+        const prompt = `Bertindaklah sebagai asisten analisis kalender akademik sekolah yang ahli dalam administrasi pendidikan dan perencanaan waktu pembelajaran guru.
+Analisis dokumen kalender akademik untuk ${namaSekolah} (${jenjang}) dengan sistem ${sistemHari} Hari Kerja.
+Tugas Anda adalah menghitung dan membuat tabel analisis lengkap per bulan:
+1. Bulan
+2. Jumlah Minggu Kalender
+3. Minggu Tidak Efektif
+4. Minggu Efektif Belajar
+5. Jumlah Hari Sekolah
+6. Hari Tidak Efektif
+7. Hari Efektif Belajar
+8. Keterangan (Libur Nasional, Ujian, Kegiatan, dll)
 
-        let tableRows = '';
-        let smt1WeeksCal = 0, smt1WeeksNotEff = 0, smt1WeeksEff = 0;
-        let smt1DaysSch = 0, smt1DaysNotEff = 0, smt1DaysEff = 0;
+Serta buatkan Tabel Rekap Total Tahunan:
+- Total Minggu Kalender
+- Total Minggu Tidak Efektif
+- Total Minggu Efektif Belajar
+- Total Hari Sekolah
+- Total Hari Tidak Efektif
+- Total Hari Efektif Belajar
 
-        let smt2WeeksCal = 0, smt2WeeksNotEff = 0, smt2WeeksEff = 0;
-        let smt2DaysSch = 0, smt2DaysNotEff = 0, smt2DaysEff = 0;
+Keluarkan HANYA HTML MURNI (tanpa format markdown ```html) dengan styling rapi, warna tema biru tua, abu-abu lembut, dan aksen oranye/kuning pada minggu & hari efektif belajar.`;
 
-        monthsDef.forEach(m => {
-            let daysInMonth = new Date(m.yr, m.mIdx + 1, 0).getDate();
-            let totalSchDays = 0;
-            let holidayCount = 0;
-            let weeksSet = new Set();
-            let holidayWeeksSet = new Set();
-
-            for (let d = 1; d <= daysInMonth; d++) {
-                let currDate = new Date(m.yr, m.mIdx, d);
-                let dayOfWeek = currDate.getDay(); // 0: Sun, 6: Sat
-                
-                // Check if it is a school day based on sistemHari (5: Mon-Fri, 6: Mon-Sat)
-                let isWorkDay = (sistemHari === 5) ? (dayOfWeek >= 1 && dayOfWeek <= 5) : (dayOfWeek >= 1 && dayOfWeek <= 6);
-                
-                if (isWorkDay) {
-                    totalSchDays++;
-                    let mm = String(m.mIdx + 1).padStart(2, '0');
-                    let dd = String(d).padStart(2, '0');
-                    let dateStr = `${m.yr}-${mm}-${dd}`;
-                    
-                    let weekNum = Math.ceil(d / 7);
-                    weeksSet.add(weekNum);
-
-                    if (nationalHolidays2026[dateStr] || (dayOfWeek === 0)) {
-                        holidayCount++;
-                        holidayWeeksSet.add(weekNum);
-                    }
+        try {
+            let aiText = "";
+            if (typeof puter !== 'undefined' && puter.auth.isSignedIn()) {
+                let msg = prompt;
+                if (fileDataUri) {
+                    msg = [{type: "text", text: prompt}, {type: "image_url", image_url: {url: fileDataUri}}];
                 }
-            }
-
-            let totalWeeksCal = weeksSet.size;
-            let weeksNotEff = Math.min(totalWeeksCal, Math.ceil(holidayCount / (sistemHari === 5 ? 5 : 6)));
-            let weeksEff = Math.max(0, totalWeeksCal - weeksNotEff);
-
-            let daysNotEff = holidayCount + (m.smt === 1 && m.mIdx === 6 ? 4 : (m.smt === 1 && m.mIdx === 11 ? 10 : (m.smt === 2 && m.mIdx === 2 ? 6 : 2)));
-            daysNotEff = Math.min(totalSchDays, daysNotEff);
-            let daysEff = Math.max(0, totalSchDays - daysNotEff);
-
-            if (m.smt === 1) {
-                smt1WeeksCal += totalWeeksCal;
-                smt1WeeksNotEff += weeksNotEff;
-                smt1WeeksEff += weeksEff;
-                smt1DaysSch += totalSchDays;
-                smt1DaysNotEff += daysNotEff;
-                smt1DaysEff += daysEff;
+                const res = await puter.ai.chat(msg, {model: 'gpt-4o-mini'});
+                aiText = typeof res === 'string' ? res : (res?.message?.content || res?.text || res);
             } else {
-                smt2WeeksCal += totalWeeksCal;
-                smt2WeeksNotEff += weeksNotEff;
-                smt2WeeksEff += weeksEff;
-                smt2DaysSch += totalSchDays;
-                smt2DaysNotEff += daysNotEff;
-                smt2DaysEff += daysEff;
+                aiText = `<div class="alert alert-warning">Puter.js belum terhubung / sign in. Menggunakan perhitungan simulasi standar kalender akademik...</div>` + getDefaultHemHtml(namaSekolah, jenjang, sistemHari);
             }
 
-            tableRows += `
-                <tr>
-                    <td class="fw-bold">${m.name}</td>
-                    <td class="text-center">${totalWeeksCal}</td>
-                    <td class="text-center">${weeksNotEff}</td>
-                    <td class="text-center fw-bold text-primary">${weeksEff}</td>
-                    <td class="text-center">${totalSchDays}</td>
-                    <td class="text-center">${daysNotEff}</td>
-                    <td class="text-center fw-bold text-success">${daysEff}</td>
-                    <td>${m.desc}</td>
-                </tr>
-            `;
-        });
+            aiText = aiText.trim();
+            if (aiText.startsWith("```html")) aiText = aiText.substring(7);
+            if (aiText.startsWith("```")) aiText = aiText.substring(3);
+            if (aiText.endsWith("```")) aiText = aiText.substring(0, aiText.length - 3);
 
-        let totalWeeksCalYear = smt1WeeksCal + smt2WeeksCal;
-        let totalWeeksNotEffYear = smt1WeeksNotEff + smt2WeeksNotEff;
-        let totalWeeksEffYear = smt1WeeksEff + smt2WeeksEff;
-        let totalDaysSchYear = smt1DaysSch + smt2DaysSch;
-        let totalDaysNotEffYear = smt1DaysNotEff + smt2DaysNotEff;
-        let totalDaysEffYear = smt1DaysEff + smt2DaysEff;
+            previewEl.innerHTML = aiText;
 
-        let html = `
+            // Save to backend
+            fetch('/api/save_hem', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    jumlah_jp: '4',
+                    hari_tertentu: [1,2,3,4,5],
+                    hasil_konten: aiText
+                })
+            }).catch(e => console.error("Save HEM error:", e));
+
+        } catch (err) {
+            console.error(err);
+            previewEl.innerHTML = `<div class="alert alert-danger">Terjadi kesalahan saat menganalisis kalender: ${err.message}</div>`;
+        }
+    }
+
+    function getDefaultHemHtml(nama, jenjang, sistem) {
+        return `
         <div class="text-center mb-4">
-            <h3>ANALISIS HARI EFEKTIF MENGAJAR (HEM)</h3>
-            <p class="text-muted mb-1">Sekolah: <b>${namaSekolah}</b> | Jenjang: <b>${jenjang}</b> | Tahun Pelajaran: <b>${tp}</b></p>
-            <p class="text-muted small">Sistem Hari Belajar: <b>${sistemHari} Hari Kerja (${sistemHari === 5 ? 'Senin–Jumat' : 'Senin–Sabtu'})</b></p>
+            <h4 class="fw-bold">ANALISIS HARI EFEKTIF MENGAJAR (HEM) & MINGGU EFEKTIF</h4>
+            <p class="text-muted">Satuan Pendidikan: <b>${nama || 'Sekolah'}</b> | Jenjang: <b>${jenjang}</b> | Sistem: <b>${sistem} Hari Kerja</b></p>
         </div>
-        <hr>
-        <h4 class="text-primary mt-4 mb-3"><i class="fa fa-calendar-alt me-2"></i>Tabel Utama Analisis Per Bulan</h4>
         <div class="table-responsive">
-            <table class="table table-bordered table-striped align-middle">
-                <thead class="table-dark text-center" style="background-color: #1B365D;">
+            <table class="table table-bordered align-middle">
+                <thead class="table-dark text-center" style="background-color: #1A365D;">
                     <tr>
                         <th>Bulan</th>
-                        <th>Jumlah Minggu Kalender</th>
+                        <th>Jml Minggu Kalender</th>
                         <th>Minggu Tidak Efektif</th>
-                        <th class="bg-warning text-dark">Minggu Efektif Belajar</th>
-                        <th>Jumlah Hari Sekolah</th>
+                        <th style="background-color: #D69E2E; color: #fff;">Minggu Efektif Belajar</th>
+                        <th>Jml Hari Sekolah</th>
                         <th>Hari Tidak Efektif</th>
-                        <th class="bg-warning text-dark">Hari Efektif Belajar</th>
+                        <th style="background-color: #2B6CB0; color: #fff;">Hari Efektif Belajar</th>
                         <th>Keterangan</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${tableRows}
+                    <tr><td class="fw-bold">Juli 2026</td><td class="text-center">4</td><td class="text-center">2</td><td class="text-center fw-bold text-success bg-light">2</td><td class="text-center">26</td><td class="text-center">14</td><td class="text-center fw-bold text-primary bg-light">12</td><td>MPLS, Libur Kenaikan Kelas</td></tr>
+                    <tr><td class="fw-bold">Agustus 2026</td><td class="text-center">5</td><td class="text-center">0</td><td class="text-center fw-bold text-success bg-light">5</td><td class="text-center">26</td><td class="text-center">1</td><td class="text-center fw-bold text-primary bg-light">25</td><td> HUT RI</td></tr>
+                    <tr><td class="fw-bold">September 2026</td><td class="text-center">4</td><td class="text-center">0</td><td class="text-center fw-bold text-success bg-light">4</td><td class="text-center">26</td><td class="text-center">0</td><td class="text-center fw-bold text-primary bg-light">26</td><td>Pembelajaran Efektif</td></tr>
+                    <tr><td class="fw-bold">Oktober 2026</td><td class="text-center">4</td><td class="text-center">0</td><td class="text-center fw-bold text-success bg-light">4</td><td class="text-center">27</td><td class="text-center">0</td><td class="text-center fw-bold text-primary bg-light">27</td><td>Pembelajaran Efektif</td></tr>
+                    <tr><td class="fw-bold">November 2026</td><td class="text-center">5</td><td class="text-center">0</td><td class="text-center fw-bold text-success bg-light">5</td><td class="text-center">26</td><td class="text-center">0</td><td class="text-center fw-bold text-primary bg-light">26</td><td>Pembelajaran Efektif</td></tr>
+                    <tr><td class="fw-bold">Desember 2026</td><td class="text-center">4</td><td class="text-center">3</td><td class="text-center fw-bold text-success bg-light">1</td><td class="text-center">27</td><td class="text-center">20</td><td class="text-center fw-bold text-primary bg-light">7</td><td>SAS / Penilaian Akhir Semester, Libur Semester</td></tr>
                 </tbody>
-                <tfoot class="table-dark" style="background-color: #1B365D;">
+                <tfoot class="table-light fw-bold">
                     <tr>
-                        <th class="text-end">TOTAL TAHUNAN:</th>
-                        <th class="text-center">${totalWeeksCalYear}</th>
-                        <th class="text-center">${totalWeeksNotEffYear}</th>
-                        <th class="text-center text-warning">${totalWeeksEffYear}</th>
-                        <th class="text-center">${totalDaysSchYear}</th>
-                        <th class="text-center">${totalDaysNotEffYear}</th>
-                        <th class="text-center text-warning">${totalDaysEffYear}</th>
-                        <th>Akumulasi Ganjil & Genap</th>
+                        <td class="text-end">TOTAL GANJIL:</td>
+                        <td class="text-center">26</td>
+                        <td class="text-center">5</td>
+                        <td class="text-center text-success">21</td>
+                        <td class="text-center">158</td>
+                        <td class="text-center">35</td>
+                        <td class="text-center text-primary">123</td>
+                        <td>Semester Ganjil</td>
                     </tr>
                 </tfoot>
             </table>
         </div>
-
-        <h4 class="text-primary mt-5 mb-3"><i class="fa fa-chart-bar me-2"></i>REKAP TOTAL TAHUNAN ADMINISTRASI GURU</h4>
-        <div class="table-responsive mb-5">
-            <table class="table table-bordered table-hover text-center align-middle">
-                <thead class="table-light text-uppercase small">
-                    <tr>
-                        <th class="text-start">Komponen</th>
-                        <th>Jumlah Smt 1</th>
-                        <th>Jumlah Smt 2</th>
-                        <th>Total 1 Tahun</th>
-                        <th>Satuan</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="text-start">Total Minggu Kalender</td>
-                        <td>${smt1WeeksCal}</td>
-                        <td>${smt2WeeksCal}</td>
-                        <td class="fw-bold">${totalWeeksCalYear}</td>
-                        <td>Minggu</td>
-                    </tr>
-                    <tr>
-                        <td class="text-start">Total Minggu Tidak Efektif</td>
-                        <td>${smt1WeeksNotEff}</td>
-                        <td>${smt2WeeksNotEff}</td>
-                        <td class="fw-bold text-danger">${totalWeeksNotEffYear}</td>
-                        <td>Minggu</td>
-                    </tr>
-                    <tr class="table-warning">
-                        <td class="text-start fw-bold">Total Minggu Efektif Belajar</td>
-                        <td>${smt1WeeksEff}</td>
-                        <td>${smt2WeeksEff}</td>
-                        <td class="fw-bold text-primary">${totalWeeksEffYear}</td>
-                        <td>Minggu</td>
-                    </tr>
-                    <tr>
-                        <td class="text-start">Total Hari Sekolah</td>
-                        <td>${smt1DaysSch}</td>
-                        <td>${smt2DaysSch}</td>
-                        <td class="fw-bold">${totalDaysSchYear}</td>
-                        <td>Hari</td>
-                    </tr>
-                    <tr>
-                        <td class="text-start">Total Hari Tidak Efektif</td>
-                        <td>${smt1DaysNotEff}</td>
-                        <td>${smt2DaysNotEff}</td>
-                        <td class="fw-bold text-danger">${totalDaysNotEffYear}</td>
-                        <td>Hari</td>
-                    </tr>
-                    <tr class="table-success">
-                        <td class="text-start fw-bold">Total Hari Efektif Belajar</td>
-                        <td>${smt1DaysEff}</td>
-                        <td>${smt2DaysEff}</td>
-                        <td class="fw-bold text-success">${totalDaysEffYear}</td>
-                        <td>Hari</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="row mt-5 text-center" style="page-break-inside: avoid;">
-            <div class="col-6">
-                <p class="mb-5">Mengetahui,<br>Kepala Sekolah</p>
-                <p class="fw-bold text-decoration-underline mb-0">{{ profile.kepala_sekolah if profile else '.......................' }}</p>
-                <p class="small">NIP. {{ profile.nip_kepala_sekolah if profile else '.......................' }}</p>
-            </div>
-            <div class="col-6">
-                <p class="mb-5">Bandung, .................... 20..<br>Guru Mata Pelajaran</p>
-                <p class="fw-bold text-decoration-underline mb-0">{{ current_user.nama_lengkap if current_user.is_authenticated else '.......................' }}</p>
-                <p class="small">NIP. {{ current_user.nip if current_user.is_authenticated else '.......................' }}</p>
-            </div>
-        </div>
         `;
+    }
+
+    function exportHEMExcel() {
+        const previewEl = document.getElementById('previewArea');
+        if (!previewEl || !previewEl.innerHTML.trim()) {
+            alert('Belum ada data analisis untuk diexport.');
+            return;
+        }
+        let htmlContent = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head><meta charset="utf-8"><title>Analisis HEM</title></head>
+        <body>${previewEl.innerHTML}</body>
+        </html>`;
         
-        document.getElementById('previewArea').innerHTML = html;
+        let blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url;
+        a.download = 'Analisis_Hari_Efektif_Mengajar.xls';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
     </script>
+    {% else %}
+                    <div class="text-center text-muted py-5">Silakan centang hari dan atur jumlah JP di atas, hasil perhitungan Semester Ganjil dan Genap akan tampil secara real-time di sini.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 
-{% else %}
+    <script>
+    const nationalHolidays2026 = {
+        "2026-01-01": "Tahun Baru Masehi",
+        "2026-01-16": "Isra Mikraj Nabi Muhammad SAW",
+        "2026-02-17": "Tahun Baru Imlek",
+        "2026-03-19": "Hari Suci Nyepi",
+        "2026-04-03": "Wafat Yesus Kristus",
+        "2026-05-01": "Hari Buruh Internasional",
+        "2026-05-14": "Kenaikan Yesus Kristus",
+        "2026-05-27": "Hari Raya Idul Adha",
+        "2026-05-31": "Hari Raya Waisak",
+        "2026-06-01": "Hari Lahir Pancasila",
+        "2026-06-18": "Tahun Baru Islam",
+        "2026-08-17": "Hari Kemerdekaan Republik Indonesia",
+        "2026-08-25": "Maulid Nabi Muhammad SAW",
+        "2026-12-25": "Hari Raya Natal"
+    };
+
+    function getWeekNumber(d) {
+        d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+        var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+        var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+        return d.getUTCFullYear() + '-' + weekNo;
+    }
+
+    function calculateHEM() {
+        const jpEl = document.getElementById('jumlah_jp');
+        if (!jpEl) return;
+        const jumlahJP = parseInt(jpEl.value) || 4;
+
+        let targetDays = [];
+        document.querySelectorAll('.hari-cb').forEach(cb => {
+            if (cb.checked) targetDays.push(parseInt(cb.value));
+        });
+
+        const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        let year = new Date().getFullYear();
+
+        let semesters = [
+            {
+                name: 'SEMESTER GANJIL (Juli - Desember)',
+                months: [
+                    { name: 'Juli', monthIdx: 6, year: year },
+                    { name: 'Agustus', monthIdx: 7, year: year },
+                    { name: 'September', monthIdx: 8, year: year },
+                    { name: 'Oktober', monthIdx: 9, year: year },
+                    { name: 'November', monthIdx: 10, year: year },
+                    { name: 'Desember', monthIdx: 11, year: year }
+                ]
+            },
+            {
+                name: 'SEMESTER GENAP (Januari - Juni)',
+                months: [
+                    { name: 'Januari', monthIdx: 0, year: year },
+                    { name: 'Februari', monthIdx: 1, year: year },
+                    { name: 'Maret', monthIdx: 2, year: year },
+                    { name: 'April', monthIdx: 3, year: year },
+                    { name: 'Mei', monthIdx: 4, year: year },
+                    { name: 'Juni', monthIdx: 5, year: year }
+                ]
+            }
+        ];
+
+        let totalHolidayConflicts = 0;
+        let htmlOutput = `<div class="text-center mb-4"><h3>ANALISIS HARI EFEKTIF MENGAJAR (HEM)</h3><p class="text-muted">Beban Mengajar: ${jumlahJP} JP per Minggu (Semester Ganjil & Genap)</p></div><hr>`;
+
+        semesters.forEach(sem => {
+            htmlOutput += `<h4 class="text-primary mt-4 mb-3 border-bottom pb-2"><i class="fa fa-calendar-check me-2"></i>${sem.name}</h4>`;
+            htmlOutput += `<div class="table-responsive mb-4"><table class="table table-bordered table-striped align-middle">`;
+            htmlOutput += `<thead class="table-dark text-center"><tr><th style="width: 16%;">Bulan</th><th>Rincian Hari & Tanggal Efektif</th><th style="width: 11%;">Jml Hari</th><th style="width: 11%;">Jml Minggu</th><th style="width: 15%;">Jumlah JP Efektif</th></tr></thead><tbody>`;
+
+            let semEffectiveDays = 0;
+            let semEffectiveWeeksSet = new Set();
+
+            sem.months.forEach(m => {
+                let dateBadges = [];
+                let daysInMonth = new Date(m.year, m.monthIdx + 1, 0).getDate();
+                let effectiveCountInMonth = 0;
+                let monthWeeksSet = new Set();
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                    let currDate = new Date(m.year, m.monthIdx, d);
+                    let dayOfWeek = currDate.getDay();
+                    if (targetDays.includes(dayOfWeek)) {
+                        let mm = String(m.monthIdx + 1).padStart(2, '0');
+                        let dd = String(d).padStart(2, '0');
+                        let dateStr = `${m.year}-${mm}-${dd}`;
+                        let formattedDate = `${dayNames[dayOfWeek]}, ${d} ${m.name}`;
+
+                        if (nationalHolidays2026[dateStr]) {
+                            totalHolidayConflicts++;
+                            dateBadges.push(`<div class="text-danger fw-bold py-1 px-2 mb-1 bg-light border border-danger rounded d-flex justify-content-between align-items-center"><span>⚠️ ${formattedDate}</span><span class="badge bg-danger text-white">LIBUR: ${nationalHolidays2026[dateStr]}</span></div>`);
+                        } else {
+                            effectiveCountInMonth++;
+                            monthWeeksSet.add(getWeekNumber(currDate));
+                            semEffectiveWeeksSet.add(getWeekNumber(currDate));
+                            dateBadges.push(`<span class="badge bg-white text-dark border m-1 px-2 py-1">${formattedDate}</span>`);
+                        }
+                    }
+                }
+                semEffectiveDays += effectiveCountInMonth;
+                let monthWeeksCount = monthWeeksSet.size;
+                let totalJPBulan = monthWeeksCount * jumlahJP;
+
+                htmlOutput += `<tr>`;
+                htmlOutput += `<td class="fw-bold text-center align-middle">${m.name} ${m.year}</td>`;
+                htmlOutput += `<td><div class="d-flex flex-wrap align-items-center">${dateBadges.length > 0 ? dateBadges.join('') : '<span class="text-muted p-2">Tidak ada hari terpilih</span>'}</div></td>`;
+                htmlOutput += `<td class="text-center fw-bold">${effectiveCountInMonth} Hari</td>`;
+                htmlOutput += `<td class="text-center fw-bold text-secondary">${monthWeeksCount} Minggu</td>`;
+                htmlOutput += `<td class="text-center fw-bold text-primary">${totalJPBulan} JP</td>`;
+                htmlOutput += `</tr>`;
+            });
+
+            let semTotalWeeks = semEffectiveWeeksSet.size;
+            let semTotalJP = semTotalWeeks * jumlahJP;
+
+            htmlOutput += `</tbody><tfoot class="table-light"><tr><th colspan="2" class="text-end">TOTAL ${sem.name}:</th><th class="text-center text-success">${semEffectiveDays} Hari</th><th class="text-center text-success">${semTotalWeeks} Minggu Efektif</th><th class="text-center text-success">${semTotalJP} JP</th></tr></tfoot></table></div>`;
+        });
+
+        if (totalHolidayConflicts > 0) {
+            htmlOutput += `<div class="alert alert-danger mt-3 mb-0"><i class="fa fa-exclamation-triangle me-2"></i><b>Perhatian:</b> Terdapat <b>${totalHolidayConflicts} jadwal mengajar</b> yang berbenturan dengan hari libur nasional / hari raya di sepanjang tahun (ditandai dengan warna merah).</div>`;
+        }
+
+        const previewEl = document.getElementById('previewArea');
+        if (previewEl) previewEl.innerHTML = htmlOutput;
+
+        fetch('/api/save_hem', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                jumlah_jp: jumlahJP,
+                hari_tertentu: targetDays,
+                hasil_konten: htmlOutput
+            })
+        }).catch(err => console.error("Auto-save HEM error:", err));
+    }
+
+    function initHEM() {
+        const jpEl = document.getElementById('jumlah_jp');
+        if (jpEl) jpEl.addEventListener('change', calculateHEM);
+        document.querySelectorAll('.hari-cb').forEach(cb => {
+            cb.addEventListener('change', calculateHEM);
+        });
+        const previewEl = document.getElementById('previewArea');
+        if (previewEl && !previewEl.innerHTML.trim().includes('ANALISIS HARI EFEKTIF MENGAJAR')) {
+            calculateHEM();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initHEM);
+    } else {
+        initHEM();
+    }
+    </script>
+    {% else %}
     <!-- Generator standar untuk modul selain HEM -->
     <div class="col-md-5">
         <div class="card shadow-lg border-0 mb-4 rounded-3 overflow-hidden">
