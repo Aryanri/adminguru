@@ -772,7 +772,6 @@ def export_word():
 def export_excel():
     import io
     import pandas as pd
-    from bs4 import BeautifulSoup
     from flask import send_file
     import openpyxl
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -783,12 +782,13 @@ def export_excel():
     
     df = None
     if saved_hem and saved_hem.hasil_konten:
-        soup = BeautifulSoup(saved_hem.hasil_konten, 'html.parser')
-        table = soup.find('table')
-        if table:
-            df_list = pd.read_html(str(table))
+        try:
+            # Parse HTML table without bs4 using pandas read_html directly if lxml/html5lib or pandas built-in parser is available, or fallback
+            df_list = pd.read_html(io.StringIO(saved_hem.hasil_konten))
             if df_list:
                 df = df_list[0]
+        except Exception as e:
+            print("HTML parse error:", e)
                 
     if df is None:
         data = [
@@ -814,7 +814,6 @@ def export_excel():
 
     # Styling Palette
     navy_fill = PatternFill(start_color="1E3D59", end_color="1E3D59", fill_type="solid")
-    white_bold_font = Font(name="Arial", size=11, bold=True, color="FFFFFF")
     title_font = Font(name="Arial", size=14, bold=True, color="1E3D59")
     subtitle_font = Font(name="Arial", size=10, italic=True, color="555555")
     header_font = Font(name="Arial", size=10, bold=True, color="FFFFFF")
@@ -871,7 +870,6 @@ def export_excel():
 
     # Populate Data
     for row_idx, row in df.iterrows():
-        # Ensure row has 8 items
         r_vals = list(row.values)[:8]
         while len(r_vals) < 8:
             r_vals.append("")
@@ -884,7 +882,6 @@ def export_excel():
             cell.font = data_font
             cell.border = thin_border
             
-            # Alignments & Formatting
             if col_idx == 1:
                 cell.alignment = Alignment(horizontal="left", vertical="center")
                 cell.font = bold_data_font
@@ -894,7 +891,7 @@ def export_excel():
                     cell.value = int(cell.value)
                 except:
                     pass
-            elif col_idx == 4: # Minggu Efektif Belajar (Accent Green)
+            elif col_idx == 4:
                 cell.alignment = Alignment(horizontal="center", vertical="center")
                 cell.fill = green_fill
                 cell.font = green_font
@@ -902,7 +899,7 @@ def export_excel():
                     cell.value = int(cell.value)
                 except:
                     pass
-            elif col_idx == 7: # Hari Efektif Belajar (Accent Yellow)
+            elif col_idx == 7:
                 cell.alignment = Alignment(horizontal="center", vertical="center")
                 cell.fill = yellow_fill
                 cell.font = yellow_font
