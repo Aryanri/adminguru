@@ -772,29 +772,197 @@ def export_word():
 def export_excel():
     import io
     import pandas as pd
+    from bs4 import BeautifulSoup
     from flask import send_file
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
     
-    # We can parse the table or send generated Excel data
-    # Let's create a robust Excel export containing the HEM table structure
-    data = [
-        {"Bulan": "Juli 2026", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 2, "Minggu Efektif Belajar": 3, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 8, "Hari Efektif Belajar": 14, "Keterangan": "Permulaan Tahun Ajaran & MPLS"},
-        {"Bulan": "Agustus 2026", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 0, "Minggu Efektif Belajar": 4, "Jumlah Hari Sekolah": 21, "Hari Tidak Efektif": 1, "Hari Efektif Belajar": 20, "Keterangan": "Efektif Normal / HUT RI"},
-        {"Bulan": "September 2026", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 0, "Minggu Efektif Belajar": 5, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 0, "Hari Efektif Belajar": 22, "Keterangan": "Efektif Normal"},
-        {"Bulan": "Oktober 2026", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 1, "Minggu Efektif Belajar": 3, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 2, "Hari Efektif Belajar": 20, "Keterangan": "STS / Penilaian Tengah Semester"},
-        {"Bulan": "November 2026", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 0, "Minggu Efektif Belajar": 4, "Jumlah Hari Sekolah": 21, "Hari Tidak Efektif": 0, "Hari Efektif Belajar": 21, "Keterangan": "Efektif Normal"},
-        {"Bulan": "Desember 2026", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 3, "Minggu Efektif Belajar": 2, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 12, "Hari Efektif Belajar": 10, "Keterangan": "SAS, Penerimaan Rapor & Libur Semester"},
-        {"Bulan": "Januari 2027", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 0, "Minggu Efektif Belajar": 4, "Jumlah Hari Sekolah": 21, "Hari Tidak Efektif": 1, "Hari Efektif Belajar": 20, "Keterangan": "Permulaan Semester Genap"},
-        {"Bulan": "Februari 2027", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 1, "Minggu Efektif Belajar": 3, "Jumlah Hari Sekolah": 20, "Hari Tidak Efektif": 3, "Hari Efektif Belajar": 17, "Keterangan": "Efektif Normal / Isra Mikraj"},
-        {"Bulan": "Maret 2027", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 2, "Minggu Efektif Belajar": 2, "Jumlah Hari Sekolah": 23, "Hari Tidak Efektif": 8, "Hari Efektif Belajar": 15, "Keterangan": "Libur Awal Ramadhan / Nyepi"},
-        {"Bulan": "April 2027", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 3, "Minggu Efektif Belajar": 2, "Jumlah Hari Sekolah": 21, "Hari Tidak Efektif": 12, "Hari Efektif Belajar": 9, "Keterangan": "Libur Hari Raya Idul Fitri & STS"},
-        {"Bulan": "Mei 2027", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 1, "Minggu Efektif Belajar": 3, "Jumlah Hari Sekolah": 20, "Hari Tidak Efektif": 4, "Hari Efektif Belajar": 16, "Keterangan": "Efektif Normal / Ujian Sekolah"},
-        {"Bulan": "Juni 2027", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 3, "Minggu Efektif Belajar": 2, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 12, "Hari Efektif Belajar": 10, "Keterangan": "SAS Genap & Libur Kenaikan Kelas"}
+    jenis = "Analisis Hari Efektif Mengajar (HEM)"
+    saved_hem = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi=jenis).order_by(Archive.created_at.desc()).first()
+    
+    df = None
+    if saved_hem and saved_hem.hasil_konten:
+        soup = BeautifulSoup(saved_hem.hasil_konten, 'html.parser')
+        table = soup.find('table')
+        if table:
+            df_list = pd.read_html(str(table))
+            if df_list:
+                df = df_list[0]
+                
+    if df is None:
+        data = [
+            {"Bulan": "Juli 2026", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 2, "Minggu Efektif Belajar": 3, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 8, "Hari Efektif Belajar": 14, "Keterangan": "Permulaan Tahun Ajaran & MPLS"},
+            {"Bulan": "Agustus 2026", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 0, "Minggu Efektif Belajar": 4, "Jumlah Hari Sekolah": 21, "Hari Tidak Efektif": 1, "Hari Efektif Belajar": 20, "Keterangan": "Efektif Normal / HUT RI"},
+            {"Bulan": "September 2026", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 0, "Minggu Efektif Belajar": 5, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 0, "Hari Efektif Belajar": 22, "Keterangan": "Efektif Normal"},
+            {"Bulan": "Oktober 2026", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 1, "Minggu Efektif Belajar": 3, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 2, "Hari Efektif Belajar": 20, "Keterangan": "STS / Penilaian Tengah Semester"},
+            {"Bulan": "November 2026", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 0, "Minggu Efektif Belajar": 4, "Jumlah Hari Sekolah": 21, "Hari Tidak Efektif": 0, "Hari Efektif Belajar": 21, "Keterangan": "Efektif Normal"},
+            {"Bulan": "Desember 2026", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 3, "Minggu Efektif Belajar": 2, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 12, "Hari Efektif Belajar": 10, "Keterangan": "SAS, Penerimaan Rapor & Libur Semester"},
+            {"Bulan": "Januari 2027", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 0, "Minggu Efektif Belajar": 4, "Jumlah Hari Sekolah": 21, "Hari Tidak Efektif": 1, "Hari Efektif Belajar": 20, "Keterangan": "Permulaan Semester Genap"},
+            {"Bulan": "Februari 2027", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 1, "Minggu Efektif Belajar": 3, "Jumlah Hari Sekolah": 20, "Hari Tidak Efektif": 3, "Hari Efektif Belajar": 17, "Keterangan": "Efektif Normal / Isra Mikraj"},
+            {"Bulan": "Maret 2027", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 2, "Minggu Efektif Belajar": 2, "Jumlah Hari Sekolah": 23, "Hari Tidak Efektif": 8, "Hari Efektif Belajar": 15, "Keterangan": "Libur Awal Ramadhan / Nyepi"},
+            {"Bulan": "April 2027", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 3, "Minggu Efektif Belajar": 2, "Jumlah Hari Sekolah": 21, "Hari Tidak Efektif": 12, "Hari Efektif Belajar": 9, "Keterangan": "Libur Hari Raya Idul Fitri & STS"},
+            {"Bulan": "Mei 2027", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 1, "Minggu Efektif Belajar": 3, "Jumlah Hari Sekolah": 20, "Hari Tidak Efektif": 4, "Hari Efektif Belajar": 16, "Keterangan": "Efektif Normal / Ujian Sekolah"},
+            {"Bulan": "Juni 2027", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 3, "Minggu Efektif Belajar": 2, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 12, "Hari Efektif Belajar": 10, "Keterangan": "SAS Genap & Libur Kenaikan Kelas"}
+        ]
+        df = pd.DataFrame(data)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Analisis HEM"
+    ws.views.sheetView[0].showGridLines = True
+
+    # Styling Palette
+    navy_fill = PatternFill(start_color="1E3D59", end_color="1E3D59", fill_type="solid")
+    white_bold_font = Font(name="Arial", size=11, bold=True, color="FFFFFF")
+    title_font = Font(name="Arial", size=14, bold=True, color="1E3D59")
+    subtitle_font = Font(name="Arial", size=10, italic=True, color="555555")
+    header_font = Font(name="Arial", size=10, bold=True, color="FFFFFF")
+    data_font = Font(name="Arial", size=10, color="333333")
+    bold_data_font = Font(name="Arial", size=10, bold=True, color="333333")
+    
+    green_fill = PatternFill(start_color="E2FEF0", end_color="E2FEF0", fill_type="solid")
+    green_font = Font(name="Arial", size=10, bold=True, color="0F5132")
+    
+    yellow_fill = PatternFill(start_color="FFF3CD", end_color="FFF3CD", fill_type="solid")
+    yellow_font = Font(name="Arial", size=10, bold=True, color="856404")
+    
+    light_gray_fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+    thin_border = Border(
+        left=Side(style='thin', color='CBD5E1'),
+        right=Side(style='thin', color='CBD5E1'),
+        top=Side(style='thin', color='CBD5E1'),
+        bottom=Side(style='thin', color='CBD5E1')
+    )
+
+    # Title Block
+    ws.merge_cells('A1:H1')
+    ws['A1'] = "LAPORAN ANALISIS MINGGU & HARI EFEKTIF MENGAJAR (HEM)"
+    ws['A1'].font = title_font
+    ws['A1'].alignment = Alignment(horizontal="center", vertical="center")
+
+    ws.merge_cells('A2:H2')
+    ws['A2'] = "Berdasarkan Kalender Akademik Resmi Kemendikdasmen | Dokumen Pendukung Penyusunan Prota & Prosem"
+    ws['A2'].font = subtitle_font
+    ws['A2'].alignment = Alignment(horizontal="center", vertical="center")
+
+    ws.append([]) # Row 3 blank
+
+    # Table Headers
+    headers = [
+        "Bulan", 
+        "Jumlah Minggu Kalender", 
+        "Minggu Tidak Efektif", 
+        "Minggu Efektif Belajar", 
+        "Jumlah Hari Sekolah", 
+        "Hari Tidak Efektif", 
+        "Hari Efektif Belajar", 
+        "Keterangan / Agenda"
     ]
+    ws.append(headers)
+    ws.row_dimensions[4].height = 28
+
+    for col_idx in range(1, 9):
+        cell = ws.cell(row=4, column=col_idx)
+        cell.fill = navy_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = thin_border
+
+    # Populate Data
+    for row_idx, row in df.iterrows():
+        # Ensure row has 8 items
+        r_vals = list(row.values)[:8]
+        while len(r_vals) < 8:
+            r_vals.append("")
+        ws.append(r_vals)
+        current_row = 5 + row_idx
+        ws.row_dimensions[current_row].height = 20
+        
+        for col_idx in range(1, 9):
+            cell = ws.cell(row=current_row, column=col_idx)
+            cell.font = data_font
+            cell.border = thin_border
+            
+            # Alignments & Formatting
+            if col_idx == 1:
+                cell.alignment = Alignment(horizontal="left", vertical="center")
+                cell.font = bold_data_font
+            elif col_idx in [2, 3, 5, 6]:
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+                try:
+                    cell.value = int(cell.value)
+                except:
+                    pass
+            elif col_idx == 4: # Minggu Efektif Belajar (Accent Green)
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+                cell.fill = green_fill
+                cell.font = green_font
+                try:
+                    cell.value = int(cell.value)
+                except:
+                    pass
+            elif col_idx == 7: # Hari Efektif Belajar (Accent Yellow)
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+                cell.fill = yellow_fill
+                cell.font = yellow_font
+                try:
+                    cell.value = int(cell.value)
+                except:
+                    pass
+            else:
+                cell.alignment = Alignment(horizontal="left", vertical="center")
+
+    # Totals Row
+    start_row = 5
+    end_row = 5 + len(df) - 1
+    total_row = end_row + 1
     
-    df = pd.DataFrame(data)
+    ws.append([
+        "TOTAL KESELURUHAN",
+        f"=SUM(B{start_row}:B{end_row})",
+        f"=SUM(C{start_row}:C{end_row})",
+        f"=SUM(D{start_row}:D{end_row})",
+        f"=SUM(E{start_row}:E{end_row})",
+        f"=SUM(F{start_row}:F{end_row})",
+        f"=SUM(G{start_row}:G{end_row})",
+        "Data Dasar Prota & Prosem"
+    ])
+    ws.row_dimensions[total_row].height = 24
+    
+    for col_idx in range(1, 9):
+        cell = ws.cell(row=total_row, column=col_idx)
+        cell.fill = light_gray_fill
+        cell.font = bold_data_font
+        cell.border = thin_border
+        if col_idx == 1:
+            cell.alignment = Alignment(horizontal="right", vertical="center")
+        elif col_idx in [4]:
+            cell.fill = green_fill
+            cell.font = green_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+        elif col_idx in [7]:
+            cell.fill = yellow_fill
+            cell.font = yellow_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+        elif col_idx in [2, 3, 5, 6]:
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+        else:
+            cell.alignment = Alignment(horizontal="left", vertical="center")
+
+    # Auto-fit column widths
+    for col in ws.columns:
+        max_len = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            if cell.row > 2 and cell.value:
+                max_len = max(max_len, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max(max_len + 5, 14)
+    ws.column_dimensions['A'].width = 18
+    ws.column_dimensions['H'].width = 38
+
     output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Analisis HEM')
+    wb.save(output)
     output.seek(0)
     
     return send_file(
