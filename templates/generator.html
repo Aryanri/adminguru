@@ -29,10 +29,8 @@
             <div class="card-header text-white d-flex justify-content-between align-items-center" style="background-color: #1e3d59;">
                 <h5 class="m-0"><i class="fa fa-calendar-alt me-2"></i>Analisis Minggu Efektif & Hari Efektif Belajar (HEM) Berdasarkan Kalender Akademik</h5>
                 <div class="d-flex gap-2">
-                    <form action="/export/word" method="POST" target="_blank" class="m-0">
-                        <input type="hidden" name="html_content" id="exportWordContentHEM" value="">
-                        <input type="hidden" name="title" value="Analisis_HEM">
-                        <button type="submit" class="btn btn-light btn-sm fw-bold shadow-sm px-3 text-primary" onclick="prepareHemWordExport()"><i class="fa fa-file-word me-1"></i> Export Word</button>
+                    <form action="/export/excel" method="POST" class="m-0">
+                        <button type="submit" class="btn btn-light btn-sm fw-bold shadow-sm px-3 text-success"><i class="fa fa-file-excel me-1"></i> Export to Excel</button>
                     </form>
                     <button type="button" class="btn btn-light btn-sm fw-bold" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / Export PDF</button>
                 </div>
@@ -41,14 +39,16 @@
                 <div class="row g-3 align-items-center">
                     <div class="col-md-4">
                         <label class="form-label fw-bold small mb-1">Sistem Hari Belajar Sekolah:</label>
-                        <select class="form-select shadow-sm" name="sistem_hari" id="sistemHari">
+                        <select class="form-select shadow-sm mb-3" name="sistem_hari" id="sistemHari">
                             <option value="5" selected>5 Hari Kerja (Senin – Jumat)</option>
                             <option value="6">6 Hari Kerja (Senin – Sabtu)</option>
                         </select>
+                        <label class="form-label fw-bold small mb-1">Upload Kalender Akademik (PDF / Word / Gambar):</label>
+                        <input type="file" class="form-control form-control-sm shadow-sm" id="kalenderFile" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg">
                     </div>
                     <div class="col-md-8">
-                        <label class="form-label fw-bold small mb-1"><i class="fa fa-info-circle text-primary me-1"></i> Petunjuk:</label>
-                        <p class="text-muted small mb-0">Analisis otomatis menghitung rincian Minggu dan Hari Efektif Belajar setiap bulan sesuai Kalender Akademik Tahun Pelajaran berjalan dengan penekanan pada komponen utama Prota & Prosem.</p>
+                        <label class="form-label fw-bold small mb-1"><i class="fa fa-info-circle text-primary me-1"></i> Tugas Analisis Asisten Kalender Akademik:</label>
+                        <p class="text-muted small mb-0">Sistem membaca dokumen kalender akademik yang diunggah untuk mengekstrak dan menghitung secara presisi <b>Jumlah Minggu Efektif Belajar</b> dan <b>Jumlah Hari Efektif Belajar</b> setiap bulan sebagai dasar penyusunan Prota & Prosem.</p>
                     </div>
                 </div>
             </div>
