@@ -332,7 +332,14 @@
             <div class="card-header bg-success text-white d-flex justify-content-between align-items-center py-3 px-4">
                 <h5 class="m-0 fw-bold"><i class="fa fa-file-alt me-2"></i>Hasil Preview Dokumen AI</h5>
                 {% if hasil_generate %}
-                <button type="button" class="btn btn-light btn-sm fw-bold shadow-sm px-3" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / Export PDF</button>
+                <div class="d-flex gap-2">
+                    <form action="/export/word" method="POST" target="_blank" class="m-0">
+                        <input type="hidden" name="html_content" id="exportWordContent" value="">
+                        <input type="hidden" name="title" value="{{ current_jenis }}">
+                        <button type="submit" class="btn btn-light btn-sm fw-bold shadow-sm px-3 text-primary" onclick="prepareWordExport()"><i class="fa fa-file-word me-1"></i> Export Word</button>
+                    </form>
+                    <button type="button" class="btn btn-light btn-sm fw-bold shadow-sm px-3" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / Export PDF</button>
+                </div>
                 {% endif %}
             </div>
             <div class="card-body bg-light p-4" style="min-height: 600px;">
@@ -728,3 +735,13 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 
 {% endblock %}
+
+<script>
+function prepareWordExport() {
+    const container = document.querySelector('.document-preview-container');
+    const input = document.getElementById('exportWordContent');
+    if (container && input) {
+        input.value = container.innerHTML;
+    }
+}
+</script>
