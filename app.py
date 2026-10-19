@@ -947,15 +947,92 @@ def export_excel():
         else:
             cell.alignment = Alignment(horizontal="left", vertical="center")
 
+    # Add Summary Tables (REKAP TOTAL TAHUNAN KOMPONEN HEM) matching the web preview
+    summary_start_row = total_row + 3
+    
+    # Section Header
+    ws.cell(row=summary_start_row, column=1, value="REKAP TOTAL TAHUNAN KOMPONEN HEM").font = Font(name="Arial", size=12, bold=True, color="1E3D59")
+    
+    # Minggu Summary Table Header
+    ws.cell(row=summary_start_row + 1, column=1, value="Komponen Analisis Minggu").font = header_font
+    ws.cell(row=summary_start_row + 1, column=1).fill = navy_fill
+    ws.cell(row=summary_start_row + 1, column=1).alignment = Alignment(horizontal="left", vertical="center")
+    ws.cell(row=summary_start_row + 1, column=1).border = thin_border
+    
+    ws.cell(row=summary_start_row + 1, column=2, value="Jumlah").font = header_font
+    ws.cell(row=summary_start_row + 1, column=2).fill = navy_fill
+    ws.cell(row=summary_start_row + 1, column=2).alignment = Alignment(horizontal="center", vertical="center")
+    ws.cell(row=summary_start_row + 1, column=2).border = thin_border
+    
+    minggu_rows = [
+        ("Total Minggu Kalender", f"=B{total_row}"),
+        ("Total Minggu Tidak Efektif", f"=C{total_row}"),
+        ("Total Minggu Efektif Belajar", f"=D{total_row}")
+    ]
+    
+    for idx, (comp, val) in enumerate(minggu_rows):
+        r = summary_start_row + 2 + idx
+        ws.row_dimensions[r].height = 20
+        c1 = ws.cell(row=r, column=1, value=comp)
+        c2 = ws.cell(row=r, column=2, value=val)
+        c1.border = thin_border
+        c2.border = thin_border
+        c1.font = data_font
+        c2.font = data_font
+        c2.alignment = Alignment(horizontal="center", vertical="center")
+        if idx == 2:
+            c1.fill = green_fill
+            c2.fill = green_fill
+            c1.font = green_font
+            c2.font = green_font
+
+    # Hari Summary Table Header (placed alongside starting column D)
+    ws.cell(row=summary_start_row + 1, column=4, value="Komponen Analisis Hari").font = header_font
+    ws.cell(row=summary_start_row + 1, column=4).fill = navy_fill
+    ws.cell(row=summary_start_row + 1, column=4).alignment = Alignment(horizontal="left", vertical="center")
+    ws.cell(row=summary_start_row + 1, column=4).border = thin_border
+    
+    ws.cell(row=summary_start_row + 1, column=5, value="Jumlah").font = header_font
+    ws.cell(row=summary_start_row + 1, column=5).fill = navy_fill
+    ws.cell(row=summary_start_row + 1, column=5).alignment = Alignment(horizontal="center", vertical="center")
+    ws.cell(row=summary_start_row + 1, column=5).border = thin_border
+    
+    hari_rows = [
+        ("Total Hari Sekolah", f"=E{total_row}"),
+        ("Total Hari Tidak Efektif", f"=F{total_row}"),
+        ("Total Hari Efektif Belajar", f"=G{total_row}")
+    ]
+    
+    for idx, (comp, val) in enumerate(hari_rows):
+        r = summary_start_row + 2 + idx
+        c1 = ws.cell(row=r, column=4, value=comp)
+        c2 = ws.cell(row=r, column=5, value=val)
+        c1.border = thin_border
+        c2.border = thin_border
+        c1.font = data_font
+        c2.font = data_font
+        c2.alignment = Alignment(horizontal="center", vertical="center")
+        if idx == 2:
+            c1.fill = yellow_fill
+            c2.fill = yellow_fill
+            c1.font = yellow_font
+            c2.font = yellow_font
+
     # Auto-fit column widths
     for col in ws.columns:
         max_len = 0
         col_letter = get_column_letter(col[0].column)
         for cell in col:
-            if cell.row > 2 and cell.value:
+            if cell.row > 2 and cell.value and not str(cell.value).startswith('='):
                 max_len = max(max_len, len(str(cell.value)))
         ws.column_dimensions[col_letter].width = max(max_len + 5, 14)
-    ws.column_dimensions['A'].width = 18
+    ws.column_dimensions['A'].width = 30
+    ws.column_dimensions['B'].width = 16
+    ws.column_dimensions['C'].width = 20
+    ws.column_dimensions['D'].width = 28
+    ws.column_dimensions['E'].width = 16
+    ws.column_dimensions['F'].width = 20
+    ws.column_dimensions['G'].width = 20
     ws.column_dimensions['H'].width = 38
 
     output = io.BytesIO()
