@@ -1131,3 +1131,9 @@ def analyze_calendar():
         return jsonify({'status': 'error', 'message': f'Google AI Error: {err_msg}'}), 500
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+# WSGI Application entrypoints for Vercel
+app = app
+application = app
+handler = app
