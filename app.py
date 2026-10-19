@@ -264,10 +264,7 @@ def generator(modul_slug):
     jenis = mod_obj.nama_modul
     profile = SchoolProfile.query.first()
 
-    if modul_slug == 'hem':
-        saved_hem = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi=jenis).order_by(Archive.created_at.desc()).first()
-        if saved_hem:
-            hasil_generate = saved_hem.hasil_konten
+
 
     if request.method == 'POST':
         try:
@@ -323,51 +320,59 @@ def generator(modul_slug):
                     except:
                         total_soal = 20
                         
-                    prompt_ai = f"""Bertindaklah sebagai guru profesional pembuat instrumen evaluasi. Buatkan naskah soal lengkap berkualitas tinggi untuk mata pelajaran {mapel}, topik {topik}, ruang lingkup {ruang_lingkup}, jenjang {jenjang} ({kelas} / {fase}), kurikulum {kurikulum}, level kognitif {kesulitan}.
-Jumlah Soal:
-- Pilihan Ganda (PG): {jml_pg} soal (lengkap opsi A, B, C, D)
-- Isian Singkat: {jml_isian} soal
-- Esai / Uraian: {jml_esai} soal
+                    prompt_ai = f"""Bertindaklah sebagai guru ahli pembuat instrumen evaluasi. Buatkan soal untuk parameter berikut:
+Mata Pelajaran: {mapel}
+Materi/Topik: {topik}
+Ruang Lingkup: {ruang_lingkup}
+Jenjang: {jenjang} ({kelas} / {fase})
+Kurikulum: {kurikulum}
+Level Kognitif: {kesulitan}
+Jumlah Soal PG: {jml_pg}
+Jumlah Soal Isian Singkat: {jml_isian}
+Jumlah Soal Esai: {jml_esai}
+Total Keseluruhan Soal: {total_soal} soal
 
-Format Output: HANYA HTML murni (tanpa markdown ```html, tanpa tag body/html).
-Gunakan struktur berikut:
-<div class='mb-1 text-center fs-5'><b>NASKAH {jenis.upper()}</b></div>
-<div class='mb-4 text-center text-muted small'>Mata Pelajaran: {mapel} | Kelas: {kelas} | Topik: {topik}</div>
+PENTING: Pada bagian "III. KISI-KISI PENULISAN SOAL", Anda WAJIB membuat baris tabel (<tr>) SEBANYAK TOTAL KESELURUHAN SOAL ({total_soal} baris). Setiap soal yang dibuat di bagian naskah soal harus ada pemetaan kisi-kisinya di tabel ini.
 
-<div class='fw-bold mt-3 mb-2 bg-light p-2 border-start border-4 border-primary'>I. SOAL PILIHAN GANDA</div>
+Keluarkan HANYA HTML MURNI (tanpa format markdown ```html, jangan gunakan tag body/html). 
+Gunakan struktur persis seperti ini:
+<div class='mb-1 text-center fs-5'><b>PERANGKAT EVALUASI PEMBELAJARAN</b></div>
+<div class='mb-4 text-center text-muted small'>Mata Pelajaran: {mapel} | Materi: {topik} | Jenjang: {jenjang} ({kelas})</div>
+<div class='fw-bold mt-2 mb-2 bg-light p-2 border-start border-4 border-primary'>I. NASKAH SOAL EVALUASI</div>
+<div class='fw-bold mt-3'>A. PILIHAN GANDA</div>
 <div class='ps-2 mb-3'>
-  <b>1.</b> [Pertanyaan soal PG 1]<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;A. [Opsi A]<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;B. [Opsi B]<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;C. [Opsi C]<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;D. [Opsi D]<br><br>
+  <b>1.</b> [Soal PG 1 yang spesifik dan menantang]<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;A. [Opsi]<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;B. [Opsi]<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;C. [Opsi]<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;D. [Opsi]<br><br>
 </div>
-
-<div class='fw-bold mt-3 mb-2 bg-light p-2 border-start border-4 border-primary'>II. SOAL ISIAN SINGKAT</div>
+<div class='fw-bold mt-3'>B. ISIAN SINGKAT</div>
 <div class='ps-2 mb-3'>
-  <b>1.</b> [Pertanyaan isian singkat 1] ....................<br><br>
+  <b>1.</b> [Soal Isian 1 yang spesifik] ....................<br><br>
 </div>
-
-<div class='fw-bold mt-3 mb-2 bg-light p-2 border-start border-4 border-primary'>III. SOAL ESAI / URAIAN</div>
+<div class='fw-bold mt-3'>C. ESAI / URAIAN</div>
 <div class='ps-2 mb-4'>
-  <b>1.</b> [Pertanyaan esai 1]<br><br>
+  <b>1.</b> [Soal Esai 1 yang menuntut analisis]<br><br>
 </div>
-
-<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-success'>IV. KUNCI JAWABAN DAN PEMBAHASAN</div>
-<div class='mb-3'><b>A. Kunci Pilihan Ganda:</b><br>1. [Kunci] - Pembahasan singkat...<br></div>
-<div class='mb-3'><b>B. Kunci Isian Singkat:</b><br>1. [Jawaban]<br></div>
-<div class='mb-3'><b>C. Kunci Esai & Rubrik:</b><br>1. [Rubrik penilaian]<br></div>
-
-<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-warning'>V. KISI-KISI PENULISAN SOAL</div>
+<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-success'>II. KUNCI JAWABAN DAN PEMBAHASAN</div>
+<div class='fw-bold mt-3'>A. KUNCI PILIHAN GANDA</div>
+<div class='ps-2 mb-3'><b>1.</b> [Kunci] — <i>Pembahasan:</i> [Penjelasan singkat]<br></div>
+<div class='fw-bold mt-3'>B. KUNCI ISIAN SINGKAT</div>
+<div class='ps-2 mb-3'><b>1.</b> [Jawaban]<br></div>
+<div class='fw-bold mt-3'>C. KUNCI ESAI</div>
+<div class='ps-2 mb-4'><b>1.</b> <i>Rubrik:</i> [Kriteria jawaban benar]<br></div>
+<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-warning'>III. KISI-KISI PENULISAN SOAL</div>
 <div class='table-responsive mt-2'>
 <table class='table table-bordered align-middle'>
-<thead class='table-light text-center'><tr><th>No</th><th>Materi / Indikator</th><th>Bentuk Soal</th><th>Level</th></tr></thead>
+<thead class='table-light text-center'><tr><th>No</th><th>CP / TP</th><th>Materi</th><th>Indikator Soal</th><th>Bentuk Soal</th><th>Level</th></tr></thead>
 <tbody>
-<tr><td class='text-center'>1</td><td>{topik}</td><td>PG</td><td class='text-center'>{kesulitan}</td></tr>
+<tr><td class='text-center'>1</td><td>[Tujuan Pembelajaran]</td><td>{topik}</td><td>[Indikator Soal PG 1]</td><td>PG</td><td class='text-center'>{kesulitan}</td></tr>
+<!-- LANJUTKAN MEMBUAT BARIS (<tr>) UNTUK SEMUA SOAL PG, LALU SEMUA SOAL ISIAN, LALU SEMUA SOAL ESAI. PASTIKAN JUMLAH BARIS SAMA PERSIS DENGAN TOTAL SOAL ({total_soal} BARIS). -->
 </tbody>
 </table>
 </div>
-""" """
+"""
                 elif modul_slug == 'cp_tp_atp':
                     prompt_ai = f"""Bertindaklah sebagai guru ahli pembuat dokumen administrasi. Buatkan dokumen CP, TP, dan ATP untuk parameter berikut:
 Mata Pelajaran: {mapel}
@@ -537,42 +542,7 @@ Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik ses
     return render_template('generator.html', all_modules=all_modules, hasil_generate=hasil_generate, active_slug=modul_slug, current_jenis=jenis)
 
 
-@app.route('/api/save_hem', methods=['POST'])
-@login_required
-def api_save_hem():
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'status': 'error', 'message': 'No data'}), 400
-        jumlah_jp = str(data.get('jumlah_jp', '4'))
-        hari_tertentu = data.get('hari_tertentu', [])
-        hasil_konten = data.get('hasil_konten', '')
-        
-        jenis = "Analisis Hari Efektif Mengajar (HEM)"
-        param_str = f"hem-{current_user.id}-{jumlah_jp}-" + "-".join([str(h) for h in hari_tertentu])
-        param_hash = hashlib.md5(param_str.encode('utf-8')).hexdigest()
-        
-        saved_hem = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi=jenis).order_by(Archive.created_at.desc()).first()
-        if saved_hem:
-            saved_hem.hasil_konten = hasil_konten
-            saved_hem.topik = f"Analisis HEM Semester Ganjil & Genap ({jumlah_jp} JP)"
-            saved_hem.parameter_hash = param_hash
-            saved_hem.created_at = wib_now()
-        else:
-            new_arch = Archive(
-                user_id=current_user.id,
-                jenis_administrasi=jenis,
-                topik=f"Analisis HEM Semester Ganjil & Genap ({jumlah_jp} JP)",
-                ruang_lingkup=f"Analisis Hari Efektif Mengajar Semester Ganjil & Genap",
-                parameter_hash=param_hash,
-                hasil_konten=hasil_konten
-            )
-            db.session.add(new_arch)
-        db.session.commit()
-        return jsonify({'status': 'success'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
@@ -722,8 +692,6 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 
 application = app
-app = app
-handler = app
 
 @app.route('/export/word', methods=['POST'])
 @login_required
@@ -761,30 +729,41 @@ def export_word():
     )
     return response
 
+
 @app.route('/export/excel', methods=['POST'])
 @login_required
 def export_excel():
     import io
     import pandas as pd
-    from flask import send_file
+    from flask import send_file, request
     import openpyxl
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     from openpyxl.utils import get_column_letter
     
-    jenis = "Analisis Hari Efektif Mengajar (HEM)"
-    saved_hem = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi=jenis).order_by(Archive.created_at.desc()).first()
+    # Try to get ai_hem_html from form if submitted from hem generator
+    hem_html = request.form.get('ai_hem_html', '')
     
     df = None
-    if saved_hem and saved_hem.hasil_konten:
+    if hem_html:
         try:
-            # Parse HTML table without bs4 using pandas read_html directly if lxml/html5lib or pandas built-in parser is available, or fallback
-            df_list = pd.read_html(io.StringIO(saved_hem.hasil_konten))
-            if df_list:
-                df = df_list[0]
+            dfs = pd.read_html(io.StringIO(hem_html))
+            if dfs:
+                df = dfs[0]
         except Exception as e:
-            print("HTML parse error:", e)
+            print("Parse HEM HTML error:", e)
+            
+    if df is None or len(df) == 0:
+        jenis = "Analisis Hari Efektif Mengajar (HEM)"
+        saved_hem = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi=jenis).order_by(Archive.created_at.desc()).first()
+        if saved_hem and saved_hem.hasil_konten:
+            try:
+                dfs = pd.read_html(io.StringIO(saved_hem.hasil_konten))
+                if dfs:
+                    df = dfs[0]
+            except:
+                pass
                 
-    if df is None:
+    if df is None or len(df) == 0:
         data = [
             {"Bulan": "Juli 2026", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 2, "Minggu Efektif Belajar": 3, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 8, "Hari Efektif Belajar": 14, "Keterangan": "Permulaan Tahun Ajaran & MPLS"},
             {"Bulan": "Agustus 2026", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 0, "Minggu Efektif Belajar": 4, "Jumlah Hari Sekolah": 21, "Hari Tidak Efektif": 1, "Hari Efektif Belajar": 20, "Keterangan": "Efektif Normal / HUT RI"},
@@ -863,6 +842,7 @@ def export_excel():
         cell.border = thin_border
 
     # Populate Data
+    start_row = 5
     for row_idx, row in df.iterrows():
         r_vals = list(row.values)[:8]
         while len(r_vals) < 8:
@@ -904,8 +884,6 @@ def export_excel():
             else:
                 cell.alignment = Alignment(horizontal="left", vertical="center")
 
-    # Totals Row
-    start_row = 5
     end_row = 5 + len(df) - 1
     total_row = end_row + 1
     
@@ -941,92 +919,61 @@ def export_excel():
         else:
             cell.alignment = Alignment(horizontal="left", vertical="center")
 
-    # Add Summary Tables (REKAP TOTAL TAHUNAN KOMPONEN HEM) matching the web preview
-    summary_start_row = total_row + 3
+    # REKAP TOTAL TAHUNAN TABLE BELOW
+    rekap_start = total_row + 3
+    ws.cell(row=rekap_start, column=1, value="REKAP TOTAL TAHUNAN KOMPONEN PEMBELAJARAN").font = title_font
+    ws.merge_cells(start_row=rekap_start, start_column=1, end_row=rekap_start, end_column=4)
     
-    # Section Header
-    ws.cell(row=summary_start_row, column=1, value="REKAP TOTAL TAHUNAN KOMPONEN HEM").font = Font(name="Arial", size=12, bold=True, color="1E3D59")
+    rekap_headers_row = rekap_start + 1
+    ws.cell(row=rekap_headers_row, column=1, value="Komponen Pembelajaran").font = header_font
+    ws.cell(row=rekap_headers_row, column=1).fill = navy_fill
+    ws.cell(row=rekap_headers_row, column=1).border = thin_border
+    ws.cell(row=rekap_headers_row, column=1).alignment = Alignment(horizontal="left", vertical="center")
     
-    # Minggu Summary Table Header
-    ws.cell(row=summary_start_row + 1, column=1, value="Komponen Analisis Minggu").font = header_font
-    ws.cell(row=summary_start_row + 1, column=1).fill = navy_fill
-    ws.cell(row=summary_start_row + 1, column=1).alignment = Alignment(horizontal="left", vertical="center")
-    ws.cell(row=summary_start_row + 1, column=1).border = thin_border
-    
-    ws.cell(row=summary_start_row + 1, column=2, value="Jumlah").font = header_font
-    ws.cell(row=summary_start_row + 1, column=2).fill = navy_fill
-    ws.cell(row=summary_start_row + 1, column=2).alignment = Alignment(horizontal="center", vertical="center")
-    ws.cell(row=summary_start_row + 1, column=2).border = thin_border
-    
-    minggu_rows = [
+    ws.cell(row=rekap_headers_row, column=2, value="Jumlah Total").font = header_font
+    ws.cell(row=rekap_headers_row, column=2).fill = navy_fill
+    ws.cell(row=rekap_headers_row, column=2).border = thin_border
+    ws.cell(row=rekap_headers_row, column=2).alignment = Alignment(horizontal="center", vertical="center")
+    ws.merge_cells(start_row=rekap_headers_row, start_column=2, end_row=rekap_headers_row, end_column=3)
+    ws.row_dimensions[rekap_headers_row].height = 24
+
+    rekap_items = [
         ("Total Minggu Kalender", f"=B{total_row}"),
         ("Total Minggu Tidak Efektif", f"=C{total_row}"),
-        ("Total Minggu Efektif Belajar", f"=D{total_row}")
-    ]
-    
-    for idx, (comp, val) in enumerate(minggu_rows):
-        r = summary_start_row + 2 + idx
-        ws.row_dimensions[r].height = 20
-        c1 = ws.cell(row=r, column=1, value=comp)
-        c2 = ws.cell(row=r, column=2, value=val)
-        c1.border = thin_border
-        c2.border = thin_border
-        c1.font = data_font
-        c2.font = data_font
-        c2.alignment = Alignment(horizontal="center", vertical="center")
-        if idx == 2:
-            c1.fill = green_fill
-            c2.fill = green_fill
-            c1.font = green_font
-            c2.font = green_font
-
-    # Hari Summary Table Header (placed alongside starting column D)
-    ws.cell(row=summary_start_row + 1, column=4, value="Komponen Analisis Hari").font = header_font
-    ws.cell(row=summary_start_row + 1, column=4).fill = navy_fill
-    ws.cell(row=summary_start_row + 1, column=4).alignment = Alignment(horizontal="left", vertical="center")
-    ws.cell(row=summary_start_row + 1, column=4).border = thin_border
-    
-    ws.cell(row=summary_start_row + 1, column=5, value="Jumlah").font = header_font
-    ws.cell(row=summary_start_row + 1, column=5).fill = navy_fill
-    ws.cell(row=summary_start_row + 1, column=5).alignment = Alignment(horizontal="center", vertical="center")
-    ws.cell(row=summary_start_row + 1, column=5).border = thin_border
-    
-    hari_rows = [
+        ("Total Minggu Efektif Belajar", f"=D{total_row}"),
         ("Total Hari Sekolah", f"=E{total_row}"),
         ("Total Hari Tidak Efektif", f"=F{total_row}"),
         ("Total Hari Efektif Belajar", f"=G{total_row}")
     ]
-    
-    for idx, (comp, val) in enumerate(hari_rows):
-        r = summary_start_row + 2 + idx
-        c1 = ws.cell(row=r, column=4, value=comp)
-        c2 = ws.cell(row=r, column=5, value=val)
-        c1.border = thin_border
-        c2.border = thin_border
+
+    for idx, (comp, formula_val) in enumerate(rekap_items):
+        r_idx = rekap_headers_row + 1 + idx
+        ws.row_dimensions[r_idx].height = 20
+        c1 = ws.cell(row=r_idx, column=1, value=comp)
         c1.font = data_font
-        c2.font = data_font
+        c1.border = thin_border
+        
+        c2 = ws.cell(row=r_idx, column=2, value=formula_val)
+        c2.font = bold_data_font if "Efektif Belajar" in comp else data_font
+        c2.border = thin_border
         c2.alignment = Alignment(horizontal="center", vertical="center")
-        if idx == 2:
-            c1.fill = yellow_fill
+        if "Minggu Efektif" in comp:
+            c2.fill = green_fill
+            c2.font = green_font
+        elif "Hari Efektif" in comp:
             c2.fill = yellow_fill
-            c1.font = yellow_font
             c2.font = yellow_font
+        ws.merge_cells(start_row=r_idx, start_column=2, end_row=r_idx, end_column=3)
 
     # Auto-fit column widths
     for col in ws.columns:
         max_len = 0
         col_letter = get_column_letter(col[0].column)
         for cell in col:
-            if cell.row > 2 and cell.value and not str(cell.value).startswith('='):
+            if cell.row < rekap_start and cell.row > 2 and cell.value:
                 max_len = max(max_len, len(str(cell.value)))
         ws.column_dimensions[col_letter].width = max(max_len + 5, 14)
-    ws.column_dimensions['A'].width = 30
-    ws.column_dimensions['B'].width = 16
-    ws.column_dimensions['C'].width = 20
-    ws.column_dimensions['D'].width = 28
-    ws.column_dimensions['E'].width = 16
-    ws.column_dimensions['F'].width = 20
-    ws.column_dimensions['G'].width = 20
+    ws.column_dimensions['A'].width = 22
     ws.column_dimensions['H'].width = 38
 
     output = io.BytesIO()
@@ -1037,8 +984,9 @@ def export_excel():
         output,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         as_attachment=True,
-        download_name="Analisis_Hari_Efektif_Mengajar_HEM.xlsx"
+        download_name="Analisis_Hari_Efektif_Mengajar_HEM_Lengkap.xlsx"
     )
+
 
 @app.route('/api/analyze_calendar', methods=['POST'])
 @login_required
@@ -1133,7 +1081,15 @@ def analyze_calendar():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
-# WSGI Application entrypoints for Vercel
-app = app
-application = app
-handler = app
+@app.route('/generator/hem', methods=['GET', 'POST'])
+@login_required
+def generator_hem():
+    all_modules = CustomModule.query.filter_by(aktif=True).all()
+    profile = SchoolProfile.query.first()
+    hasil_generate = None
+    
+    saved_hem = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi="Analisis Hari Efektif Mengajar (HEM)").order_by(Archive.created_at.desc()).first()
+    if saved_hem:
+        hasil_generate = saved_hem.hasil_konten
+        
+    return render_template('generator_hem.html', all_modules=all_modules, hasil_generate=hasil_generate, active_slug='hem', current_jenis="Analisis Hari Efektif Mengajar (HEM)")

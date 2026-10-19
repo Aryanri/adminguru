@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2><i class="fa fa-calendar-alt me-2 text-primary"></i>Analisis Hari Efektif Mengajar (HEM)</h2>
+        <p class="text-muted">Asisten Analisis Kalender Akademik Sekolah Ahli Administrasi Pendidikan & Perencanaan Waktu Pembelajaran Guru.</p>
+    </div>
+</div>
+
+<!-- Navigasi Tab Modul -->
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-body bg-light rounded">
+        <ul class="nav nav-pills flex-wrap gap-2">
+            {% for mod in all_modules %}
+            <li class="nav-item">
+                <a class="nav-link {% if active_slug == mod.slug %}active{% endif %}" href="{{ url_for('generator', modul_slug=mod.slug) }}">
+                    <i class="fa {% if mod.is_default %}fa-file-alt{% else %}fa-cube{% endif %} me-1"></i> {{ mod.nama_modul }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Parameter & Upload Kalender Akademik -->
+    <div class="col-md-5">
+        <div class="card shadow-lg border-0 mb-4 rounded-3 overflow-hidden">
+            <div class="card-header bg-gradient bg-primary text-white py-3 px-4">
+                <h5 class="m-0 fw-bold"><i class="fa fa-file-upload me-2"></i>Upload Dokumen Kalender Akademik</h5>
+            </div>
+            <div class="card-body p-4 bg-light">
+                <div class="alert alert-secondary small mb-3">
+                    <b>Instruksi Asisten Ahli:</b> Unggah dokumen resmi kalender akademik dari Kemendikdasmen (Format PDF atau Gambar JPG/PNG). AI akan membaca dan menghitung secara akurat Minggu Efektif dan Hari Efektif Belajar per bulan sebagai dasar penyusunan Prota & Prosem.
+                </div>
+                <form id="hemAnalysisForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-graduation-cap me-1 text-primary"></i> Jenjang Pendidikan</label>
+                        <select class="form-select shadow-sm border-0 py-2" name="jenjang" id="hemJenjang" required>
+                            <option value="SD / MI">SD / MI</option>
+                            <option value="SMP / MTs" selected>SMP / MTs</option>
+                            <option value="SMA / MA">SMA / MA</option>
+                            <option value="SMK / MAK">SMK / MAK</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-calendar me-1 text-primary"></i> Tahun Akademik</label>
+                        <select class="form-select shadow-sm border-0 py-2" name="tahun_akademik" id="hemTahun" required>
+                            <option value="2025/2026">2025/2026</option>
+                            <option value="2026/2027" selected>2026/2027</option>
+                            <option value="2027/2028">2027/2028</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-clock me-1 text-primary"></i> Sistem Hari Belajar Sekolah</label>
+                        <select class="form-select shadow-sm border-0 py-2" name="sistem_hari" id="hemSistemHari" required>
+                            <option value="5" selected>5 Hari Kerja (Senin–Jumat)</option>
+                            <option value="6">6 Hari Kerja (Senin–Sabtu)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-file-pdf me-1 text-primary"></i> File Kalender Akademik (PDF / Gambar)</label>
+                        <input type="file" class="form-control shadow-sm border-0 py-2" name="file" id="hemFile" accept=".pdf,image/*" required>
+                    </div>
+                    <button type="button" onclick="runHemAnalysis()" class="btn btn-primary w-100 py-3 fw-bold shadow-sm mt-2 rounded-2" id="btnAnalyzeHem">
+                        <i class="fa fa-brain me-2"></i> Analisis Kalender dengan AI
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview & Download Hasil Analisis HEM -->
+    <div class="col-md-7">
+        <div class="card shadow-lg border-0 rounded-3 overflow-hidden">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center py-3 px-4">
+                <h5 class="m-0 fw-bold"><i class="fa fa-table me-2"></i>Hasil Analisis HEM & Rekap Tahunan</h5>
+                <div class="d-flex gap-2" id="exportActionButtons" {% if not hasil_generate %}style="display:none!important;"{% endif %}>
+                    <form action="/export/excel" method="POST" class="m-0">
+                        <input type="hidden" name="ai_hem_html" id="exportHemHtml" value="">
+                        <button type="submit" class="btn btn-light btn-sm fw-bold shadow-sm px-3 text-success"><i class="fa fa-file-excel me-1"></i> Export Excel (.xlsx)</button>
+                    </form>
+                    <button type="button" class="btn btn-light btn-sm fw-bold shadow-sm px-3" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / PDF</button>
+                </div>
+            </div>
+            <div class="card-body bg-light p-4" style="min-height: 600px;">
+                <div class="document-preview-container bg-white shadow-sm p-4 rounded-3 border mx-auto" id="hemPreviewContainer" style="max-width: 100%; overflow-x: auto; font-size: 0.95rem; line-height: 1.6;">
+                    {% if hasil_generate %}
+                        {{ hasil_generate | safe }}
+                    {% else %}
+                        <div class="text-center text-muted py-5 my-5">
+                            <i class="fa fa-calendar-check fa-3x mb-3 text-secondary opacity-50"></i>
+                            <h5 class="fw-bold">Belum ada analisis HEM.</h5>
+                            <p class="small text-muted">Pilih parameter dan unggah dokumen kalender akademik, lalu klik <b>Analisis Kalender dengan AI</b>.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function runHemAnalysis() {
+    const form = document.getElementById('hemAnalysisForm');
+    const fileInput = document.getElementById('hemFile');
+    const btn = document.getElementById('btnAnalyzeHem');
+    const container = document.getElementById('hemPreviewContainer');
+    const exportBtns = document.getElementById('exportActionButtons');
+    
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alert('Mohon unggah file kalender akademik terlebih dahulu.');
+        return;
+    }
+
+    const formData = new FormData(form);
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i> AI sedang menganalisis kalender...';
+    container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary mb-3" role="status"></div><h5 class="fw-bold">Asisten Ahli sedang membaca kalender akademik...</h5><p class="text-muted small">Proses ini memakan waktu 10-30 detik untuk menghitung minggu & hari efektif belajar secara teliti.</p></div>';
+
+    try {
+        const response = await fetch('/api/analyze_calendar', {
+            method: 'POST',
+            body: formData
+        });
+        const res = await response.json();
+        if (res.status === 'success') {
+            container.innerHTML = res.html;
+            exportBtns.style.display = 'flex';
+            document.getElementById('exportHemHtml').value = res.html;
+        } else {
+            container.innerHTML = `<div class='alert alert-danger'><h5>Gagal Menganalisis</h5><p>${res.message}</p></div>`;
+        }
+    } catch (e) {
+        container.innerHTML = `<div class='alert alert-danger'><h5>Error</h5><p>${e.toString()}</p></div>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa fa-brain me-2"></i> Analisis Kalender dengan AI';
+    }
+}
+</script>
+{% endblock %}
