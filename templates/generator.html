@@ -94,42 +94,180 @@
         </div>
     </div>
 
-    <script>
+        <script>
+    const nationalHolidays2026 = {
+        "2026-01-01": "Tahun Baru Masehi",
+        "2026-01-16": "Isra Mikraj",
+        "2026-02-17": "Tahun Baru Imlek",
+        "2026-03-19": "Hari Suci Nyepi",
+        "2026-04-03": "Wafat Yesus Kristus",
+        "2026-05-01": "Hari Buruh",
+        "2026-05-14": "Kenaikan Yesus Kristus",
+        "2026-05-27": "Idul Adha",
+        "2026-05-31": "Hari Raya Waisak",
+        "2026-06-01": "Hari Lahir Pancasila",
+        "2026-06-18": "Tahun Baru Islam",
+        "2026-08-17": "Hari Kemerdekaan",
+        "2026-08-25": "Maulid Nabi",
+        "2026-12-25": "Hari Raya Natal"
+    };
+
     function generateHEMAnalysis() {
         const namaSekolah = document.getElementById('inputNamaSekolah').value;
         const jenjang = document.getElementById('inputJenjang').value;
         const tp = document.getElementById('inputTp').value;
-        const sistemHari = document.getElementById('sistemHariKerja').value;
+        const sistemHari = parseInt(document.getElementById('sistemHariKerja').value);
         
         // Update hidden inputs for excel export
         document.getElementById('exNamaSekolah').value = namaSekolah;
         document.getElementById('exJenjang').value = jenjang;
         document.getElementById('exTp').value = tp;
-        document.getElementById('exSistemHari').value = sistemHari + (sistemHari === '5' ? ' Hari Kerja (Senin–Jumat)' : ' Hari Kerja (Senin–Sabtu)');
+        document.getElementById('exSistemHari').value = sistemHari + ' Hari Kerja';
 
-        // Calculations based on sistemHari
-        let totalHariSmt1 = sistemHari === '5' ? 110 : 132;
-        let totalHariSmt2 = sistemHari === '5' ? 115 : 138;
-        let tidakEfektifSmt1 = 24;
-        let tidakEfektifSmt2 = 36;
-        let efektifSmt1 = totalHariSmt1 - tidakEfektifSmt1;
-        let efektifSmt2 = totalHariSmt2 - tidakEfektifSmt2;
-        
-        let mingguSmt1 = 25;
-        let mingguSmt2 = 25;
-        let mTidakEfektifSmt1 = 6;
-        let mTidakEfektifSmt2 = 7;
-        let mingguEfektifSmt1 = mingguSmt1 - mTidakEfektifSmt1;
-        let mingguEfektifSmt2 = mingguSmt2 - mTidakEfektifSmt2;
+        // Parse years from tp e.g. "2025/2026"
+        let parts = tp.split('/');
+        let startYear = parts.length > 0 && !isNaN(parseInt(parts[0])) ? parseInt(parts[0]) : 2025;
+        let endYear = parts.length > 1 && !isNaN(parseInt(parts[1])) ? parseInt(parts[1])) : startYear + 1;
+
+        // Months definition: Smt 1 (July - Dec of startYear), Smt 2 (Jan - June of endYear)
+        let monthsDef = [
+            { name: "Juli " + startYear, mIdx: 6, yr: startYear, smt: 1, desc: "MPLS & Kegiatan Awal" },
+            { name: "Agustus " + startYear, mIdx: 7, yr: startYear, smt: 1, desc: "HUT RI & Pembelajaran" },
+            { name: "September " + startYear, mIdx: 8, yr: startYear, smt: 1, desc: "Pembelajaran Efektif" },
+            { name: "Oktober " + startYear, mIdx: 9, yr: startYear, smt: 1, desc: "Pembelajaran Efektif" },
+            { name: "November " + startYear, mIdx: 10, yr: startYear, smt: 1, desc: "Pembelajaran Efektif" },
+            { name: "Desember " + startYear, mIdx: 11, yr: startYear, smt: 1, desc: "ASAS/PAS & Libur Semester" },
+            { name: "Januari " + endYear, mIdx: 0, yr: endYear, smt: 2, desc: "Awal Semester Genap" },
+            { name: "Februari " + endYear, mIdx: 1, yr: endYear, smt: 2, desc: "Pembelajaran Efektif" },
+            { name: "Maret " + endYear, mIdx: 2, yr: endYear, smt: 2, desc: "Pondok Ramadan & Libur" },
+            { name: "April " + endYear, mIdx: 3, yr: endYear, smt: 2, desc: "Ujian & Libur Hari Raya" },
+            { name: "Mei " + endYear, mIdx: 4, yr: endYear, smt: 2, desc: "Hari Besar Nasional" },
+            { name: "Juni " + endYear, mIdx: 5, yr: endYear, smt: 2, desc: "ASAS/PAT & Kenaikan Kelas" }
+        ];
+
+        let tableRows = '';
+        let smt1WeeksCal = 0, smt1WeeksNotEff = 0, smt1WeeksEff = 0;
+        let smt1DaysSch = 0, smt1DaysNotEff = 0, smt1DaysEff = 0;
+
+        let smt2WeeksCal = 0, smt2WeeksNotEff = 0, smt2WeeksEff = 0;
+        let smt2DaysSch = 0, smt2DaysNotEff = 0, smt2DaysEff = 0;
+
+        monthsDef.forEach(m => {
+            let daysInMonth = new Date(m.yr, m.mIdx + 1, 0).getDate();
+            let totalSchDays = 0;
+            let holidayCount = 0;
+            let weeksSet = new Set();
+            let holidayWeeksSet = new Set();
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                let currDate = new Date(m.yr, m.mIdx, d);
+                let dayOfWeek = currDate.getDay(); // 0: Sun, 6: Sat
+                
+                // Check if it is a school day based on sistemHari (5: Mon-Fri, 6: Mon-Sat)
+                let isWorkDay = (sistemHari === 5) ? (dayOfWeek >= 1 && dayOfWeek <= 5) : (dayOfWeek >= 1 && dayOfWeek <= 6);
+                
+                if (isWorkDay) {
+                    totalSchDays++;
+                    let mm = String(m.mIdx + 1).padStart(2, '0');
+                    let dd = String(d).padStart(2, '0');
+                    let dateStr = `${m.yr}-${mm}-${dd}`;
+                    
+                    let weekNum = Math.ceil(d / 7);
+                    weeksSet.add(weekNum);
+
+                    if (nationalHolidays2026[dateStr] || (dayOfWeek === 0)) {
+                        holidayCount++;
+                        holidayWeeksSet.add(weekNum);
+                    }
+                }
+            }
+
+            let totalWeeksCal = weeksSet.size;
+            let weeksNotEff = Math.min(totalWeeksCal, Math.ceil(holidayCount / (sistemHari === 5 ? 5 : 6)));
+            let weeksEff = Math.max(0, totalWeeksCal - weeksNotEff);
+
+            let daysNotEff = holidayCount + (m.smt === 1 && m.mIdx === 6 ? 4 : (m.smt === 1 && m.mIdx === 11 ? 10 : (m.smt === 2 && m.mIdx === 2 ? 6 : 2)));
+            daysNotEff = Math.min(totalSchDays, daysNotEff);
+            let daysEff = Math.max(0, totalSchDays - daysNotEff);
+
+            if (m.smt === 1) {
+                smt1WeeksCal += totalWeeksCal;
+                smt1WeeksNotEff += weeksNotEff;
+                smt1WeeksEff += weeksEff;
+                smt1DaysSch += totalSchDays;
+                smt1DaysNotEff += daysNotEff;
+                smt1DaysEff += daysEff;
+            } else {
+                smt2WeeksCal += totalWeeksCal;
+                smt2WeeksNotEff += weeksNotEff;
+                smt2WeeksEff += weeksEff;
+                smt2DaysSch += totalSchDays;
+                smt2DaysNotEff += daysNotEff;
+                smt2DaysEff += daysEff;
+            }
+
+            tableRows += `
+                <tr>
+                    <td class="fw-bold">${m.name}</td>
+                    <td class="text-center">${totalWeeksCal}</td>
+                    <td class="text-center">${weeksNotEff}</td>
+                    <td class="text-center fw-bold text-primary">${weeksEff}</td>
+                    <td class="text-center">${totalSchDays}</td>
+                    <td class="text-center">${daysNotEff}</td>
+                    <td class="text-center fw-bold text-success">${daysEff}</td>
+                    <td>${m.desc}</td>
+                </tr>
+            `;
+        });
+
+        let totalWeeksCalYear = smt1WeeksCal + smt2WeeksCal;
+        let totalWeeksNotEffYear = smt1WeeksNotEff + smt2WeeksNotEff;
+        let totalWeeksEffYear = smt1WeeksEff + smt2WeeksEff;
+        let totalDaysSchYear = smt1DaysSch + smt2DaysSch;
+        let totalDaysNotEffYear = smt1DaysNotEff + smt2DaysNotEff;
+        let totalDaysEffYear = smt1DaysEff + smt2DaysEff;
 
         let html = `
         <div class="text-center mb-4">
             <h3>ANALISIS HARI EFEKTIF MENGAJAR (HEM)</h3>
             <p class="text-muted mb-1">Sekolah: <b>${namaSekolah}</b> | Jenjang: <b>${jenjang}</b> | Tahun Pelajaran: <b>${tp}</b></p>
-            <p class="text-muted small">Sistem Hari Belajar: <b>${sistemHari === '5' ? '5 Hari Kerja (Senin–Jumat)' : '6 Hari Kerja (Senin–Sabtu)'}</b></p>
+            <p class="text-muted small">Sistem Hari Belajar: <b>${sistemHari} Hari Kerja (${sistemHari === 5 ? 'Senin–Jumat' : 'Senin–Sabtu'})</b></p>
         </div>
         <hr>
-        <h4 class="text-primary mt-4 mb-3"><i class="fa fa-chart-bar me-2"></i>REKAP TOTAL TAHUNAN ADMINISTRASI GURU</h4>
+        <h4 class="text-primary mt-4 mb-3"><i class="fa fa-calendar-alt me-2"></i>Tabel Utama Analisis Per Bulan</h4>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle">
+                <thead class="table-dark text-center" style="background-color: #1B365D;">
+                    <tr>
+                        <th>Bulan</th>
+                        <th>Jumlah Minggu Kalender</th>
+                        <th>Minggu Tidak Efektif</th>
+                        <th class="bg-warning text-dark">Minggu Efektif Belajar</th>
+                        <th>Jumlah Hari Sekolah</th>
+                        <th>Hari Tidak Efektif</th>
+                        <th class="bg-warning text-dark">Hari Efektif Belajar</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRows}
+                </tbody>
+                <tfoot class="table-dark" style="background-color: #1B365D;">
+                    <tr>
+                        <th class="text-end">TOTAL TAHUNAN:</th>
+                        <th class="text-center">${totalWeeksCalYear}</th>
+                        <th class="text-center">${totalWeeksNotEffYear}</th>
+                        <th class="text-center text-warning">${totalWeeksEffYear}</th>
+                        <th class="text-center">${totalDaysSchYear}</th>
+                        <th class="text-center">${totalDaysNotEffYear}</th>
+                        <th class="text-center text-warning">${totalDaysEffYear}</th>
+                        <th>Akumulasi Ganjil & Genap</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <h4 class="text-primary mt-5 mb-3"><i class="fa fa-chart-bar me-2"></i>REKAP TOTAL TAHUNAN ADMINISTRASI GURU</h4>
         <div class="table-responsive mb-5">
             <table class="table table-bordered table-hover text-center align-middle">
                 <thead class="table-light text-uppercase small">
@@ -144,44 +282,44 @@
                 <tbody>
                     <tr>
                         <td class="text-start">Total Minggu Kalender</td>
-                        <td>${mingguSmt1}</td>
-                        <td>${mingguSmt2}</td>
-                        <td class="fw-bold">${mingguSmt1 + mingguSmt2}</td>
+                        <td>${smt1WeeksCal}</td>
+                        <td>${smt2WeeksCal}</td>
+                        <td class="fw-bold">${totalWeeksCalYear}</td>
                         <td>Minggu</td>
                     </tr>
                     <tr>
                         <td class="text-start">Total Minggu Tidak Efektif</td>
-                        <td>${mTidakEfektifSmt1}</td>
-                        <td>${mTidakEfektifSmt2}</td>
-                        <td class="fw-bold text-danger">${mTidakEfektifSmt1 + mTidakEfektifSmt2}</td>
+                        <td>${smt1WeeksNotEff}</td>
+                        <td>${smt2WeeksNotEff}</td>
+                        <td class="fw-bold text-danger">${totalWeeksNotEffYear}</td>
                         <td>Minggu</td>
                     </tr>
                     <tr class="table-warning">
                         <td class="text-start fw-bold">Total Minggu Efektif Belajar</td>
-                        <td>${mingguEfektifSmt1}</td>
-                        <td>${mingguEfektifSmt2}</td>
-                        <td class="fw-bold text-primary">${mingguEfektifSmt1 + mingguEfektifSmt2}</td>
+                        <td>${smt1WeeksEff}</td>
+                        <td>${smt2WeeksEff}</td>
+                        <td class="fw-bold text-primary">${totalWeeksEffYear}</td>
                         <td>Minggu</td>
                     </tr>
                     <tr>
                         <td class="text-start">Total Hari Sekolah</td>
-                        <td>${totalHariSmt1}</td>
-                        <td>${totalHariSmt2}</td>
-                        <td class="fw-bold">${totalHariSmt1 + totalHariSmt2}</td>
+                        <td>${smt1DaysSch}</td>
+                        <td>${smt2DaysSch}</td>
+                        <td class="fw-bold">${totalDaysSchYear}</td>
                         <td>Hari</td>
                     </tr>
                     <tr>
                         <td class="text-start">Total Hari Tidak Efektif</td>
-                        <td>${tidakEfektifSmt1}</td>
-                        <td>${tidakEfektifSmt2}</td>
-                        <td class="fw-bold text-danger">${tidakEfektifSmt1 + tidakEfektifSmt2}</td>
+                        <td>${smt1DaysNotEff}</td>
+                        <td>${smt2DaysNotEff}</td>
+                        <td class="fw-bold text-danger">${totalDaysNotEffYear}</td>
                         <td>Hari</td>
                     </tr>
                     <tr class="table-success">
                         <td class="text-start fw-bold">Total Hari Efektif Belajar</td>
-                        <td>${efektifSmt1}</td>
-                        <td>${efektifSmt2}</td>
-                        <td class="fw-bold text-success">${efektifSmt1 + efektifSmt2}</td>
+                        <td>${smt1DaysEff}</td>
+                        <td>${smt2DaysEff}</td>
+                        <td class="fw-bold text-success">${totalDaysEffYear}</td>
                         <td>Hari</td>
                     </tr>
                 </tbody>
@@ -195,7 +333,7 @@
                 <p class="small">NIP. {{ profile.nip_kepala_sekolah if profile else '.......................' }}</p>
             </div>
             <div class="col-6">
-                <p class="mb-5">................, .................... 20..<br>Guru Mata Pelajaran</p>
+                <p class="mb-5">Bandung, .................... 20..<br>Guru Mata Pelajaran</p>
                 <p class="fw-bold text-decoration-underline mb-0">{{ current_user.nama_lengkap if current_user.is_authenticated else '.......................' }}</p>
                 <p class="small">NIP. {{ current_user.nip if current_user.is_authenticated else '.......................' }}</p>
             </div>
@@ -205,6 +343,7 @@
         document.getElementById('previewArea').innerHTML = html;
     }
     </script>
+
 {% else %}
     <!-- Generator standar untuk modul selain HEM -->
     <div class="col-md-5">
