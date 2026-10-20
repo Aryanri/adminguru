@@ -120,7 +120,7 @@
                 </div>
                 <hr class="text-secondary opacity-25">
                 <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}"><i class="fa fa-tachometer-alt me-3 fa-fw"></i> Dashboard</a>
-                <a href="{{ url_for('generator', modul_slug='hem') }}" class="{% if request.endpoint == 'generator' %}active{% endif %}"><i class="fa fa-magic me-3 fa-fw"></i> Generator</a>
+                <a href="{{ url_for('generator_index') }}" class="{% if request.endpoint == 'generator' %}active{% endif %}"><i class="fa fa-magic me-3 fa-fw"></i> Generator</a>
                 <a href="{{ url_for('arsip') }}" class="{% if request.endpoint in ['arsip', 'arsip_detail'] %}active{% endif %}"><i class="fa fa-archive me-3 fa-fw"></i> Arsip</a>
                 <a href="{{ url_for('pengaturan') }}" class="{% if request.endpoint == 'pengaturan' %}active{% endif %}"><i class="fa fa-cog me-3 fa-fw"></i> Pengaturan</a>
                 {% if current_user.role == 'superadmin' %}

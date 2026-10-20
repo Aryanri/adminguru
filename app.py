@@ -53,7 +53,6 @@ with app.app_context():
     try:
         db.create_all()
         defaults = [
-            ('Analisis Hari Efektif Mengajar (HEM)', 'hem'),
             ('CP-TP-ATP', 'cp_tp_atp'),
             ('Modul Ajar / RPP', 'modul_ajar'),
             ('LKPD Siswa', 'lkpd'),
@@ -70,6 +69,13 @@ with app.app_context():
                 cm = CustomModule(nama_modul=d_name, slug=d_slug, aktif=True, is_default=True)
                 db.session.add(cm)
         db.session.commit()
+
+        # Modul HEM sudah dihapus total: hapus juga baris modul lamanya
+        # agar tidak muncul lagi di daftar generator.
+        hem_module = CustomModule.query.filter_by(slug='hem').first()
+        if hem_module:
+            db.session.delete(hem_module)
+            db.session.commit()
 
         if not User.query.filter_by(username='superadmin').first():
             sa = User(
@@ -245,6 +251,15 @@ def dashboard():
     
     return render_template('dashboard.html', profile=profile, user_logs=user_logs, announcement=announcement)
 
+@app.route('/generator')
+@login_required
+def generator_index():
+    first_mod = CustomModule.query.filter_by(aktif=True).order_by(CustomModule.is_default.desc(), CustomModule.id.asc()).first()
+    if not first_mod:
+        flash('Tidak ada modul aktif saat ini.', 'danger')
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('generator', modul_slug=first_mod.slug))
+
 @app.route('/generator/<modul_slug>', methods=['GET', 'POST'])
 @login_required
 def generator(modul_slug):
@@ -264,16 +279,8 @@ def generator(modul_slug):
     jenis = mod_obj.nama_modul
     profile = SchoolProfile.query.first()
 
-    if modul_slug == 'hem':
-        saved_hem = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi=jenis).order_by(Archive.created_at.desc()).first()
-        if saved_hem:
-            hasil_generate = saved_hem.hasil_konten
-
     if request.method == 'POST':
         try:
-            if modul_slug == 'hem':
-                return redirect(url_for('generator', modul_slug='hem'))
-            
             jenjang = request.form.get('jenjang', 'SMP / MTs')
             kelas_fase_val = request.form.get('kelas_fase', 'Kelas 7 | Fase D (Kelas 7-9)')
             parts = kelas_fase_val.split('|')
@@ -309,13 +316,6 @@ def generator(modul_slug):
                 guru_nip = current_user.nip if current_user.nip else '-'
                 guru_email = current_user.email if current_user.email else '-'
                 guru_mapel = current_user.mapel if current_user.mapel else (mapel if mapel else '-')
-
-                hem_saved = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi="Analisis Hari Efektif Mengajar (HEM)").order_by(Archive.created_at.desc()).first()
-                sem1_jp = "48"
-                sem2_jp = "48"
-                sem1_minggu = "16"
-                sem2_minggu = "16"
-                jp_per_mgg = "3"
 
                 if modul_slug in ['soal_harian', 'soal_sts', 'soal_sas', 'asesmen_sumatif']:
                     try:
@@ -532,43 +532,6 @@ Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik ses
     return render_template('generator.html', all_modules=all_modules, hasil_generate=hasil_generate, active_slug=modul_slug, current_jenis=jenis)
 
 
-@app.route('/api/save_hem', methods=['POST'])
-@login_required
-def api_save_hem():
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'status': 'error', 'message': 'No data'}), 400
-        jumlah_jp = str(data.get('jumlah_jp', '4'))
-        hari_tertentu = data.get('hari_tertentu', [])
-        hasil_konten = data.get('hasil_konten', '')
-        
-        jenis = "Analisis Hari Efektif Mengajar (HEM)"
-        param_str = f"hem-{current_user.id}-{jumlah_jp}-" + "-".join([str(h) for h in hari_tertentu])
-        param_hash = hashlib.md5(param_str.encode('utf-8')).hexdigest()
-        
-        saved_hem = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi=jenis).order_by(Archive.created_at.desc()).first()
-        if saved_hem:
-            saved_hem.hasil_konten = hasil_konten
-            saved_hem.topik = f"Analisis HEM Semester Ganjil & Genap ({jumlah_jp} JP)"
-            saved_hem.parameter_hash = param_hash
-            saved_hem.created_at = wib_now()
-        else:
-            new_arch = Archive(
-                user_id=current_user.id,
-                jenis_administrasi=jenis,
-                topik=f"Analisis HEM Semester Ganjil & Genap ({jumlah_jp} JP)",
-                ruang_lingkup=f"Analisis Hari Efektif Mengajar Semester Ganjil & Genap",
-                parameter_hash=param_hash,
-                hasil_konten=hasil_konten
-            )
-            db.session.add(new_arch)
-        db.session.commit()
-        return jsonify({'status': 'success'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_file(os.path.join(app.config['UPLOAD_FOLDER'], filename))
@@ -753,40 +716,3 @@ def export_word():
         headers={"Content-Disposition": f"attachment;filename={title}.doc"}
     )
     return response
-
-@app.route('/export/excel', methods=['POST'])
-@login_required
-def export_excel():
-    import io
-    import pandas as pd
-    from flask import send_file
-    
-    # We can parse the table or send generated Excel data
-    # Let's create a robust Excel export containing the HEM table structure
-    data = [
-        {"Bulan": "Juli 2026", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 2, "Minggu Efektif Belajar": 3, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 8, "Hari Efektif Belajar": 14, "Keterangan": "Permulaan Tahun Ajaran & MPLS"},
-        {"Bulan": "Agustus 2026", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 0, "Minggu Efektif Belajar": 4, "Jumlah Hari Sekolah": 21, "Hari Tidak Efektif": 1, "Hari Efektif Belajar": 20, "Keterangan": "Efektif Normal / HUT RI"},
-        {"Bulan": "September 2026", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 0, "Minggu Efektif Belajar": 5, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 0, "Hari Efektif Belajar": 22, "Keterangan": "Efektif Normal"},
-        {"Bulan": "Oktober 2026", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 1, "Minggu Efektif Belajar": 3, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 2, "Hari Efektif Belajar": 20, "Keterangan": "STS / Penilaian Tengah Semester"},
-        {"Bulan": "November 2026", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 0, "Minggu Efektif Belajar": 4, "Jumlah Hari Sekolah": 21, "Hari Tidak Efektif": 0, "Hari Efektif Belajar": 21, "Keterangan": "Efektif Normal"},
-        {"Bulan": "Desember 2026", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 3, "Minggu Efektif Belajar": 2, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 12, "Hari Efektif Belajar": 10, "Keterangan": "SAS, Penerimaan Rapor & Libur Semester"},
-        {"Bulan": "Januari 2027", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 0, "Minggu Efektif Belajar": 4, "Jumlah Hari Sekolah": 21, "Hari Tidak Efektif": 1, "Hari Efektif Belajar": 20, "Keterangan": "Permulaan Semester Genap"},
-        {"Bulan": "Februari 2027", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 1, "Minggu Efektif Belajar": 3, "Jumlah Hari Sekolah": 20, "Hari Tidak Efektif": 3, "Hari Efektif Belajar": 17, "Keterangan": "Efektif Normal / Isra Mikraj"},
-        {"Bulan": "Maret 2027", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 2, "Minggu Efektif Belajar": 2, "Jumlah Hari Sekolah": 23, "Hari Tidak Efektif": 8, "Hari Efektif Belajar": 15, "Keterangan": "Libur Awal Ramadhan / Nyepi"},
-        {"Bulan": "April 2027", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 3, "Minggu Efektif Belajar": 2, "Jumlah Hari Sekolah": 21, "Hari Tidak Efektif": 12, "Hari Efektif Belajar": 9, "Keterangan": "Libur Hari Raya Idul Fitri & STS"},
-        {"Bulan": "Mei 2027", "Jumlah Minggu Kalender": 4, "Minggu Tidak Efektif": 1, "Minggu Efektif Belajar": 3, "Jumlah Hari Sekolah": 20, "Hari Tidak Efektif": 4, "Hari Efektif Belajar": 16, "Keterangan": "Efektif Normal / Ujian Sekolah"},
-        {"Bulan": "Juni 2027", "Jumlah Minggu Kalender": 5, "Minggu Tidak Efektif": 3, "Minggu Efektif Belajar": 2, "Jumlah Hari Sekolah": 22, "Hari Tidak Efektif": 12, "Hari Efektif Belajar": 10, "Keterangan": "SAS Genap & Libur Kenaikan Kelas"}
-    ]
-    
-    df = pd.DataFrame(data)
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Analisis HEM')
-    output.seek(0)
-    
-    return send_file(
-        output,
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        as_attachment=True,
-        download_name="Analisis_Hari_Efektif_Mengajar_HEM.xlsx"
-    )
