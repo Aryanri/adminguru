@@ -1,40 +1,80 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <h2><i class="fa fa-archive me-2 text-primary"></i>Arsip & Cache Dokumen Administrasi</h2>
-        <p class="text-muted">Semua hasil generate tersimpan otomatis di sini untuk digunakan kembali tanpa memanggil ulang API (Hemat Token).</p>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Arsip & Cache Dokumen - SIM Admin Guru</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding-top: 70px; }
+    </style>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="#">SIM Admin Guru</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" href="/dashboard">Dashboard</a>
+            <a class="nav-link" href="/generator">Generator AI</a>
+            <a class="nav-link active" href="/arsip">Arsip & Cache</a>
+            <a class="nav-link" href="/pengaturan">Pengaturan</a>
+            <a class="nav-link text-danger fw-bold" href="/logout">Keluar</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container my-4">
+    <div class="card p-4 shadow-sm">
+        <h3 class="mb-3 text-primary">Arsip Dokumen & Cache Pembelajaran</h3>
+        <p class="text-muted">Setiap hasil generate modul atau analisis HEM disimpan otomatis ke dalam arsip untuk efisiensi request dan siap dicetak.</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="table-responsive mt-3">
+            <table class="table table-bordered table-striped align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>No</th>
+                        <th>Jenis Modul</th>
+                        <th>Topik / Standar</th>
+                        <th>Pembuat / Guru</th>
+                        <th>Waktu Arsip</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if list_arsip %}
+                        {% for a in list_arsip %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td class="fw-bold">{{ a.jenis_modul }}</td>
+                            <td>{{ a.topik }}</td>
+                            <td>{{ a.nama_lengkap }} (NIP. {{ a.nip }})</td>
+                            <td>{{ a.created_at }}</td>
+                            <td>
+                                <a href="/arsip/lihat/{{ a.id }}" class="btn btn-sm btn-primary">Lihat & Siap Cetak</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Belum ada dokumen di dalam arsip.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
-<div class="card p-4 shadow-sm">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Waktu</th>
-                    <th>Pembuat</th>
-                    <th>Jenis Administrasi</th>
-                    <th>Topik Materi</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for arch in archives %}
-                <tr>
-                    <td>{{ arch.created_at.strftime('%d-%m-%Y %H:%M') }}</td>
-                    <td>{{ arch.user.nama_lengkap }}</td>
-                    <td><span class="badge bg-primary">{{ arch.jenis_administrasi }}</span></td>
-                    <td>{{ arch.topik }}</td>
-                    <td>
-                        <a href="{{ url_for('arsip_detail', id=arch.id) }}" class="btn btn-sm btn-outline-primary"><i class="fa fa-eye me-1"></i> Buka / Cetak</a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="5" class="text-center text-muted">Belum ada arsip tersimpan.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endblock %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

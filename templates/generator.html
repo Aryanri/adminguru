@@ -1,633 +1,409 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <h2><i class="fa fa-magic me-2 text-primary"></i>Generator Administrasi Mengajar AI (Puter.js)</h2>
-        <p class="text-muted">Semua proses pembuatan dokumen digenerate secara langsung di browser Anda menggunakan Puter.js AI (GPT-4o-mini).</p>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Generator AI Kurikulum Merdeka - SIM Admin Guru</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding-top: 70px; }
+        .document-page {
+            background: white;
+            width: 100%;
+            padding: 20mm;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        #loadingOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            z-index: 9999;
+            text-align: center;
+            padding-top: 20vh;
+        }
+        @media print {
+            body { background: white; padding-top: 0; }
+            .no-print { display: none !important; }
+            .document-page { border: none; box-shadow: none; margin: 0; padding: 10mm; }
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<!-- LOADING ANIMATION OVERLAY -->
+<div id="loadingOverlay">
+    <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
     </div>
+    <h3 class="mt-4 fw-bold text-primary">🤖 Sedang Mengenerate Dokumen Kurikulum Merdeka...</h3>
+    <p class="text-muted">Mohon tunggu sebentar, sistem sedang memproses cache database & AI sesuai BSKAP 2026.</p>
 </div>
 
-<!-- Navigasi Tab Modul -->
-<div class="card mb-4 shadow-sm border-0">
-    <div class="card-body bg-light rounded">
-        <ul class="nav nav-pills flex-wrap gap-2">
-            {% for mod in all_modules %}
-            <li class="nav-item">
-                <a class="nav-link {% if active_slug == mod.slug %}active{% endif %}" href="{{ url_for('generator', modul_slug=mod.slug) }}">
-                    <i class="fa {% if mod.is_default %}fa-file-alt{% else %}fa-cube{% endif %} me-1"></i> {{ mod.nama_modul }}
-                </a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow no-print">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="#">SIM Admin Guru</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" href="/dashboard">Dashboard</a>
+            <a class="nav-link active" href="/generator">Generator AI</a>
+            <a class="nav-link" href="/arsip">Arsip & Cache</a>
+            <a class="nav-link" href="/pengaturan">Pengaturan</a>
+            <a class="nav-link text-danger fw-bold" href="/logout">Keluar</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container my-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show no-print" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="card p-4 shadow-sm mb-4 no-print">
+        <h3 class="mb-2 text-primary fw-bold">Generator Administrasi Kurikulum Merdeka (BSKAP 2026)</h3>
+        <p class="text-muted small">Pilih menu administrasi di bawah ini. Seluruh form menggunakan inputan standar Kurikulum Merdeka (Jenjang, Kelas, Fase, Mapel, Metode, Aktivitas, C1-C6, Topik, & Ruang Lingkup Materi).</p>
+
+        <!-- NAVIGATION TABS -->
+        <ul class="nav nav-tabs mt-3" id="generatorTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if active_tab == 'Analisis Hari Efektif Mengajar (HEM)' %}active{% endif %}" id="hem-tab" data-bs-toggle="tab" data-bs-target="#hemPane" type="button" role="tab">Analisis HEM</button>
             </li>
-            {% endfor %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if active_tab == 'CP-TP-ATP' %}active{% endif %}" id="cptp-tab" data-bs-toggle="tab" data-bs-target="#standardPane" type="button" role="tab" onclick="setModul('CP-TP-ATP')">CP-TP-ATP</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if not active_tab or active_tab == 'Modul Ajar/RPP' %}active{% endif %}" id="modul-tab" data-bs-toggle="tab" data-bs-target="#standardPane" type="button" role="tab" onclick="setModul('Modul Ajar/RPP')">Modul Ajar/RPP</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if active_tab == 'LKPD Siswa' %}active{% endif %}" id="lkpd-tab" data-bs-toggle="tab" data-bs-target="#standardPane" type="button" role="tab" onclick="setModul('LKPD Siswa')">LKPD Siswa</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if active_tab == 'Program Semester' %}active{% endif %}" id="promes-tab" data-bs-toggle="tab" data-bs-target="#standardPane" type="button" role="tab" onclick="setModul('Program Semester')">Program Semester</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if active_tab == 'Program Tahunan' %}active{% endif %}" id="prota-tab" data-bs-toggle="tab" data-bs-target="#standardPane" type="button" role="tab" onclick="setModul('Program Tahunan')">Program Tahunan</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if 'Bank Soal' in active_tab %}active{% endif %}" id="banksoal-tab" data-bs-toggle="tab" data-bs-target="#bankSoalPane" type="button" role="tab">Bank Soal</button>
+            </li>
         </ul>
-    </div>
-</div>
 
-<div class="row">
-    <!-- Generator Form -->
-    <div class="col-md-5">
-        <div class="card shadow-lg border-0 mb-4 rounded-3 overflow-hidden">
-            <div class="card-header bg-gradient bg-primary text-white py-3 px-4">
-                <h5 class="m-0 fw-bold"><i class="fa fa-sliders-h me-2"></i>Parameter Dokumen: {{ current_jenis }}</h5>
-            </div>
-            <div class="card-body p-4 bg-light">
-                <script src="https://js.puter.com/v2/"></script>
-                <div id="puterStatusBox" class="alert alert-info py-2 small d-flex justify-content-between align-items-center mb-3">
-                    <span><i class="fa fa-circle-notch fa-spin me-1"></i> Memeriksa sesi Puter.js...</span>
-                    <button type="button" class="btn btn-sm btn-outline-danger d-none" id="btnPuterLogout" onclick="logoutPuter()"><i class="fa fa-sign-out-alt"></i> Logout</button>
-                </div>
-                <form method="POST" id="generatorForm" onsubmit="handlePuterGeneration(event)">
-                    <input type="hidden" name="ai_generated_content" id="ai_generated_content" value="">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-graduation-cap me-1 text-primary"></i> Jenjang Pendidikan</label>
-                        <select class="form-select shadow-sm border-0 py-2" name="jenjang" id="jenjangSelect" required>
-                            <option value="SD / MI">SD / MI</option>
-                            <option value="SMP / MTs" selected>SMP / MTs</option>
-                            <option value="SMA / MA">SMA / MA</option>
-                            <option value="SMK / MAK">SMK / MAK</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-layer-group me-1 text-primary"></i> Kelas & Fase</label>
-                        <select class="form-select shadow-sm border-0 py-2" name="kelas_fase" id="kelasFaseSelect" required>
-                            <!-- Dinamis via JS -->
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-book-open me-1 text-primary"></i> Mata Pelajaran</label>
-                        <select class="form-select shadow-sm border-0 py-2" name="mapel" id="mapelSelect" required>
-                            <!-- Dinamis via JS -->
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-bookmark me-1 text-primary"></i> Topik / Materi Pokok</label>
-                        <input type="text" class="form-control shadow-sm border-0 py-2" name="topik" id="inputTopik" placeholder="Contoh: Perangkat Pembelajaran Bab 1" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-compass me-1 text-primary"></i> Ruang Lingkup / Sub-Materi</label>
-                        <input type="text" class="form-control shadow-sm border-0 py-2" name="ruang_lingkup" id="inputRuangLingkup" placeholder="Contoh: Konsep Dasar & Aplikasi" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-tasks me-1 text-primary"></i> Metode Pembelajaran</label>
-                        <select class="form-select shadow-sm border-0 py-2" name="metode" id="selectMetode" required>
-                            <!-- Dinamis via JS -->
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-bolt me-1 text-primary"></i> Aktivitas Pembelajaran Utama</label>
-                        <select class="form-select shadow-sm border-0 py-2" name="aktivitas" id="aktivitasSelect" required>
-                            <!-- Dinamis via JS -->
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-dark small text-uppercase mb-1"><i class="fa fa-signal me-1 text-primary"></i> Tingkat Kesulitan</label>
-                        <select class="form-select shadow-sm border-0 py-2" name="kesulitan" id="selectKesulitan">
-                            <option value="C1">C1 (Ingat)</option>
-                            <option value="C2">C2 (Paham)</option>
-                            <option value="C3" selected>C3 (Aplikasi)</option>
-                            <option value="C4">C4 (Analisis)</option>
-                            <option value="C5">C5 (Evaluasi)</option>
-                            <option value="C6">C6 (Kreasi)</option>
-                        </select>
-                    </div>
-                    <div class="row" id="soalParamsBox" style="display: none;">
+        <div class="tab-content pt-4" id="generatorTabsContent">
+            
+            <!-- 1. ANALISIS HEM PANE -->
+            <div class="tab-pane fade {% if active_tab == 'Analisis Hari Efektif Mengajar (HEM)' %}show active{% endif %}" id="hemPane" role="tabpanel">
+                <form method="POST" action="/generator-hem" enctype="multipart/form-data" onsubmit="showLoading()">
+                    <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label class="form-label fw-bold text-dark small text-uppercase mb-1">Jml PG</label>
-                            <input type="number" class="form-control shadow-sm border-0 py-2" name="jml_pg" id="inputJmlPg" value="10" min="1" max="50">
+                            <label class="form-label">Jenjang Pendidikan</label>
+                            <select name="jenjang" class="form-select" required>
+                                <option value="SD / MI">SD / MI</option>
+                                <option value="SMP / MTs">SMP / MTs</option>
+                                <option value="SMA / SMK / MA" selected>SMA / SMK / MA</option>
+                            </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label fw-bold text-dark small text-uppercase mb-1">Jml Esai</label>
-                            <input type="number" class="form-control shadow-sm border-0 py-2" name="jml_esai" id="inputJmlEsai" value="5" min="0" max="20">
+                            <label class="form-label">Tahun Pelajaran</label>
+                            <select name="tahun_ajaran" class="form-select" required>
+                                <option value="2025/2026" selected>2025/2026</option>
+                                <option value="2026/2027">2026/2027</option>
+                                <option value="2027/2028">2027/2028</option>
+                            </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label fw-bold text-dark small text-uppercase mb-1">Jml Isian</label>
-                            <input type="number" class="form-control shadow-sm border-0 py-2" name="jml_isian" id="inputJmlIsian" value="5" min="0" max="20">
+                            <label class="form-label">Sistem Hari Sekolah</label>
+                            <select name="sistem_hari" class="form-select" required>
+                                <option value="5 Hari Kerja (Senin–Jumat)">5 Hari Kerja (Senin–Jumat)</option>
+                                <option value="6 Hari Kerja (Senin–Sabtu)">6 Hari Kerja (Senin–Sabtu)</option>
+                            </select>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm mt-2 rounded-2" id="btnSubmitGen">
-                        <i class="fa fa-robot me-2"></i> Generate dengan Puter.js AI
-                    </button>
+                    <div class="mb-3">
+                        <label class="form-label">Upload Kalender Pendidikan (Opsional PDF/Gambar)</label>
+                        <input type="file" name="kalender_file" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">📊 Jalankan Analisis Hari Efektif Mengajar (HEM)</button>
                 </form>
             </div>
+
+            <!-- 2. STANDARD ADMIN PANE (CP-TP-ATP, Modul Ajar/RPP, LKPD, Promes, Prota) -->
+            <div class="tab-pane fade {% if not active_tab or active_tab in ['CP-TP-ATP', 'Modul Ajar/RPP', 'LKPD Siswa', 'Program Semester', 'Program Tahunan'] %}show active{% endif %}" id="standardPane" role="tabpanel">
+                <form method="POST" action="/generator" onsubmit="showLoading()">
+                    <input type="hidden" name="jenis_modul" id="inputJenisModul" value="{{ active_tab if active_tab in ['CP-TP-ATP', 'Modul Ajar/RPP', 'LKPD Siswa', 'Program Semester', 'Program Tahunan'] else 'Modul Ajar/RPP' }}">
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Jenjang Pendidikan</label>
+                            <select name="jenjang" class="form-select" required>
+                                <option value="SD / MI">SD / MI</option>
+                                <option value="SMP / MTs">SMP / MTs</option>
+                                <option value="SMA / SMK / MA" selected>SMA / SMK / MA</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Kelas & Fase</label>
+                            <select name="kelas" class="form-select" required>
+                                <option value="Kelas X (Fase E)" selected>Kelas X (Fase E)</option>
+                                <option value="Kelas XI (Fase F)">Kelas XI (Fase F)</option>
+                                <option value="Kelas XII (Fase F)">Kelas XII (Fase F)</option>
+                                <option value="Kelas VII (Fase D)">Kelas VII (Fase D)</option>
+                                <option value="Kelas VIII (Fase D)">Kelas VIII (Fase D)</option>
+                                <option value="Kelas IX (Fase D)">Kelas IX (Fase D)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Mata Pelajaran (Kurikulum Merdeka)</label>
+                            <input type="text" name="mapel" class="form-control" value="{{ session.mapel }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Metode Pembelajaran</label>
+                            <select name="metode" class="form-select" required>
+                                <option value="Project Based Learning (PjBL)" selected>Project Based Learning (PjBL)</option>
+                                <option value="Problem Based Learning (PBL)">Problem Based Learning (PBL)</option>
+                                <option value="Inquiry Learning">Inquiry Learning</option>
+                                <option value="Discovery Learning">Discovery Learning</option>
+                                <option value="Contextual Teaching and Learning (CTL)">Contextual Teaching and Learning (CTL)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Aktivitas Pembelajaran</label>
+                            <input type="text" name="aktivitas" class="form-control" value="Eksplorasi konsep, diskusi kelompok & presentasi proyek" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tingkat Kesulitan / Kognitif (BSKAP)</label>
+                            <select name="kesulitan" class="form-select" required>
+                                <option value="C1 (Mengingat)">C1 (Mengingat)</option>
+                                <option value="C2 (Memahami)">C2 (Memahami)</option>
+                                <option value="C3 (Aplikasi)" selected>C3 (Aplikasi)</option>
+                                <option value="C4 (Analisis)">C4 (Analisis)</option>
+                                <option value="C5 (Evaluasi)">C5 (Evaluasi)</option>
+                                <option value="C6 (Kreasi)">C6 (Kreasi)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Topik Materi</label>
+                            <input type="text" name="topik" class="form-control" placeholder="Contoh: Jaringan Komputer dan Keamanan Data" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ruang Lingkup Materi</label>
+                            <input type="text" name="ruang_lingkup" class="form-control" value="Elemen Jaringan Komputer & Internet Kurikulum Merdeka" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">🚀 Generate Administrasi Kurikulum Merdeka</button>
+                </form>
+            </div>
+
+            <!-- 3. BANK SOAL PANE (Soal Harian, STS, SAS, Asesmen Sumatif dengan C1-C6) -->
+            <div class="tab-pane fade {% if 'Bank Soal' in active_tab %}show active{% endif %}" id="bankSoalPane" role="tabpanel">
+                <form method="POST" action="/generator" onsubmit="showLoading()">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-success">Jenis Bank Soal / Asesmen</label>
+                        <select name="jenis_modul" class="form-select" required>
+                            <option value="Bank Soal - Soal Harian (Formatif)">Bank Soal - Soal Harian (Formatif)</option>
+                            <option value="Bank Soal - Sumatif Tengah Semester (STS)">Bank Soal - Sumatif Tengah Semester (STS)</option>
+                            <option value="Bank Soal - Sumatif Akhir Semester (SAS)">Bank Soal - Sumatif Akhir Semester (SAS)</option>
+                            <option value="Bank Soal - Asesmen Sumatif Lingkup Materi">Bank Soal - Asesmen Sumatif Lingkup Materi</option>
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Jenjang Pendidikan</label>
+                            <select name="jenjang" class="form-select" required>
+                                <option value="SD / MI">SD / MI</option>
+                                <option value="SMP / MTs">SMP / MTs</option>
+                                <option value="SMA / SMK / MA" selected>SMA / SMK / MA</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Kelas & Fase</label>
+                            <select name="kelas" class="form-select" required>
+                                <option value="Kelas X (Fase E)" selected>Kelas X (Fase E)</option>
+                                <option value="Kelas XI (Fase F)">Kelas XI (Fase F)</option>
+                                <option value="Kelas XII (Fase F)">Kelas XII (Fase F)</option>
+                                <option value="Kelas VII (Fase D)">Kelas VII (Fase D)</option>
+                                <option value="Kelas VIII (Fase D)">Kelas VIII (Fase D)</option>
+                                <option value="Kelas IX (Fase D)">Kelas IX (Fase D)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Mata Pelajaran</label>
+                            <input type="text" name="mapel" class="form-control" value="{{ session.mapel }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tingkat Kesulitan Kognitif (C1 - C6 BSKAP)</label>
+                            <select name="kesulitan" class="form-select" required>
+                                <option value="C1 (Mengingat)">C1 (Mengingat)</option>
+                                <option value="C2 (Memahami)">C2 (Memahami)</option>
+                                <option value="C3 (Aplikasi)">C3 (Aplikasi)</option>
+                                <option value="C4 (Analisis)" selected>C4 (Analisis)</option>
+                                <option value="C5 (Evaluasi)">C5 (Evaluasi)</option>
+                                <option value="C6 (Kreasi)">C6 (Kreasi)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Jumlah Soal PG</label>
+                            <input type="number" name="jumlah_pg" class="form-control" value="10" min="1" max="50" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Jumlah Soal Esai</label>
+                            <input type="number" name="jumlah_esai" class="form-control" value="5" min="0" max="20" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Jumlah Isian Singkat</label>
+                            <input type="number" name="jumlah_isian" class="form-control" value="5" min="0" max="20" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Topik Materi</label>
+                            <input type="text" name="topik" class="form-control" placeholder="Contoh: Algoritma & Pemrograman Lanjut" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ruang Lingkup Materi</label>
+                            <input type="text" name="ruang_lingkup" class="form-control" value="Elemen Berpikir Komputasional" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">📝 Generate Bank Soal & Kunci Jawaban BSKAP</button>
+                </form>
+            </div>
+
         </div>
     </div>
 
-    <!-- Preview Dokumen -->
-    <div class="col-md-7">
-        <div class="card shadow-lg border-0 rounded-3 overflow-hidden">
-            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center py-3 px-4">
-                <h5 class="m-0 fw-bold"><i class="fa fa-file-alt me-2"></i>Hasil Preview Dokumen AI</h5>
-                {% if hasil_generate %}
-                <div class="d-flex gap-2">
-                    <form action="/export/word" method="POST" target="_blank" class="m-0">
-                        <input type="hidden" name="html_content" id="exportWordContent" value="">
-                        <input type="hidden" name="title" value="{{ current_jenis }}">
-                        <button type="submit" class="btn btn-light btn-sm fw-bold shadow-sm px-3 text-primary" onclick="prepareWordExport()"><i class="fa fa-file-word me-1"></i> Export Word</button>
-                    </form>
-                    <form action="/export/excel" method="POST" class="m-0">
-                        <button type="submit" class="btn btn-light btn-sm fw-bold shadow-sm px-3 text-success"><i class="fa fa-file-excel me-1"></i> Export Excel</button>
-                    </form>
-                    <button type="button" class="btn btn-light btn-sm fw-bold shadow-sm px-3" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / PDF</button>
-                </div>
-                {% endif %}
+    <!-- HASIL GENERATE & PREVIEW DOKUMEN SIAP CETAK -->
+    {% if hasil %}
+    <div class="card p-4 shadow-sm mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+            <h4 class="text-primary mb-0">Preview Dokumen Siap Cetak</h4>
+            <button onclick="window.print()" class="btn btn-success">🖨️ Cetak / Download PDF</button>
+        </div>
+        
+        <div class="document-page">
+            <div class="text-center border-bottom pb-3 mb-4">
+                <h4 class="fw-bold text-uppercase mb-1">SMP/SMA Negeri Contoh Bandung</h4>
+                <p class="text-muted small mb-1">Jl. Pendidikan No. 1, Bandung</p>
+                <h5 class="fw-bold text-uppercase mt-3 text-primary">Dokumen Kurikulum Merdeka (BSKAP 2026)</h5>
             </div>
-            <div class="card-body bg-light p-4" style="min-height: 600px;">
-                <div class="document-preview-container bg-white shadow-sm p-4 rounded-3 border mx-auto" style="max-width: 100%; overflow-x: auto; font-size: 0.95rem; line-height: 1.6;">
-                    {% if hasil_generate %}
-                        {{ hasil_generate | safe }}
-                    {% else %}
-                        <div class="text-center text-muted py-5 my-5" id="placeholderPreview">
-                            <i class="fa fa-file-invoice fa-3x mb-3 text-secondary opacity-50"></i>
-                            <h5 class="fw-bold">Belum ada dokumen yang digenerate.</h5>
-                            <p class="small text-muted">Lengkapi form parameter di sebelah kiri lalu klik <b>Generate dengan Puter.js AI</b>.</p>
-                        </div>
-                    {% endif %}
+
+            <div class="row mb-4 small">
+                <div class="col-6">
+                    <table class="table table-sm table-borderless">
+                        <tr><td class="fw-bold" style="width: 140px;">Guru Pengampu:</td><td>{{ session.nama_lengkap }}</td></tr>
+                        <tr><td class="fw-bold">NIP Guru:</td><td>{{ session.nip }}</td></tr>
+                    </table>
+                </div>
+                <div class="col-6 text-end">
+                    <table class="table table-sm table-borderless">
+                        <tr><td class="fw-bold">Status:</td><td><span class="badge bg-success">Tersimpan di Cache Database</span></td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card p-4 bg-light border mb-4">
+                <h6 class="fw-bold text-dark mb-3">Isi Konten Dokumen:</h6>
+                <div style="white-space: pre-line; font-size: 14px; line-height: 1.6;">
+                    {{ hasil }}
+                </div>
+            </div>
+
+            <div class="row mt-5 pt-4">
+                <div class="col-4 text-center">
+                    <p class="mb-5">Mengetahui,<br>Kepala Sekolah</p>
+                    <p class="fw-bold text-decoration-underline mb-0">Drs. H. Ahmad Sutisna, M.Pd.</p>
+                    <p class="small text-muted">NIP. 196812121994031005</p>
+                </div>
+                <div class="col-4"></div>
+                <div class="col-4 text-center">
+                    <p class="mb-5">Bandung, {{ session.get('tanggal', '2026-10-20') }}<br>Guru Mata Pelajaran</p>
+                    <p class="fw-bold text-decoration-underline mb-0">{{ session.nama_lengkap }}</p>
+                    <p class="small text-muted">NIP. {{ session.nip }}</p>
                 </div>
             </div>
         </div>
     </div>
+    {% endif %}
+
+    <!-- PREVIEW TABEL HEM -->
+    {% if preview_data %}
+    <div class="card p-4 shadow-sm mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+            <h4 class="text-success mb-0">Hasil Analisis Hari Efektif Mengajar (HEM)</h4>
+            <a href="/download-file-hem?filename={{ download_filename }}" class="btn btn-success">📥 Download File Excel</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Bulan</th>
+                        <th>Jml Minggu Kalender</th>
+                        <th>Minggu Tidak Efektif</th>
+                        <th>Minggu Efektif Belajar</th>
+                        <th>Jml Hari Sekolah</th>
+                        <th>Hari Tidak Efektif</th>
+                        <th>Hari Efektif Belajar</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in preview_data %}
+                    <tr>
+                        <td class="fw-bold">{{ row[0] }}</td>
+                        <td class="text-center">{{ row[1] }}</td>
+                        <td class="text-center">{{ row[2] }}</td>
+                        <td class="text-center fw-bold text-danger">{{ row[3] }}</td>
+                        <td class="text-center">{{ row[4] }}</td>
+                        <td class="text-center">{{ row[5] }}</td>
+                        <td class="text-center fw-bold text-success">{{ row[6] }}</td>
+                        <td>{{ row[7] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-secondary fw-bold">
+                    <tr>
+                        <td>TOTAL TAHUNAN</td>
+                        <td class="text-center">{{ totals.total_minggu_kalender }}</td>
+                        <td class="text-center">{{ totals.total_minggu_taktif }}</td>
+                        <td class="text-center text-danger">{{ totals.total_minggu_efektif }}</td>
+                        <td class="text-center">{{ totals.total_hari_sekolah }}</td>
+                        <td class="text-center">{{ totals.total_hari_taktif }}</td>
+                        <td class="text-center text-success">{{ totals.total_hari_efektif }}</td>
+                        <td>Akumulasi Tahun Pelajaran {{ req_tahun }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const slug = "{{ active_slug }}";
-    const soalBox = document.getElementById('soalParamsBox');
-    if (['soal_harian', 'soal_sts', 'soal_sas', 'asesmen_sumatif'].includes(slug)) {
-        if (soalBox) soalBox.style.display = 'flex';
+    function setModul(nama) {
+        document.getElementById('inputJenisModul').value = nama;
     }
-
-    const jenjangSelect = document.getElementById('jenjangSelect');
-    const kelasFaseSelect = document.getElementById('kelasFaseSelect');
-        const mapelSelect = document.getElementById('mapelSelect');
-    const aktivitasSelect = document.getElementById('aktivitasSelect');
-    const inputTopik = document.getElementById('inputTopik');
-    const inputRuangLingkup = document.getElementById('inputRuangLingkup');
-    const selectMetode = document.getElementById('selectMetode');
-    const selectKesulitan = document.getElementById('selectKesulitan');
-    const inputJmlPg = document.getElementById('inputJmlPg');
-    const inputJmlEsai = document.getElementById('inputJmlEsai');
-    const inputJmlIsian = document.getElementById('inputJmlIsian');
-
-    const STORAGE_KEY = 'gurava_generator_params_' + slug;
-
-    function saveInputs() {
-        const data = {
-            jenjang: jenjangSelect ? jenjangSelect.value : '',
-            kelas_fase: kelasFaseSelect ? kelasFaseSelect.value : '',
-                        mapel: mapelSelect ? mapelSelect.value : '',
-            topik: inputTopik ? inputTopik.value : '',
-            ruang_lingkup: inputRuangLingkup ? inputRuangLingkup.value : '',
-            metode: selectMetode ? selectMetode.value : '',
-            aktivitas: aktivitasSelect ? aktivitasSelect.value : '',
-            kesulitan: selectKesulitan ? selectKesulitan.value : '',
-            jml_pg: inputJmlPg ? inputJmlPg.value : '10',
-            jml_esai: inputJmlEsai ? inputJmlEsai.value : '5',
-            jml_isian: inputJmlIsian ? inputJmlIsian.value : '5'
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'block';
     }
-
-    function loadInputs() {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                if (jenjangSelect && data.jenjang) jenjangSelect.value = data.jenjang;
-                updateKelasFase();
-                updateMapel();
-                if (kelasFaseSelect && data.kelas_fase) kelasFaseSelect.value = data.kelas_fase;
-                                updateAktivitas();
-                if (mapelSelect && data.mapel) mapelSelect.value = data.mapel;
-                if (inputTopik && data.topik) inputTopik.value = data.topik;
-                if (inputRuangLingkup && data.ruang_lingkup) inputRuangLingkup.value = data.ruang_lingkup;
-                if (selectMetode && data.metode) selectMetode.value = data.metode;
-                if (aktivitasSelect && data.aktivitas) aktivitasSelect.value = data.aktivitas;
-                if (selectKesulitan && data.kesulitan) selectKesulitan.value = data.kesulitan;
-                if (inputJmlPg && data.jml_pg) inputJmlPg.value = data.jml_pg;
-                if (inputJmlEsai && data.jml_esai) inputJmlEsai.value = data.jml_esai;
-                if (inputJmlIsian && data.jml_isian) inputJmlIsian.value = data.jml_isian;
-            } catch (e) {
-                console.error("Load input error:", e);
-            }
-        }
-    }
-
-    const kelasFaseData = {
-        "SD / MI": [
-            { text: "Kelas 1 | Fase A (Kelas 1-2)", value: "Kelas 1 | Fase A (Kelas 1-2)" },
-            { text: "Kelas 2 | Fase A (Kelas 1-2)", value: "Kelas 2 | Fase A (Kelas 1-2)" },
-            { text: "Kelas 3 | Fase B (Kelas 3-4)", value: "Kelas 3 | Fase B (Kelas 3-4)" },
-            { text: "Kelas 4 | Fase B (Kelas 3-4)", value: "Kelas 4 | Fase B (Kelas 3-4)" },
-            { text: "Kelas 5 | Fase C (Kelas 5-6)", value: "Kelas 5 | Fase C (Kelas 5-6)" },
-            { text: "Kelas 6 | Fase C (Kelas 5-6)", value: "Kelas 6 | Fase C (Kelas 5-6)" }
-        ],
-        "SMP / MTs": [
-            { text: "Kelas 7 | Fase D (Kelas 7-9)", value: "Kelas 7 | Fase D (Kelas 7-9)" },
-            { text: "Kelas 8 | Fase D (Kelas 7-9)", value: "Kelas 8 | Fase D (Kelas 7-9)" },
-            { text: "Kelas 9 | Fase D (Kelas 7-9)", value: "Kelas 9 | Fase D (Kelas 7-9)" }
-        ],
-        "SMA / MA": [
-            { text: "Kelas 10 | Fase E (Kelas 10)", value: "Kelas 10 | Fase E (Kelas 10)" },
-            { text: "Kelas 11 | Fase F (Kelas 11-12)", value: "Kelas 11 | Fase F (Kelas 11-12)" },
-            { text: "Kelas 12 | Fase F (Kelas 11-12)", value: "Kelas 12 | Fase F (Kelas 11-12)" }
-        ],
-        "SMK / MAK": [
-            { text: "Kelas 10 | Fase E (Kelas 10)", value: "Kelas 10 | Fase E (Kelas 10)" },
-            { text: "Kelas 11 | Fase F (Kelas 11-12)", value: "Kelas 11 | Fase F (Kelas 11-12)" },
-            { text: "Kelas 12 | Fase F (Kelas 11-12)", value: "Kelas 12 | Fase F (Kelas 11-12)" }
-        ]
-    };
-
-    const mapelData = {
-        "SD / MI": [
-            "Pendidikan Agama dan Budi Pekerti",
-            "Pendidikan Pancasila",
-            "Bahasa Indonesia",
-            "Matematika",
-            "Ilmu Pengetahuan Alam dan Sosial (IPAS)",
-            "Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)",
-            "Seni Budaya (Seni Musik/Rupa/Teater/Tari)",
-            "Bahasa Inggris",
-            "Muatan Lokal"
-        ],
-        "SMP / MTs": [
-            "Pendidikan Agama dan Budi Pekerti",
-            "Pendidikan Pancasila",
-            "Bahasa Indonesia",
-            "Matematika",
-            "Ilmu Pengetahuan Alam (IPA)",
-            "Ilmu Pengetahuan Sosial (IPS)",
-            "Bahasa Inggris",
-            "Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)",
-            "Informatika",
-            "Seni Budaya (Seni Musik/Rupa/Teater/Tari)",
-            "Prakarya",
-            "Muatan Lokal"
-        ],
-        "SMA / MA": [
-            "Pendidikan Agama dan Budi Pekerti",
-            "Pendidikan Pancasila",
-            "Bahasa Indonesia",
-            "Matematika",
-            "Matematika Tingkat Lanjut",
-            "Fisika",
-            "Kimia",
-            "Biologi",
-            "Informatika",
-            "Sosiologi",
-            "Ekonomi",
-            "Geografi",
-            "Sejarah",
-            "Antropologi",
-            "Bahasa Inggris",
-            "Bahasa Inggris Tingkat Lanjut",
-            "Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)",
-            "Seni Budaya (Seni Musik/Rupa/Teater/Tari)",
-            "Prakarya dan Kewirausahaan (PKWU)",
-            "Muatan Lokal"
-        ],
-        "SMK / MAK": [
-            "Pendidikan Agama dan Budi Pekerti",
-            "Pendidikan Pancasila",
-            "Bahasa Indonesia",
-            "Matematika",
-            "Bahasa Inggris",
-            "Informatika",
-            "Projek IPAS",
-            "Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)",
-            "Seni Budaya",
-            "Dasar-Dasar Kejuruan",
-            "Konsentrasi Keahlian / Kejuruan",
-            "Projek Kreatif dan Kewirausahaan",
-            "Mata Pelajaran Pilihan",
-            "Muatan Lokal"
-        ]
-    };
-
-    const metodeData = {
-        "SD / MI": [
-            "Pendekatan Tematik / Terpadu",
-            "Pembelajaran Berbasis Permainan (Game-based Learning)",
-            "Project Based Learning (PjBL)",
-            "Problem Based Learning (PBL)",
-            "Discovery Learning"
-        ],
-        "SMP / MTs": [
-            "Problem Based Learning (PBL)",
-            "Project Based Learning (PjBL)",
-            "Discovery Learning",
-            "Inquiry Learning",
-            "Flipped Classroom"
-        ],
-        "SMA / MA": [
-            "Problem Based Learning (PBL)",
-            "Project Based Learning (PjBL)",
-            "Inquiry Learning",
-            "Flipped Classroom",
-            "Teaching at the Right Level (TaRL)"
-        ],
-        "SMK / MAK": [
-            "Project Based Learning (PjBL)",
-            "Teaching Factory (TEFA)",
-            "Problem Based Learning (PBL)",
-            "PjBL Terintegrasi",
-            "Praktik Kerja Industri / DUDI"
-        ]
-    };
-
-    const aktivitasData = {
-        "SD / MI": [
-            "Bermain Peran (Role Play) & Permainan Interaktif",
-            "Diferensiasi Konten (Visual, Auditori, Kinestetik)",
-            "Projek Penguatan Profil Pelajar Pancasila (P5)",
-            "Unjuk Kerja / Praktik Sederhana",
-            "Eksplorasi Lingkungan Sekitar"
-        ],
-        "SMP / MTs": [
-            "Diferensiasi Pembelajaran (Konten/Proses/Produk)",
-            "Diskusi Kelompok Kolaboratif",
-            "Projek P5 Terintegrasi Materi",
-            "Penugasan Mandiri Terbimbing",
-            "Eksplorasi & Presentasi Kasus"
-        ],
-        "SMA / MA": [
-            "Eksplorasi Konsep Mendalam & Analisis Kritis",
-            "Diferensiasi Produk dan Proses Tingkat Lanjut",
-            "Studi Kasus (Case Study) & Pemecahan Masalah",
-            "Praktik Mandiri Berbasis Digital / LKPD Interaktif",
-            "Projek P5 Berkelanjutan"
-        ],
-        "SMK / MAK": [
-            "Praktik Kejuruan / Bengkel / Laboratorium",
-            "Projek Riil berbasis Teaching Factory (TEFA)",
-            "Diferensiasi Berbasis Konsentrasi Keahlian",
-            "Simulasi Kerja / Guru Tamu Industri",
-            "Projek P5 Tema Kebekerjaan & Wirausaha"
-        ]
-    };
-
-    function updateKelasFase() {
-        if (!jenjangSelect || !kelasFaseSelect) return;
-        const jenjang = jenjangSelect.value;
-        const currentVal = kelasFaseSelect.value;
-        kelasFaseSelect.innerHTML = "";
-        if (kelasFaseData[jenjang]) {
-            kelasFaseData[jenjang].forEach(item => {
-                const opt = document.createElement('option');
-                opt.value = item.value;
-                opt.textContent = item.text;
-                kelasFaseSelect.appendChild(opt);
-            });
-            if (currentVal && Array.from(kelasFaseSelect.options).some(o => o.value === currentVal)) {
-                kelasFaseSelect.value = currentVal;
-            }
-        }
-    }
-
-    function updateMapel() {
-        if (!jenjangSelect || !mapelSelect) return;
-        const jenjang = jenjangSelect.value;
-        const currentVal = mapelSelect.value;
-        mapelSelect.innerHTML = "";
-        if (mapelData[jenjang]) {
-            mapelData[jenjang].forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m;
-                opt.textContent = m;
-                mapelSelect.appendChild(opt);
-            });
-            if (currentVal && Array.from(mapelSelect.options).some(o => o.value === currentVal)) {
-                mapelSelect.value = currentVal;
-            }
-        }
-    }
-
-    function updateMetode() {
-        if (!jenjangSelect || !selectMetode) return;
-        const jenjang = jenjangSelect.value;
-        const currentVal = selectMetode.value;
-        selectMetode.innerHTML = "";
-        if (metodeData[jenjang]) {
-            metodeData[jenjang].forEach(met => {
-                const opt = document.createElement('option');
-                opt.value = met;
-                opt.textContent = met;
-                selectMetode.appendChild(opt);
-            });
-            if (currentVal && Array.from(selectMetode.options).some(o => o.value === currentVal)) {
-                selectMetode.value = currentVal;
-            }
-        }
-    }
-
-    function updateAktivitas() {
-        if (!jenjangSelect || !aktivitasSelect) return;
-        const jenjang = jenjangSelect.value;
-        const currentVal = aktivitasSelect.value;
-        aktivitasSelect.innerHTML = "";
-        if (aktivitasData[jenjang]) {
-            aktivitasData[jenjang].forEach(akt => {
-                const opt = document.createElement('option');
-                opt.value = akt;
-                opt.textContent = akt;
-                aktivitasSelect.appendChild(opt);
-            });
-            if (currentVal && Array.from(aktivitasSelect.options).some(o => o.value === currentVal)) {
-                aktivitasSelect.value = currentVal;
-            }
-        }
-    }
-
-    if (jenjangSelect) {
-        jenjangSelect.addEventListener('change', function() {
-            updateKelasFase();
-            updateMapel();
-            updateMetode();
-            updateAktivitas();
-            saveInputs();
-        });
-    }
-
-
-
-    const allFormInputs = document.querySelectorAll('#generatorForm input, #generatorForm select');
-    allFormInputs.forEach(el => {
-        el.addEventListener('change', saveInputs);
-        el.addEventListener('input', saveInputs);
-    });
-
-    updateKelasFase();
-    updateMapel();
-    updateMetode();
-    updateAktivitas();
-    loadInputs();
-
-    const puterStatusBox = document.getElementById('puterStatusBox');
-    async function initPuter() {
-        if (typeof puter === 'undefined') return;
-        try {
-            if (puter.auth.isSignedIn()) {
-                const user = await puter.auth.getUser();
-                if (puterStatusBox) {
-                    puterStatusBox.innerHTML = `
-                        <span><i class="fa fa-check-circle text-success me-1"></i> Terhubung ke Puter AI: <b>${user.username}</b></span>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="logoutPuter()"><i class="fa fa-sign-out-alt"></i> Ganti Akun</button>
-                    `;
-                }
-            } else {
-                await puter.auth.signIn();
-                window.location.reload();
-            }
-        } catch (e) {
-            console.error("Puter Auth Error:", e);
-        }
-    }
-    
-    window.logoutPuter = function() {
-        if (typeof puter !== 'undefined' && puter.auth.isSignedIn()) {
-            puter.auth.signOut();
-            alert('Berhasil logout dari akun Puter.js');
-            window.location.reload();
-        }
-    };
-    
-    initPuter();
-});
-
-async function handlePuterGeneration(event) {
-    event.preventDefault();
-    const btn = document.getElementById('btnSubmitGen');
-    const previewContainer = document.querySelector('.document-preview-container');
-    
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i> Puter.js AI Sedang Generate...';
-    previewContainer.innerHTML = '<div class="text-center py-5 my-5"><div class="spinner-border text-primary mb-3" role="status"></div><h5 class="fw-bold">Puter.js AI sedang menyusun dokumen profesional...</h5><p class="text-muted small">Harap tunggu sebentar, dokumen akademis sedang digenerate secara real-time.</p></div>';
-
-    const jenjang = document.getElementById('jenjangSelect').value;
-    const kelasFase = document.getElementById('kelasFaseSelect').value;
-    const kurikulum = 'Kurikulum Merdeka';
-    const mapel = document.getElementById('mapelSelect').value;
-    const topik = document.getElementById('inputTopik').value;
-    const ruangLingkup = document.getElementById('inputRuangLingkup').value;
-    const metode = document.getElementById('selectMetode').value;
-    const aktivitas = document.getElementById('aktivitasSelect').value;
-    const kesulitan = document.getElementById('selectKesulitan').value;
-    const jenisModul = "{{ current_jenis }}";
-    const slug = "{{ active_slug }}";
-
-    let prompt = "";
-    if (['soal_harian', 'soal_sts', 'soal_sas', 'asesmen_sumatif'].includes(slug)) {
-        const jmlPg = document.getElementById('inputJmlPg').value;
-        const jmlEsai = document.getElementById('inputJmlEsai').value;
-        const jmlIsian = document.getElementById('inputJmlIsian').value;
-        const totalSoal = parseInt(jmlPg) + parseInt(jmlIsian) + parseInt(jmlEsai);
-
-        prompt = `Bertindaklah sebagai guru ahli pembuat instrumen evaluasi. Buatkan soal untuk parameter berikut:
-Mata Pelajaran: ${mapel}
-Materi/Topik: ${topik}
-Ruang Lingkup: ${ruangLingkup}
-Jenjang: ${jenjang} (${kelasFase})
-Kurikulum: ${kurikulum}
-Level Kognitif: ${kesulitan}
-Jumlah Soal PG: ${jmlPg}
-Jumlah Soal Isian Singkat: ${jmlIsian}
-Jumlah Soal Esai: ${jmlEsai}
-Total Keseluruhan Soal: ${totalSoal} soal
-
-PENTING: Pada bagian "III. KISI-KISI PENULISAN SOAL", Anda WAJIB membuat baris tabel (<tr>) SEBANYAK TOTAL KESELURUHAN SOAL (${totalSoal} baris).
-
-Keluarkan HANYA HTML MURNI (tanpa format markdown ```html, jangan gunakan tag body/html). 
-Gunakan struktur persis seperti ini:
-<div class='mb-1 text-center fs-5'><b>PERANGKAT EVALUASI PEMBELAJARAN</b></div>
-<div class='mb-4 text-center text-muted small'>Mata Pelajaran: ${mapel} | Materi: ${topik} | Jenjang: ${jenjang}</div>
-<div class='fw-bold mt-2 mb-2 bg-light p-2 border-start border-4 border-primary'>I. NASKAH SOAL EVALUASI</div>
-<div class='fw-bold mt-3'>A. PILIHAN GANDA</div>
-<div class='ps-2 mb-3'><b>1.</b> [Soal PG 1]<br>&nbsp;&nbsp;&nbsp;&nbsp;A. [Opsi]<br>&nbsp;&nbsp;&nbsp;&nbsp;B. [Opsi]<br>&nbsp;&nbsp;&nbsp;&nbsp;C. [Opsi]<br>&nbsp;&nbsp;&nbsp;&nbsp;D. [Opsi]<br><br></div>
-<div class='fw-bold mt-3'>B. ISIAN SINGKAT</div><div class='ps-2 mb-3'><b>1.</b> [Soal Isian 1] ....................<br><br></div>
-<div class='fw-bold mt-3'>C. ESAI / URAIAN</div><div class='ps-2 mb-4'><b>1.</b> [Soal Esai 1]<br><br></div>
-<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-success'>II. KUNCI JAWABAN DAN PEMBAHASAN</div>
-<div class='fw-bold mt-3'>A. KUNCI PILIHAN GANDA</div><div class='ps-2 mb-3'><b>1.</b> [Kunci] — Pembahasan: [Penjelasan]<br></div>
-<div class='fw-bold mt-3'>B. KUNCI ISIAN SINGKAT</div><div class='ps-2 mb-3'><b>1.</b> [Jawaban]<br></div>
-<div class='fw-bold mt-3'>C. KUNCI ESAI</div><div class='ps-2 mb-4'><b>1.</b> Rubrik: [Kriteria]<br></div>
-<div class='fw-bold mt-4 mb-2 bg-light p-2 border-start border-4 border-warning'>III. KISI-KISI PENULISAN SOAL</div>
-<div class='table-responsive mt-2'>
-<table class='table table-bordered align-middle'>
-<thead class='table-light text-center'><tr><th>No</th><th>CP / TP</th><th>Materi</th><th>Indikator Soal</th><th>Bentuk Soal</th><th>Level</th></tr></thead>
-<tbody>
-<tr><td class='text-center'>1</td><td>[Tujuan Pembelajaran]</td><td>${topik}</td><td>[Indikator Soal 1]</td><td>PG</td><td class='text-center'>${kesulitan}</td></tr>
-</tbody>
-</table>
-</div>`;
-    } else if (slug === 'cp_tp_atp') {
-        prompt = `Bertindaklah sebagai guru ahli pembuat dokumen administrasi. Buatkan dokumen CP, TP, dan ATP untuk parameter berikut:
-Mata Pelajaran: ${mapel}
-Materi/Topik: ${topik}
-Ruang Lingkup: ${ruangLingkup}
-Jenjang: ${jenjang} (${kelasFase})
-Kurikulum: ${kurikulum}
-Pendekatan/Metode: ${metode}
-Aktivitas: ${aktivitas}
-
-Keluarkan HANYA HTML MURNI tanpa markdown ```html, tanpa tag html/body.
-Gunakan format tabel dan struktur yang rapi:
-<h3 class='text-center'>PEMETAAN CAPAIAN PEMBELAJARAN (CP), TUJUAN PEMBELAJARAN (TP)<br>DAN ALUR TUJUAN PEMBELAJARAN (ATP)</h3>
-<hr>
-<table class='table table-bordered mb-4'>
-<tr><th style='width: 25%'>Mata Pelajaran</th><td>${mapel}</td></tr>
-<tr><th>Kelas / Fase</th><td>${kelasFase}</td></tr>
-<tr><th>Tahun Pelajaran</th><td>2026/2027</td></tr>
-</table>
-<h4 class='text-primary mt-4'>I. CAPAIAN PEMBELAJARAN (CP)</h4>
-[Buat tabel Elemen dan Capaian Pembelajaran secara mendalam terkait ${topik}]
-<h4 class='text-primary mt-4'>II. TUJUAN PEMBELAJARAN (TP) DAN ALUR TUJUAN PEMBELAJARAN (ATP)</h4>
-[Buat tabel dengan kolom No, Elemen, Materi/Bab, Tujuan Pembelajaran (TP), Alur Tujuan Pembelajaran (ATP), dan Justifikasi]`;
-    } else {
-        prompt = `Bertindaklah sebagai guru ahli. Buatkan dokumen administrasi ${jenisModul} untuk parameter berikut:
-Mata Pelajaran: ${mapel}
-Materi/Topik: ${topik}
-Ruang Lingkup: ${ruangLingkup}
-Jenjang: ${jenjang} (${kelasFase})
-Kurikulum: ${kurikulum}
-Metode: ${metode}
-Aktivitas: ${aktivitas}
-
-Keluarkan HANYA HTML MURNI tanpa markdown ```html, tanpa tag body/html.
-Format dokumen semenarik dan serapi mungkin menyerupai dokumen administrasi guru profesional menggunakan Bootstrap classes (table-bordered, dll).
-Beri judul dokumen <h3>${jenisModul.toUpperCase()}</h3>
-Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik sesuai mata pelajaran ${mapel} untuk topik ${topik} dengan ruang lingkup ${ruangLingkup}.`;
-    }
-
-    try {
-        if (typeof puter === 'undefined' || !puter.ai) {
-            throw new Error("Puter.js AI belum dimuat atau tidak tersedia.");
-        }
-
-        const response = await puter.ai.chat(prompt, { model: 'gpt-4o-mini' });
-        let rawHtml = typeof response === 'string' ? response : (response.message ? response.message.content : response.toString());
-        
-        rawHtml = rawHtml.trim();
-        if (rawHtml.startsWith("```html")) rawHtml = rawHtml.slice(7);
-        if (rawHtml.startsWith("```")) rawHtml = rawHtml.slice(3);
-        if (rawHtml.endswith("```")) rawHtml = rawHtml.slice(0, -3);
-
-        document.getElementById('ai_generated_content').value = rawHtml;
-        document.getElementById('generatorForm').submit();
-    } catch (err) {
-        console.error("Puter AI Error:", err);
-        alert("Gagal melakukan generate dengan Puter.js AI: " + err.message);
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa fa-robot me-2"></i> Generate dengan Puter.js AI';
-        previewContainer.innerHTML = '<div class="text-center text-muted py-5 my-5"><i class="fa fa-exclamation-triangle fa-3x mb-3 text-danger"></i><h5 class="fw-bold">Gagal Generate Puter.js AI</h5><p class="small text-muted">' + err.message + '</p></div>';
-    }
-}
-
-function prepareWordExport() {
-    const container = document.querySelector('.document-preview-container');
-    const input = document.getElementById('exportWordContent');
-    if (container && input) {
-        input.value = container.innerHTML;
-    }
-}
 </script>
-
-{% endblock %}
+</body>
+</html>
