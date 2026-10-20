@@ -4,17 +4,29 @@
 {% if hem_report %}
 <style>
     .hem-report table { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .hem-report .hem-head th { background-color: #1e3d59 !important; color: #ffffff !important; }
+    .hem-report .hem-head th { background-color: #1e3d59 !important; color: #ffffff !important; vertical-align: middle; }
     .hem-report .hem-total td { background-color: #1e3d59 !important; color: #ffffff !important; }
     .hem-report .hem-abu { background-color: #f1f5f9 !important; }
     .hem-report .hem-aksen { background-color: #fde68a !important; color: #7c2d12 !important; }
     .hem-report .hem-aksen-kuat { background-color: #f59e0b !important; color: #ffffff !important; }
+    .hem-report .hem-judul { color: #1e3d59; font-weight: bold; font-size: 1.35rem; line-height: 1.3; }
+    .hem-report .hem-ket { white-space: normal; word-break: break-word; }
+    /* Agar dokumen tetap muat (tanpa terpotong) di lebar layar kecil, mis. preview 764px. */
+    @media (max-width: 991.98px) {
+        .hem-report .hem-tabel th, .hem-report .hem-tabel td { padding: .4rem .45rem; }
+    }
+    @media (max-width: 767.98px) {
+        .hem-report .hem-judul { font-size: 1rem; }
+        .hem-report .hem-sub { font-size: .78rem; }
+        .hem-report .hem-tabel { table-layout: fixed; width: 100%; font-size: .68rem; }
+        .hem-report .hem-tabel th, .hem-report .hem-tabel td { padding: .28rem .3rem; }
+    }
 </style>
 
 <div class="hem-report">
     <div class="text-center mb-3">
-        <h3 style="color: #1e3d59; font-weight: bold;">LAPORAN ANALISIS MINGGU &amp; HARI EFEKTIF BELAJAR (HEM)</h3>
-        <p class="text-muted mb-1">
+        <h3 class="hem-judul mb-2">LAPORAN ANALISIS MINGGU &amp; HARI EFEKTIF BELAJAR (HEM)</h3>
+        <p class="text-muted hem-sub mb-1">
             Nama Sekolah: <b>{{ hem_report.meta.nama_sekolah }}</b> |
             Jenjang: <b>{{ hem_report.meta.jenjang }}</b> |
             Tahun Pelajaran: <b>{{ hem_report.meta.tahun_pelajaran }}</b>
@@ -28,7 +40,7 @@
     <hr style="border: 2px solid #1e3d59;">
 
     <div class="table-responsive mb-4">
-        <table class="table table-bordered align-middle mb-0" style="border-color: #cbd5e1;">
+        <table class="table table-bordered align-middle mb-0 hem-tabel" style="border-color: #cbd5e1;">
             <thead class="hem-head text-center">
                 <tr>
                     <th style="width: 13%;">Bulan</th>
@@ -51,7 +63,7 @@
                     <td class="text-center">{{ b.hari_sekolah }}</td>
                     <td class="text-center text-muted">{{ b.hari_tidak_efektif }}</td>
                     <td class="text-center fw-bold hem-aksen">{{ b.hari_efektif }}</td>
-                    <td class="small">{{ b.keterangan }}</td>
+                    <td class="small hem-ket">{{ b.keterangan }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

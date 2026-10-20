@@ -80,7 +80,7 @@
 
         {% if hem_context.report %}
         <div class="card shadow-sm border-0">
-            <div class="card-header text-white d-flex justify-content-between align-items-center" style="background-color: #f59e0b;">
+            <div class="card-header text-white d-flex flex-wrap gap-2 justify-content-between align-items-center" style="background-color: #f59e0b;">
                 <h5 class="m-0"><i class="fa fa-file-invoice me-2"></i>Hasil Analisis Minggu &amp; Hari Efektif Belajar</h5>
                 <div class="d-flex gap-2">
                     <form action="{{ url_for('export_excel_hem') }}" method="POST" class="m-0">
@@ -90,7 +90,7 @@
                     <button type="button" class="btn btn-light btn-sm fw-bold" onclick="window.print()"><i class="fa fa-print me-1"></i> Cetak / Export PDF</button>
                 </div>
             </div>
-            <div class="card-body bg-white p-4">
+            <div class="card-body bg-white p-3 p-md-4">
                 {% with hem_report = hem_context.report %}{% include "_hem_report.html" %}{% endwith %}
             </div>
         </div>
