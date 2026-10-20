@@ -1,0 +1,99 @@
+{# Laporan Analisis Minggu & Hari Efektif Belajar (HEM).
+   Dipakai oleh halaman generator HEM dan oleh halaman detail arsip.
+   Variabel yang dibutuhkan: hem_report (hasil analisis tersimpan). #}
+{% if hem_report %}
+<style>
+    .hem-report table { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .hem-report .hem-head th { background-color: #1e3d59 !important; color: #ffffff !important; }
+    .hem-report .hem-total td { background-color: #1e3d59 !important; color: #ffffff !important; }
+    .hem-report .hem-abu { background-color: #f1f5f9 !important; }
+    .hem-report .hem-aksen { background-color: #fde68a !important; color: #7c2d12 !important; }
+    .hem-report .hem-aksen-kuat { background-color: #f59e0b !important; color: #ffffff !important; }
+</style>
+
+<div class="hem-report">
+    <div class="text-center mb-3">
+        <h3 style="color: #1e3d59; font-weight: bold;">LAPORAN ANALISIS MINGGU &amp; HARI EFEKTIF BELAJAR (HEM)</h3>
+        <p class="text-muted mb-1">
+            Nama Sekolah: <b>{{ hem_report.meta.nama_sekolah }}</b> |
+            Jenjang: <b>{{ hem_report.meta.jenjang }}</b> |
+            Tahun Pelajaran: <b>{{ hem_report.meta.tahun_pelajaran }}</b>
+        </p>
+        <p class="text-muted small mb-0">
+            Sistem: <b>{{ hem_report.meta.sistem_hari_label }}</b> |
+            {{ hem_report.meta.sumber_dokumen }} |
+            Dibuat: {{ hem_report.meta.dibuat }}{% if hem_report.meta.mesin_ai %} | Mesin AI: {{ hem_report.meta.mesin_ai }}{% endif %}
+        </p>
+    </div>
+    <hr style="border: 2px solid #1e3d59;">
+
+    <div class="table-responsive mb-4">
+        <table class="table table-bordered align-middle mb-0" style="border-color: #cbd5e1;">
+            <thead class="hem-head text-center">
+                <tr>
+                    <th style="width: 13%;">Bulan</th>
+                    <th style="width: 11%;">Jumlah Minggu Kalender</th>
+                    <th style="width: 11%;">Minggu Tidak Efektif</th>
+                    <th style="width: 12%;">Minggu Efektif Belajar</th>
+                    <th style="width: 11%;">Jumlah Hari Sekolah</th>
+                    <th style="width: 11%;">Hari Tidak Efektif</th>
+                    <th style="width: 12%;">Hari Efektif Belajar</th>
+                    <th>Keterangan</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in hem_report.bulan %}
+                <tr class="{% if loop.index is odd %}hem-abu{% endif %}">
+                    <td class="fw-bold">{{ b.nama_bulan }}</td>
+                    <td class="text-center">{{ b.minggu_kalender }}</td>
+                    <td class="text-center text-muted">{{ b.minggu_tidak_efektif }}</td>
+                    <td class="text-center fw-bold hem-aksen">{{ b.minggu_efektif }}</td>
+                    <td class="text-center">{{ b.hari_sekolah }}</td>
+                    <td class="text-center text-muted">{{ b.hari_tidak_efektif }}</td>
+                    <td class="text-center fw-bold hem-aksen">{{ b.hari_efektif }}</td>
+                    <td class="small">{{ b.keterangan }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="hem-total text-center fw-bold">
+                    <td class="text-end">TOTAL KESELURUHAN</td>
+                    <td>{{ hem_report.total.minggu_kalender }}</td>
+                    <td>{{ hem_report.total.minggu_tidak_efektif }}</td>
+                    <td class="hem-aksen-kuat">{{ hem_report.total.minggu_efektif }} Minggu</td>
+                    <td>{{ hem_report.total.hari_sekolah }}</td>
+                    <td>{{ hem_report.total.hari_tidak_efektif }}</td>
+                    <td class="hem-aksen-kuat">{{ hem_report.total.hari_efektif }} Hari</td>
+                    <td class="text-start">Data dasar penyusunan Prota &amp; Prosem</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <h5 class="fw-bold mt-4 mb-3" style="color: #1e3d59;"><i class="fa fa-chart-bar me-2"></i>REKAP TOTAL TAHUNAN</h5>
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle" style="border-color: #cbd5e1; max-width: 520px;">
+            <thead class="hem-head">
+                <tr><th>Komponen</th><th class="text-center" style="width: 35%;">Jumlah</th></tr>
+            </thead>
+            <tbody>
+                <tr class="hem-abu"><td>Total Minggu Kalender</td><td class="text-center fw-bold">{{ hem_report.total.minggu_kalender }}</td></tr>
+                <tr><td>Total Minggu Tidak Efektif</td><td class="text-center text-muted">{{ hem_report.total.minggu_tidak_efektif }}</td></tr>
+                <tr class="hem-aksen"><td><b>Total Minggu Efektif Belajar</b></td><td class="text-center fw-bold">{{ hem_report.total.minggu_efektif }} Minggu</td></tr>
+                <tr class="hem-abu"><td>Total Hari Sekolah</td><td class="text-center fw-bold">{{ hem_report.total.hari_sekolah }}</td></tr>
+                <tr><td>Total Hari Tidak Efektif</td><td class="text-center text-muted">{{ hem_report.total.hari_tidak_efektif }}</td></tr>
+                <tr class="hem-aksen"><td><b>Total Hari Efektif Belajar</b></td><td class="text-center fw-bold">{{ hem_report.total.hari_efektif }} Hari</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    {% if hem_report.catatan %}
+    <div class="alert alert-warning mt-3 mb-0">
+        <b><i class="fa fa-info-circle me-1"></i>Catatan:</b>
+        <ul class="mb-0 mt-1 small">
+            {% for c in hem_report.catatan %}<li>{{ c }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endif %}

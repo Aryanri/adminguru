@@ -1,5 +1,9 @@
 import os
+import base64
 import hashlib
+import io
+import json
+import re
 import uuid
 import sqlite3
 import pandas as pd
@@ -53,6 +57,7 @@ with app.app_context():
     try:
         db.create_all()
         defaults = [
+            ('Analisis Minggu & Hari Efektif Belajar (HEM)', 'hem'),
             ('CP-TP-ATP', 'cp_tp_atp'),
             ('Modul Ajar / RPP', 'modul_ajar'),
             ('LKPD Siswa', 'lkpd'),
@@ -69,13 +74,6 @@ with app.app_context():
                 cm = CustomModule(nama_modul=d_name, slug=d_slug, aktif=True, is_default=True)
                 db.session.add(cm)
         db.session.commit()
-
-        # Modul HEM sudah dihapus total: hapus juga baris modul lamanya
-        # agar tidak muncul lagi di daftar generator.
-        hem_module = CustomModule.query.filter_by(slug='hem').first()
-        if hem_module:
-            db.session.delete(hem_module)
-            db.session.commit()
 
         if not User.query.filter_by(username='superadmin').first():
             sa = User(
@@ -251,6 +249,345 @@ def dashboard():
     
     return render_template('dashboard.html', profile=profile, user_logs=user_logs, announcement=announcement)
 
+# ==========================================================================
+# Analisis Minggu & Hari Efektif Belajar (HEM)
+# ==========================================================================
+HEM_JENJANG = ['SD / MI', 'SMP / MTs', 'SMA / MA', 'SMK / MAK']
+# Alias ke model Flash terbaru, supaya analisis tidak mati saat versi tertentu pensiun.
+HEM_GEMINI_MODELS = ['gemini-flash-latest', 'gemini-3.5-flash', 'gemini-flash-lite-latest']
+HEM_GROQ_MODEL = 'llama-3.3-70b-versatile'
+HEM_DOC_PREFIX = 'kalender-'
+
+
+def hem_tahun_options():
+    """Pilihan kalender tahun pelajaran mulai 2025/2026, bertambah otomatis mengikuti tahun berjalan."""
+    return [f"{y}/{y + 1}" for y in range(2025, max(2028, wib_now().year) + 1)]
+
+
+def hem_sistem_hari_label(sistem_hari):
+    return '6 Hari Kerja (Senin - Sabtu)' if str(sistem_hari) == '6' else '5 Hari Kerja (Senin - Jumat)'
+
+
+def hem_document_prefix(jenjang, tahun_pelajaran):
+    return HEM_DOC_PREFIX + re.sub(r'[^a-z0-9]+', '-', f"{tahun_pelajaran} {jenjang}".lower()).strip('-')
+
+
+def hem_find_document(jenjang, tahun_pelajaran):
+    """Nama berkas kalender yang tersimpan untuk jenjang + tahun pelajaran ini (bila ada)."""
+    folder = app.config['UPLOAD_FOLDER']
+    if not os.path.isdir(folder):
+        return None
+    prefix = hem_document_prefix(jenjang, tahun_pelajaran)
+    for name in sorted(os.listdir(folder)):
+        if name.startswith(prefix):
+            return name
+    return None
+
+
+def hem_store_document(file_storage, jenjang, tahun_pelajaran):
+    """Simpan dokumen kalender dari guru, menggantikan dokumen lama untuk jenjang + tahun yang sama."""
+    folder = app.config['UPLOAD_FOLDER']
+    os.makedirs(folder, exist_ok=True)
+    prefix = hem_document_prefix(jenjang, tahun_pelajaran)
+    for name in os.listdir(folder):
+        if name.startswith(prefix):
+            try:
+                os.remove(os.path.join(folder, name))
+            except OSError:
+                pass
+    ext = os.path.splitext(secure_filename(file_storage.filename or ''))[1].lower() or '.dat'
+    filename = prefix + ext
+    file_storage.save(os.path.join(folder, filename))
+    return filename
+
+
+def hem_document_text(filename, raw):
+    """Ambil teks kalender dari berkas Word/teks (tanpa pustaka tambahan)."""
+    name = (filename or '').lower()
+    if name.endswith('.docx'):
+        import zipfile
+        with zipfile.ZipFile(io.BytesIO(raw)) as berkas_zip:
+            xml = berkas_zip.read('word/document.xml').decode('utf-8', 'ignore')
+        xml = xml.replace('</w:p>', '\n').replace('</w:tr>', '\n')
+        return re.sub(r'<[^>]+>', '', xml).strip()
+    if name.endswith(('.txt', '.csv', '.md')):
+        return raw.decode('utf-8', 'ignore').strip()
+    return ''
+
+
+def hem_document_mime(filename):
+    name = (filename or '').lower()
+    if name.endswith('.pdf'):
+        return 'application/pdf'
+    if name.endswith('.png'):
+        return 'image/png'
+    if name.endswith(('.jpg', '.jpeg')):
+        return 'image/jpeg'
+    if name.endswith('.webp'):
+        return 'image/webp'
+    return 'application/octet-stream'
+
+
+def hem_prompt(meta, ada_dokumen):
+    hari = 'Senin-Jumat' if str(meta['sistem_hari']) == '5' else 'Senin-Sabtu'
+    jumlah_hari = '6' if str(meta['sistem_hari']) == '6' else '5'
+    sumber = (
+        'Dokumen kalender akademik Kemendikdasmen yang disertakan pada pesan ini.'
+        if ada_dokumen else
+        'Tidak ada dokumen yang disertakan. Gunakan kalender akademik resmi Kemendikdasmen untuk tahun '
+        'pelajaran tersebut, dan tuliskan pada catatan bahwa hasilnya wajib diverifikasi dengan dokumen '
+        'resmi sekolah.'
+    )
+    return f"""Bertindaklah sebagai asisten analisis kalender akademik sekolah yang ahli dalam administrasi pendidikan dan perencanaan waktu pembelajaran guru.
+
+KONTEKS SEKOLAH
+Nama Sekolah: {meta['nama_sekolah']}
+Jenjang: {meta['jenjang']}
+Tahun Pelajaran: {meta['tahun_pelajaran']}
+Sistem Hari Belajar Sekolah: {meta['sistem_hari_label']} (hari belajar: {hari})
+
+SUMBER DATA
+{sumber}
+
+TUGAS ANALISIS
+1. Baca dokumen kalender akademik tersebut dan identifikasi: awal dan akhir tahun pelajaran, bulan pembelajaran, minggu dalam setiap bulan, hari belajar sekolah, hari libur (nasional, keagamaan, semester), kegiatan sekolah, asesmen/ujian, serta kegiatan lain yang mempengaruhi pembelajaran. Jika ada data yang tidak jelas, tampilkan sebagai catatan dan jangan berasumsi.
+2. Untuk SETIAP BULAN pada tahun pelajaran tersebut hitung:
+   - minggu_kalender: jumlah minggu kalender bulan tersebut.
+   - minggu_tidak_efektif: minggu libur, minggu tanpa kegiatan pembelajaran, dan minggu kegiatan sekolah yang bukan pembelajaran reguler.
+   - hari_sekolah: jumlah hari sekolah menurut sistem {jumlah_hari} hari kerja ({hari}).
+   - hari_tidak_efektif: hari libur, hari kegiatan sekolah non pembelajaran, hari asesmen/ujian, dan hari lain yang tidak dipakai untuk pembelajaran.
+   - keterangan: agenda singkat bulan tersebut.
+3. Jangan memakai kalender umum di luar dokumen/acuan resmi Kemendikdasmen di atas.
+
+KELUARKAN HANYA JSON VALID (tanpa markdown dan tanpa penjelasan tambahan) dengan skema:
+{{"bulan": [{{"nama_bulan": "Juli 2025", "minggu_kalender": 5, "minggu_tidak_efektif": 2, "hari_sekolah": 22, "hari_tidak_efektif": 8, "keterangan": "Permulaan tahun ajaran & MPLS"}}], "catatan": ["..."]}}
+
+Semua angka berupa bilangan bulat dan tidak negatif. Urutkan bulan dari awal sampai akhir tahun pelajaran."""
+
+
+def hem_request_ai(prompt, dokumen_nama, doc_bytes, doc_text):
+    """Kirim permintaan analisis ke Gemini (membaca PDF/gambar/teks), Groq sebagai cadangan."""
+    import time
+    import urllib.request
+
+    errors = []
+    gemini_key = os.environ.get('GEMINI_API_KEY')
+    groq_key = os.environ.get('GROQ_API_KEY')
+    ai_text = ''
+    sumber_ai = ''
+
+    if gemini_key:
+        parts = [{'text': prompt}]
+        if doc_text:
+            parts.append({'text': 'ISI DOKUMEN KALENDER AKADEMIK:\n' + doc_text[:60000]})
+        elif doc_bytes:
+            parts.append({'inline_data': {'mime_type': hem_document_mime(dokumen_nama),
+                                          'data': base64.b64encode(doc_bytes).decode('ascii')}})
+        payload = {'contents': [{'parts': parts}],
+                   'generationConfig': {'temperature': 0.2, 'responseMimeType': 'application/json'}}
+        # Layanan AI sesekali membalas 503/429 sesaat, jadi model dicoba bergantian sebelum menyerah.
+        for model in HEM_GEMINI_MODELS:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
+            for percobaan in range(2):
+                try:
+                    req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'),
+                                                 headers={'Content-Type': 'application/json'})
+                    with urllib.request.urlopen(req, timeout=60) as response:
+                        res = json.loads(response.read().decode('utf-8'))
+                    kandidat = (res.get('candidates') or [{}])[0]
+                    ai_text = kandidat.get('content', {}).get('parts', [{}])[0].get('text', '') or ''
+                    if ai_text:
+                        sumber_ai = f'Gemini {model}'
+                    break
+                except Exception as e:
+                    errors.append(f'Gemini {model} (percobaan {percobaan + 1}): {e}')
+                    if percobaan == 0:
+                        time.sleep(2)
+            if ai_text:
+                break
+
+    if not ai_text and groq_key and (doc_text or not doc_bytes):
+        try:
+            isi = prompt if not doc_text else prompt + '\n\nISI DOKUMEN KALENDER AKADEMIK:\n' + doc_text[:60000]
+            payload = {'model': HEM_GROQ_MODEL, 'temperature': 0.2,
+                       'messages': [{'role': 'user', 'content': isi}]}
+            req = urllib.request.Request(
+                'https://api.groq.com/openai/v1/chat/completions',
+                data=json.dumps(payload).encode('utf-8'),
+                headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {groq_key}'})
+            with urllib.request.urlopen(req, timeout=120) as response:
+                res = json.loads(response.read().decode('utf-8'))
+            ai_text = (res.get('choices') or [{}])[0].get('message', {}).get('content', '') or ''
+            if ai_text:
+                sumber_ai = f'Groq {HEM_GROQ_MODEL}'
+        except Exception as e:
+            errors.append(f'Groq: {e}')
+
+    return ai_text, sumber_ai, errors
+
+
+def hem_parse_json(ai_text):
+    text = (ai_text or '').strip()
+    if text.startswith('```'):
+        text = re.sub(r'^```[a-zA-Z]*\s*', '', text)
+        text = re.sub(r'```\s*$', '', text).strip()
+    awal, akhir = text.find('{'), text.rfind('}')
+    if awal == -1 or akhir == -1:
+        raise ValueError('AI tidak mengembalikan data JSON.')
+    return json.loads(text[awal:akhir + 1])
+
+
+def hem_build_report(ai_data, meta, catatan_tambahan):
+    """Rumus minggu/hari efektif dan rekap total dihitung di server agar tidak ada perhitungan ganda."""
+    def angka(nilai):
+        try:
+            return max(0, int(round(float(str(nilai).strip()))))
+        except (TypeError, ValueError):
+            return 0
+
+    bulan = []
+    for item in (ai_data.get('bulan') or []):
+        if not isinstance(item, dict):
+            continue
+        minggu_kalender = angka(item.get('minggu_kalender'))
+        minggu_tidak_efektif = min(angka(item.get('minggu_tidak_efektif')), minggu_kalender)
+        hari_sekolah = angka(item.get('hari_sekolah'))
+        hari_tidak_efektif = min(angka(item.get('hari_tidak_efektif')), hari_sekolah)
+        bulan.append({
+            'nama_bulan': str(item.get('nama_bulan') or '-').strip(),
+            'minggu_kalender': minggu_kalender,
+            'minggu_tidak_efektif': minggu_tidak_efektif,
+            'minggu_efektif': minggu_kalender - minggu_tidak_efektif,
+            'hari_sekolah': hari_sekolah,
+            'hari_tidak_efektif': hari_tidak_efektif,
+            'hari_efektif': hari_sekolah - hari_tidak_efektif,
+            'keterangan': str(item.get('keterangan') or '').strip(),
+        })
+    if not bulan:
+        raise ValueError('AI tidak mengembalikan rincian bulan.')
+
+    kunci = ('minggu_kalender', 'minggu_tidak_efektif', 'minggu_efektif',
+             'hari_sekolah', 'hari_tidak_efektif', 'hari_efektif')
+    total = {k: sum(b[k] for b in bulan) for k in kunci}
+    catatan = [str(c).strip() for c in (ai_data.get('catatan') or []) if str(c).strip()]
+    catatan.extend(catatan_tambahan)
+    if len(bulan) != 12:
+        catatan.append(f'Catatan sistem: hanya {len(bulan)} bulan yang terbaca dari kalender akademik.')
+    return {'meta': meta, 'bulan': bulan, 'total': total, 'catatan': catatan}
+
+
+def hem_latest_report(jenis):
+    """Analisis HEM terakhir milik pengguna, bila tersimpan di arsip."""
+    arsip = Archive.query.filter_by(user_id=current_user.id, jenis_administrasi=jenis).order_by(Archive.created_at.desc()).first()
+    if not arsip:
+        return None
+    try:
+        data = json.loads(arsip.hasil_konten)
+    except (TypeError, ValueError):
+        return None
+    return data if isinstance(data, dict) and data.get('bulan') else None
+
+
+def hem_page_context(jenis, report=None, error=None, form=None):
+    folder = app.config['UPLOAD_FOLDER']
+    tersimpan = sorted(n for n in (os.listdir(folder) if os.path.isdir(folder) else []) if n.startswith(HEM_DOC_PREFIX))
+    if report is None:
+        report = hem_latest_report(jenis)
+    tahun_options = hem_tahun_options()
+    return {
+        'report': report,
+        'report_json': json.dumps(report, ensure_ascii=False) if report else '',
+        'error': error,
+        'jenjang_options': HEM_JENJANG,
+        'tahun_options': tahun_options,
+        'dokumen_tersimpan': tersimpan,
+        'form': form or {'jenjang': HEM_JENJANG[1], 'tahun_pelajaran': tahun_options[-1], 'sistem_hari': '5'},
+    }
+
+
+def hem_analyze_request(req, profile, jenis):
+    """Jalankan analisis HEM dari form guru, lalu simpan hasilnya ke arsip."""
+    tahun_options = hem_tahun_options()
+    jenjang = req.form.get('jenjang', HEM_JENJANG[1])
+    if jenjang not in HEM_JENJANG:
+        jenjang = HEM_JENJANG[1]
+    tahun_pelajaran = req.form.get('tahun_pelajaran', tahun_options[-1])
+    if tahun_pelajaran not in tahun_options:
+        tahun_pelajaran = tahun_options[-1]
+    sistem_hari = '6' if str(req.form.get('sistem_hari')) == '6' else '5'
+    form = {'jenjang': jenjang, 'tahun_pelajaran': tahun_pelajaran, 'sistem_hari': sistem_hari}
+
+    unggahan = req.files.get('kalender_file')
+    try:
+        if unggahan and unggahan.filename:
+            dokumen = hem_store_document(unggahan, jenjang, tahun_pelajaran)
+            flash(f'Dokumen kalender "{unggahan.filename}" tersimpan dan dipakai untuk analisis ini.', 'info')
+        else:
+            dokumen = hem_find_document(jenjang, tahun_pelajaran)
+    except Exception as e:
+        print('HEM upload error:', e)
+        return hem_page_context(jenis, error=f'Gagal menyimpan dokumen kalender: {e}', form=form)
+
+    doc_bytes, doc_text = b'', ''
+    if dokumen:
+        try:
+            with open(os.path.join(app.config['UPLOAD_FOLDER'], dokumen), 'rb') as berkas:
+                doc_bytes = berkas.read()
+            doc_text = hem_document_text(dokumen, doc_bytes)
+        except OSError as e:
+            doc_bytes, doc_text = b'', ''
+            print('HEM read error:', e)
+
+    meta = {
+        'nama_sekolah': (profile.nama_sekolah if profile and profile.nama_sekolah else '-'),
+        'jenjang': jenjang,
+        'tahun_pelajaran': tahun_pelajaran,
+        'sistem_hari': sistem_hari,
+        'sistem_hari_label': hem_sistem_hari_label(sistem_hari),
+        'sumber_dokumen': f'Dokumen kalender: {dokumen}' if dokumen else 'Tanpa dokumen kalender (acuan kalender resmi Kemendikdasmen dari pengetahuan AI)',
+        'dibuat': wib_now().strftime('%d-%m-%Y %H:%M'),
+    }
+
+    catatan_sistem = []
+    if not dokumen:
+        catatan_sistem.append('Catatan sistem: analisis ini dibuat tanpa dokumen kalender yang diunggah. Unggah kalender resmi Kemendikdasmen untuk hasil yang pasti.')
+    elif doc_bytes and not doc_text:
+        catatan_sistem.append('Catatan sistem: dokumen dibaca langsung oleh AI sebagai berkas ' + hem_document_mime(dokumen).split('/')[-1] + '.')
+
+    prompt = hem_prompt(meta, bool(dokumen))
+    ai_text, sumber_ai, errors = hem_request_ai(prompt, dokumen, doc_bytes, doc_text)
+    if not ai_text:
+        pesan = 'Analisis AI gagal. ' + (' | '.join(errors) if errors else 'Tidak ada API Key AI yang tersedia (GEMINI_API_KEY / GROQ_API_KEY).')
+        return hem_page_context(jenis, error=pesan, form=form)
+
+    try:
+        report = hem_build_report(hem_parse_json(ai_text), meta, catatan_sistem)
+    except (ValueError, TypeError) as e:
+        return hem_page_context(jenis, error=f'Hasil analisis AI tidak dapat dibaca: {e}', form=form)
+
+    report['meta']['mesin_ai'] = sumber_ai
+    isi_arsip = json.dumps(report, ensure_ascii=False)
+    try:
+        arsip = Archive(
+            user_id=current_user.id,
+            jenis_administrasi=jenis,
+            topik=f"Analisis HEM {tahun_pelajaran} - {jenjang}",
+            ruang_lingkup=f"{meta['nama_sekolah']} | {meta['sistem_hari_label']} | {meta['sumber_dokumen']}",
+            parameter_hash=hashlib.md5(f"hem-{current_user.id}-{jenjang}-{tahun_pelajaran}-{sistem_hari}-{dokumen}-{len(isi_arsip)}".encode('utf-8')).hexdigest(),
+            hasil_konten=isi_arsip,
+        )
+        db.session.add(arsip)
+        db.session.commit()
+        log_activity(current_user.id, f"Analisis HEM {tahun_pelajaran} ({jenjang}).")
+        flash('Analisis HEM selesai dan tersimpan di arsip.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        print('HEM archive error:', e)
+        flash(f'Analisis berhasil, tetapi gagal disimpan ke arsip: {e}', 'warning')
+
+    return hem_page_context(jenis, report=report, form=form)
+
+
 @app.route('/generator')
 @login_required
 def generator_index():
@@ -278,6 +615,11 @@ def generator(modul_slug):
             
     jenis = mod_obj.nama_modul
     profile = SchoolProfile.query.first()
+
+    hem_context = hem_page_context(jenis) if modul_slug == 'hem' else {}
+    if modul_slug == 'hem' and request.method == 'POST':
+        hem_context = hem_analyze_request(request, profile, jenis)
+        return render_template('generator.html', all_modules=all_modules, hasil_generate=None, active_slug=modul_slug, current_jenis=jenis, hem_context=hem_context)
 
     if request.method == 'POST':
         try:
@@ -529,7 +871,7 @@ Isi semua bagian dengan konten akademis yang panjang, mendalam, dan spesifik ses
             flash(f'Terjadi kesalahan server saat menyimpan data: {str(e)}', 'danger')
             return redirect(url_for('generator', modul_slug=modul_slug))
             
-    return render_template('generator.html', all_modules=all_modules, hasil_generate=hasil_generate, active_slug=modul_slug, current_jenis=jenis)
+    return render_template('generator.html', all_modules=all_modules, hasil_generate=hasil_generate, active_slug=modul_slug, current_jenis=jenis, hem_context=hem_context)
 
 
 @app.route('/uploads/<filename>')
@@ -546,7 +888,15 @@ def arsip():
 @login_required
 def arsip_detail(id):
     arch = Archive.query.get_or_404(id)
-    return render_template('arsip_detail.html', arch=arch)
+    hem_data = None
+    if arch.jenis_administrasi == 'Analisis Minggu & Hari Efektif Belajar (HEM)':
+        try:
+            data = json.loads(arch.hasil_konten)
+            if isinstance(data, dict) and data.get('bulan'):
+                hem_data = data
+        except (TypeError, ValueError):
+            hem_data = None
+    return render_template('arsip_detail.html', arch=arch, hem_data=hem_data)
 
 @app.route('/pengaturan', methods=['GET', 'POST'])
 @login_required
@@ -716,3 +1066,140 @@ def export_word():
         headers={"Content-Disposition": f"attachment;filename={title}.doc"}
     )
     return response
+
+@app.route('/export/excel_hem', methods=['POST'])
+@login_required
+def export_excel_hem():
+    """Unduh hasil analisis HEM sebagai file Excel (.xlsx) siap cetak."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+    from openpyxl.utils import get_column_letter
+    from openpyxl.worksheet.properties import PageSetupProperties
+
+    try:
+        report = json.loads(request.form.get('hem_json') or '')
+        bulan, total, meta = report['bulan'], report['total'], report.get('meta', {})
+    except (TypeError, ValueError, KeyError):
+        flash('Data analisis HEM tidak valid. Silakan jalankan analisis ulang.', 'danger')
+        return redirect(url_for('generator', modul_slug='hem'))
+
+    BIRU_TUA, ABU_LEMBUT, AKSEN = '1E3D59', 'F1F5F9', 'FFC107'
+    tipis = Side(style='thin', color='CBD5E1')
+    garis = Border(left=tipis, right=tipis, top=tipis, bottom=tipis)
+    fill_biru = PatternFill('solid', fgColor=BIRU_TUA)
+    fill_abu = PatternFill('solid', fgColor=ABU_LEMBUT)
+    fill_aksen = PatternFill('solid', fgColor=AKSEN)
+    font_putih = Font(bold=True, color='FFFFFF', size=11)
+    font_aksen = Font(bold=True, color='7C2D12')
+    tengah = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    kiri = Alignment(horizontal='left', vertical='center', wrap_text=True)
+
+    kolom = 8
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Analisis HEM'
+
+    def baris_merge(teks, row, fill=None, font=None, align=tengah, tinggi=20):
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=kolom)
+        sel = ws.cell(row=row, column=1, value=teks)
+        sel.alignment = align
+        if fill:
+            sel.fill = fill
+        if font:
+            sel.font = font
+        ws.row_dimensions[row].height = tinggi
+        return row + 1
+
+    r = 1
+    r = baris_merge('LAPORAN ANALISIS MINGGU & HARI EFEKTIF BELAJAR (HEM)', r, fill_biru,
+                    Font(bold=True, color='FFFFFF', size=14), tengah, 28)
+    r = baris_merge(f"Tahun Pelajaran {meta.get('tahun_pelajaran', '-')} | Jenjang {meta.get('jenjang', '-')} | {meta.get('sistem_hari_label', '-')}",
+                    r, fill_aksen, font_aksen, tengah, 20)
+    r = baris_merge(f"Nama Sekolah: {meta.get('nama_sekolah', '-')}     |     Sumber data: {meta.get('sumber_dokumen', '-')}",
+                    r, fill_abu, Font(italic=True, size=10), kiri, 18)
+    r += 1
+
+    kepala = ['Bulan', 'Jumlah Minggu Kalender', 'Minggu Tidak Efektif', 'Minggu Efektif Belajar',
+              'Jumlah Hari Sekolah', 'Hari Tidak Efektif', 'Hari Efektif Belajar', 'Keterangan']
+    baris_kepala = r
+    for i, judul in enumerate(kepala, start=1):
+        sel = ws.cell(row=r, column=i, value=judul)
+        sel.fill, sel.font, sel.alignment, sel.border = fill_biru, font_putih, tengah, garis
+    ws.row_dimensions[r].height = 34
+    r += 1
+
+    for urutan, b in enumerate(bulan):
+        nilai = [b['nama_bulan'], b['minggu_kalender'], b['minggu_tidak_efektif'], b['minggu_efektif'],
+                 b['hari_sekolah'], b['hari_tidak_efektif'], b['hari_efektif'], b['keterangan']]
+        for i, val in enumerate(nilai, start=1):
+            sel = ws.cell(row=r, column=i, value=val)
+            sel.border = garis
+            sel.alignment = kiri if i in (1, 8) else tengah
+            if urutan % 2 == 1:
+                sel.fill = fill_abu
+            if i == 1:
+                sel.font = Font(bold=True)
+            if i in (4, 7):
+                sel.fill, sel.font = fill_aksen, font_aksen
+        r += 1
+
+    nilai_total = ['TOTAL KESELURUHAN', total['minggu_kalender'], total['minggu_tidak_efektif'], total['minggu_efektif'],
+                   total['hari_sekolah'], total['hari_tidak_efektif'], total['hari_efektif'],
+                   'Data dasar penyusunan Prota & Prosem']
+    for i, val in enumerate(nilai_total, start=1):
+        sel = ws.cell(row=r, column=i, value=val)
+        sel.border = garis
+        sel.alignment = kiri if i in (1, 8) else tengah
+        sel.fill, sel.font = (fill_aksen, font_aksen) if i in (4, 7) else (fill_biru, font_putih)
+    r += 2
+
+    r = baris_merge('REKAP TOTAL TAHUNAN', r, fill_biru, font_putih, kiri, 22)
+    for i, judul in enumerate(('Komponen', 'Jumlah'), start=1):
+        sel = ws.cell(row=r, column=i, value=judul)
+        sel.fill, sel.font, sel.border = fill_aksen, font_aksen, garis
+        sel.alignment = kiri if i == 1 else tengah
+    r += 1
+    rekap = [
+        ('Total Minggu Kalender', total['minggu_kalender']),
+        ('Total Minggu Tidak Efektif', total['minggu_tidak_efektif']),
+        ('Total Minggu Efektif Belajar', total['minggu_efektif']),
+        ('Total Hari Sekolah', total['hari_sekolah']),
+        ('Total Hari Tidak Efektif', total['hari_tidak_efektif']),
+        ('Total Hari Efektif Belajar', total['hari_efektif']),
+    ]
+    for urutan, (komponen, jumlah) in enumerate(rekap):
+        for i, val in enumerate((komponen, jumlah), start=1):
+            sel = ws.cell(row=r, column=i, value=val)
+            sel.border = garis
+            sel.alignment = kiri if i == 1 else tengah
+            if urutan in (2, 5):
+                sel.fill, sel.font = fill_aksen, font_aksen
+            elif urutan % 2 == 1:
+                sel.fill = fill_abu
+        r += 1
+
+    if report.get('catatan'):
+        r += 1
+        r = baris_merge('CATATAN', r, fill_biru, font_putih, kiri, 20)
+        for catatan in report['catatan']:
+            ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=kolom)
+            sel = ws.cell(row=r, column=1, value='- ' + str(catatan))
+            sel.alignment = kiri
+            r += 1
+
+    for i, lebar in enumerate((16, 15, 15, 15, 15, 15, 15, 46), start=1):
+        ws.column_dimensions[get_column_letter(i)].width = lebar
+    ws.freeze_panes = f'A{baris_kepala + 1}'
+    ws.page_setup.orientation = 'landscape'
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0
+    ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
+
+    aliran = io.BytesIO()
+    wb.save(aliran)
+    aliran.seek(0)
+    nama_file = re.sub(r'[^A-Za-z0-9]+', '_',
+                       f"Analisis_HEM_{meta.get('tahun_pelajaran', '')}_{meta.get('jenjang', '')}").strip('_') + '.xlsx'
+    return send_file(aliran,
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                     as_attachment=True, download_name=nama_file)

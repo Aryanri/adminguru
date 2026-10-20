@@ -11,7 +11,11 @@
     </div>
     <hr>
     <div class="mt-3">
-        {{ arch.hasil_konten | safe }}
+        {% if hem_data %}
+            {% with hem_report = hem_data %}{% include "_hem_report.html" %}{% endwith %}
+        {% else %}
+            {{ arch.hasil_konten | safe }}
+        {% endif %}
     </div>
 </div>
 {% endblock %}
